@@ -1,7 +1,106 @@
 ---
-- hosts: all
+- hosts: local
+  gather_facts: true
+  vars:
+    vim_plug_script_path: "{{ ansible_env.HOME + '/.local/share/nvim/site/autoload/plug.vim' }}"
+    git_repos: "{{ ansible_env.HOME + '/repos/neovim' }}"
   tasks:
+
     - name: See if system is reachable
       ping:
+        data: "pong"
 
+    - name: Make sure some functions are in bashrc
+      blockinfile:
+        path: ~/.bashrc
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        block: "{{ item }}"
+      with_items:
+        - |
+          # Declare function to add path
+          # https://unix.stackexchange.com/questions/14895/duplicate-entries-in-path-a-problem
+          # Answer from: Gilles
+          # answered Jun 13 '11 at 8:34
+          function addThisPath() {
+              case ":$PATH:" in
+              *":$1:"*) :;; # already there
+              *) PATH="$1:$PATH";; # or PATH="$PATH:$1"
+              esac
+          }
+          if [[ -d "$HOME/.vim/plugged/fzf" ]]; then
+              addThisPath "$HOME/.vim/plugged/fzf/bin"
+              . "$HOME/.vim/plugged/fzf/shell/completion.bash"
+              . "$HOME/.vim/plugged/fzf/shell/key-bindings.bash"
+          fi
+          set -o vi
+          if command -v fd &>/dev/null; then
+              export FZF_DEFAULT_COMMAND='fd --hidden --type file --color=always'
+              export FZF_DEFAULT_OPTS="--ansi"
+          elif command -v fdfind &>/dev/null; then
+              export FZF_DEFAULT_COMMAND='fdfind --hidden --type file --color=always'
+              export FZF_DEFAULT_OPTS="--ansi"
+              alias fd=fdfind
+          fi
+          v () {
+              if command -v nvim &>/dev/null; then
+                  nvim $@
+              fi
+          }
 
+    - name: Make sure some system dependencies are installed
+      become: true
+      package:
+        name: "{{ item }}"
+        state: 'present'
+      with_items:
+        - git
+        - gcc
+        - make
+        - wget
+        - curl
+        - fd
+        - ninja-build
+        - gettext
+        - libtool
+        - libtool-bin
+        - autoconf
+        - automake
+        - cmake
+        - g++
+        - pkg-config
+        - unzip
+
+    - name: Check vim-plug script existance
+      stat:
+        path: "{{ vim_plug_script_path }}"
+      register: vim_plug_script_result
+
+    - name: If vim-plug script doesn't exist, install it
+      when: not vim_plug_script_result.stat.exists
+      get_url:
+        url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+        dest: "{{ vim_plug_script_path }}"
+        mode: 0755
+
+    - name: Get latest source code for neovim
+      git:
+        repo: https://github.com/neovim/neovim.git
+        dest: "{{ git_repos }}"
+        clone: true
+        update: true
+      register: git_neovim_repo
+
+    - name: Compile and update neovim
+      when: git_neovim_repo.changed
+      community.general.make:
+        chdir: "{{ git_repos }}"
+        target: install
+        params:
+          CMAKE_BUILD_TYPE: RelWithDebInfo
+      become: true
+
+    - name: Update neovim plugin
+      shell:
+        cmd: nvim -c 'PlugUpdate' -c 'qa'
+      args:
+        warn: false
