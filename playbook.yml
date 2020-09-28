@@ -3,9 +3,14 @@
   gather_facts: true
   vars:
     home_dir: "{{ ansible_env.HOME }}"
+    bashrc_path: "{{ home_dir + '/.bashrc' }}"
+    profile_path: "{{ home_dir + '/.profile' }}"
     vim_plug_script_path: "{{ home_dir + '/.local/share/nvim/site/autoload/plug.vim' }}"
     git_repos: "{{ home_dir + '/repos/neovim' }}"
     dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
+    fd_repos: "{{ home_dir + '/repos/fd' }}"
+    rg_repos: "{{ home_dir + '/repos/ripgrep' }}"
+    cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
   tasks:
 
     - name: See if system is reachable
@@ -14,8 +19,9 @@
 
     - name: Make sure some functions are in bashrc
       blockinfile:
-        path: ~/.bashrc
+        path: "{{ bashrc_path }}"
         marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        backup: true
         block: "{{ item }}"
       with_items:
         - |
@@ -29,6 +35,7 @@
               *) PATH="$1:$PATH";; # or PATH="$PATH:$1"
               esac
           }
+          addThisPath "$HOME/.cargo/bin"
           export TERM=xterm-256color
           if [[ -d "$HOME/.vim/plugged/fzf" ]]; then
               addThisPath "$HOME/.vim/plugged/fzf/bin"
@@ -70,8 +77,6 @@
         - make
         - wget
         - curl
-        - fd
-        - ripgrep
         - stow
         - ninja-build
         - gettext
@@ -83,6 +88,54 @@
         - g++
         - pkg-config
         - unzip
+
+    - name: Check cargo and rustup is installed
+      shell: command -v cargo &>/dev/null
+      register: cargo_present
+      changed_when: cargo_present.rc != 0
+
+    - name: Install cargo and rustup
+      shell: curl https://sh.rustup.rs -sSf | bash -s - -y
+      when: cargo_present.changed
+      register: rustup_install
+
+    - name: Make sure cargo export is not present in .profile
+      when: rustup_install.changed
+      lineinfile:
+        path: "{{ profile_path }}"
+        line: export PATH="$HOME/.cargo/bin:$PATH"
+        state: absent
+        backup: true
+
+    - name: Get latest source code for fd/fd-find
+      git:
+        repo: https://github.com/sharkdp/fd.git
+        dest: "{{ fd_repos }}"
+        clone: true
+        version: HEAD
+        update: true
+      register: git_clone_fd
+
+    - name: Compile and update fd
+      when: git_clone_fd.changed
+      shell:
+        cmd: "{{ cargo_default_bin }}/cargo install --path ."
+        chdir: "{{ fd_repos }}"
+
+    - name: Get latest source code for ripgrep
+      git:
+        repo: https://github.com/BurntSushi/ripgrep
+        dest: "{{ rg_repos }}"
+        clone: true
+        version: HEAD
+        update: true
+      register: git_clone_rg
+
+    - name: Compile and update rg
+      when: git_clone_rg.changed
+      shell:
+        cmd: "{{ cargo_default_bin }}/cargo install --path ."
+        chdir: "{{ rg_repos }}"
 
     - name: Get latest source code for neovim
       git:
@@ -126,10 +179,14 @@
       shell:
         chdir: "{{ dotfiles_repos }}"
         cmd: stow -t {{ home_dir }} tmux -R && stow -f {{ home_dir }} nvim -R
+      register: stow_dotfiles
+      changed_when: stow_dotfiles.rc != 0
 
     - name: Update neovim plugin
       shell:
         cmd: nvim -c 'PlugInstall' -c 'PlugUpdate' -c 'qa'
       args:
         warn: false
+      register: update_nvim_plugin
+      changed_when: update_nvim_plugin.rc != 0
 
