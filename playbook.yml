@@ -90,14 +90,16 @@
         - unzip
 
     - name: Check cargo and rustup is installed
-      shell: command -v cargo &>/dev/null
+      shell: command -v cargo &>/dev/null && echo good || echo bad
       register: cargo_present
-      changed_when: cargo_present.rc != 0
+      changed_when: "cargo_present.stdout is search('bad')"
 
     - name: Install cargo and rustup
       shell: curl https://sh.rustup.rs -sSf | bash -s - -y
       when: cargo_present.changed
       register: rustup_install
+      args:
+        warn: false
 
     - name: Make sure cargo export is not present in .profile
       when: rustup_install.changed
@@ -159,6 +161,11 @@
       stat:
         path: "{{ vim_plug_script_path }}"
       register: vim_plug_script_result
+
+    - name: Make sure autoload folder for vimplug exists
+      file:
+        path: "{{ vim_plug_script_path | dirname }}"
+        state: directory
 
     - name: If vim-plug script doesn't exist, install it
       when: not vim_plug_script_result.stat.exists
