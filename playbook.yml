@@ -2,8 +2,10 @@
 - hosts: local
   gather_facts: true
   vars:
-    vim_plug_script_path: "{{ ansible_env.HOME + '/.local/share/nvim/site/autoload/plug.vim' }}"
-    git_repos: "{{ ansible_env.HOME + '/repos/neovim' }}"
+    home_dir: "{{ ansible_env.HOME }}"
+    vim_plug_script_path: "{{ home_dir + '/.local/share/nvim/site/autoload/plug.vim' }}"
+    git_repos: "{{ home_dir + '/repos/neovim' }}"
+    dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
   tasks:
 
     - name: See if system is reachable
@@ -69,6 +71,8 @@
         - wget
         - curl
         - fd
+        - ripgrep
+        - stow
         - ninja-build
         - gettext
         - libtool
@@ -79,6 +83,24 @@
         - g++
         - pkg-config
         - unzip
+
+    - name: Get latest source code for neovim
+      git:
+        repo: https://github.com/neovim/neovim.git
+        dest: "{{ git_repos }}"
+        clone: true
+        version: HEAD
+        update: true
+      register: git_clone_neovim
+
+    - name: Compile and update neovim
+      when: git_clone_neovim.changed
+      community.general.make:
+        chdir: "{{ git_repos }}"
+        target: install
+        params:
+          CMAKE_BUILD_TYPE: RelWithDebInfo
+      become: true
 
     - name: Check vim-plug script existance
       stat:
@@ -92,25 +114,24 @@
         dest: "{{ vim_plug_script_path }}"
         mode: 0755
 
-    - name: Get latest source code for neovim
+    - name: Get my dotfiles
       git:
-        repo: https://github.com/neovim/neovim.git
-        dest: "{{ git_repos }}"
+        repo: https://github.com/jkc-sw/dotfiles.git
+        dest: "{{ dotfiles_repos }}"
         clone: true
+        version: HEAD
         update: true
-      register: git_neovim_repo
+      notify:
+        - Stow the destination
 
-    - name: Compile and update neovim
-      when: git_neovim_repo.changed
-      community.general.make:
-        chdir: "{{ git_repos }}"
-        target: install
-        params:
-          CMAKE_BUILD_TYPE: RelWithDebInfo
-      become: true
+    - name: Stow the destination
+      shell:
+        chdir: "{{ dotfiles_repos }}"
+        cmd: stow -t {{ home_dir }} tmux -R && stow -f {{ home_dir }} nvim -R
 
     - name: Update neovim plugin
       shell:
         cmd: nvim -c 'PlugUpdate' -c 'qa'
       args:
         warn: false
+
