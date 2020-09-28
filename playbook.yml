@@ -27,6 +27,7 @@
               *) PATH="$1:$PATH";; # or PATH="$PATH:$1"
               esac
           }
+          export TERM=xterm-256color
           if [[ -d "$HOME/.vim/plugged/fzf" ]]; then
               addThisPath "$HOME/.vim/plugged/fzf/bin"
               . "$HOME/.vim/plugged/fzf/shell/completion.bash"
@@ -41,11 +42,20 @@
               export FZF_DEFAULT_OPTS="--ansi"
               alias fd=fdfind
           fi
-          v () {
+          nv () {
               if command -v nvim &>/dev/null; then
                   nvim $@
               fi
           }
+          if [[ -x "$HOME/.vim/plugged/fzf/bin/fzf" ]]; then
+              addThisPath "$HOME/.vim/plugged/fzf/bin"
+              if [[ -d "$HOME/.vim/plugged/fzf/shell" ]]; then
+                  for f in $(ls  "$HOME/.vim/plugged/fzf/shell/"*.bash); do
+                      . "$f"
+                  done
+              fi
+              alias his='eval "$(history | tac | sed -n "s/[ 0-9]\+\(.*\)/\1/p" | fzf)"'
+          fi
 
     - name: Make sure some system dependencies are installed
       become: true
