@@ -121,8 +121,6 @@
         clone: true
         version: HEAD
         update: true
-      notify:
-        - Stow the destination
 
     - name: Stow the destination
       shell:
@@ -131,7 +129,7 @@
 
     - name: Update neovim plugin
       shell:
-        cmd: nvim -c 'PlugUpdate' -c 'qa'
+        cmd: nvim -c 'PlugInstall' -c 'PlugUpdate' -c 'qa'
       args:
         warn: false
 
