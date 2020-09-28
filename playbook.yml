@@ -184,8 +184,11 @@
 
     - name: Stow the destination
       shell:
+        cmd: |
+          stow -t '{{ home_dir }}' -R tmux
+          stow -t '{{ home_dir }}' -R nvim
         chdir: "{{ dotfiles_repos }}"
-        cmd: stow -t {{ home_dir }} tmux -R && stow -f {{ home_dir }} nvim -R
+        executable: /bin/bash
       register: stow_dotfiles
       changed_when: stow_dotfiles.rc != 0
 
