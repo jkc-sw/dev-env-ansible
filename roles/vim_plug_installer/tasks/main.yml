@@ -8,7 +8,6 @@
   file:
     path: "{{ vim_plug_script_path | dirname }}"
     state: directory
-    mode: 1644
 
 - name: If vim-plug script doesn't exist, install it
   when: not vim_plug_script_result.stat.exists

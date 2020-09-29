@@ -1,12 +1,4 @@
 ---
-- name: Make sure some system dependencies are installed
-  become: true
-  package:
-    name: "{{ item }}"
-    state: 'present'
-  with_items:
-    - stow
-
 - name: Get my dotfiles
   git:
     repo: https://github.com/jkc-sw/dotfiles.git
@@ -15,6 +7,15 @@
     version: HEAD
     update: true
   register: git_clone_dotfiles
+
+- name: Make sure some system dependencies are installed
+  become: true
+  when: git_clone_dotfiles.changed
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - stow
 
 - name: Stow the destination
   when: git_clone_dotfiles.changed

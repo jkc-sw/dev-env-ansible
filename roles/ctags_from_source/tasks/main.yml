@@ -1,5 +1,20 @@
 ---
+- name: Check if ctags is installed
+  shell: command -v ctags && echo good || echo bad
+  register: ctags_present
+  changed_when: "'bad' in ctags_present.stdout"
+
+- name: Get latest source code for ctags
+  git:
+    repo: https://github.com/universal-ctags/ctags.git
+    dest: "{{ ctags_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_ctags
+
 - name: Make sure some system dependencies are installed
+  when: git_clone_ctags.changed or ctags_present.changed
   become: true
   package:
     name: "{{ item }}"
@@ -16,20 +31,6 @@
     - libjansson-dev
     - libyaml-dev
     - libxml2-dev
-
-- name: Check if ctags is installed
-  shell: command -v ctags && echo good || echo bad
-  register: ctags_present
-  changed_when: "'bad' in ctags_present.stdout"
-
-- name: Get latest source code for ctags
-  git:
-    repo: https://github.com/universal-ctags/ctags.git
-    dest: "{{ ctags_repos }}"
-    clone: true
-    version: HEAD
-    update: true
-  register: git_clone_ctags
 
 - name: Configure before running build for ctags
   when: git_clone_ctags.changed or ctags_present.changed

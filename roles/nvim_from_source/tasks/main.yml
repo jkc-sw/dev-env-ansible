@@ -1,6 +1,21 @@
 ---
+- name: Check if nvim is installed
+  shell: command -v nvim && echo good || echo bad
+  register: nvim_present
+  changed_when: "'bad' in nvim_present.stdout"
+
+- name: Get latest source code for neovim
+  git:
+    repo: https://github.com/neovim/neovim.git
+    dest: "{{ nvim_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_neovim
+
 - name: Make sure some system dependencies are installed
   become: true
+  when: git_clone_neovim.changed or nvim_present.changed
   package:
     name: "{{ item }}"
     state: 'present'
@@ -15,20 +30,6 @@
     - g++
     - pkg-config
     - unzip
-
-- name: Check if nvim is installed
-  shell: command -v nvim && echo good || echo bad
-  register: nvim_present
-  changed_when: "'bad' in nvim_present.stdout"
-
-- name: Get latest source code for neovim
-  git:
-    repo: https://github.com/neovim/neovim.git
-    dest: "{{ nvim_repos }}"
-    clone: true
-    version: HEAD
-    update: true
-  register: git_clone_neovim
 
 - name: Compile and update neovim
   when: git_clone_neovim.changed or nvim_present.changed
