@@ -6,10 +6,11 @@
     bashrc_path: "{{ home_dir + '/.bashrc' }}"
     profile_path: "{{ home_dir + '/.profile' }}"
     vim_plug_script_path: "{{ home_dir + '/.local/share/nvim/site/autoload/plug.vim' }}"
-    git_repos: "{{ home_dir + '/repos/neovim' }}"
+    nvim_repos: "{{ home_dir + '/repos/neovim' }}"
     dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
     fd_repos: "{{ home_dir + '/repos/fd' }}"
     rg_repos: "{{ home_dir + '/repos/ripgrep' }}"
+    ctags_repos: "{{ home_dir + '/repos/ctags' }}"
     cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
   tasks:
 
@@ -88,6 +89,11 @@
         - g++
         - pkg-config
         - unzip
+        - python3-docutils
+        - libseccomp-dev
+        - libjansson-dev
+        - libyaml-dev
+        - libxml2-dev
 
     - name: Check cargo and rustup is installed
       shell: command -v cargo &>/dev/null && echo good || echo bad
@@ -139,10 +145,34 @@
         cmd: "{{ cargo_default_bin }}/cargo install --path ."
         chdir: "{{ rg_repos }}"
 
+    - name: Get latest source code for ctags
+      git:
+        repo: https://github.com/universal-ctags/ctags.git
+        dest: "{{ ctags_repos }}"
+        clone: true
+        version: HEAD
+        update: true
+      register: git_clone_ctags
+
+    - name: Configure before running build for ctags
+      when: git_clone_ctags.changed
+      shell:
+        chdir: "{{ ctags_repos }}"
+        cmd: |
+          ./autogen.sh
+          ./configure
+
+    - name: Compile and update ctags
+      when: git_clone_ctags.changed
+      community.general.make:
+        chdir: "{{ ctags_repos }}"
+        target: install
+      become: true
+
     - name: Get latest source code for neovim
       git:
         repo: https://github.com/neovim/neovim.git
-        dest: "{{ git_repos }}"
+        dest: "{{ nvim_repos }}"
         clone: true
         version: HEAD
         update: true
@@ -151,7 +181,7 @@
     - name: Compile and update neovim
       when: git_clone_neovim.changed
       community.general.make:
-        chdir: "{{ git_repos }}"
+        chdir: "{{ nvim_repos }}"
         target: install
         params:
           CMAKE_BUILD_TYPE: RelWithDebInfo
