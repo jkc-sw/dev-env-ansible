@@ -97,9 +97,16 @@
       when: git_clone_neovim.changed
       community.general.make:
         chdir: "{{ git_repos }}"
-        target: install
+        target: all
         params:
           CMAKE_BUILD_TYPE: RelWithDebInfo
+      register: compile_neovim
+
+    - name: Install neovim
+      when: compile_neovim.changed
+      community.general.make:
+        chdir: "{{ git_repos }}"
+        target: install
       become: true
 
     - name: Check vim-plug script existance
