@@ -1,0 +1,5 @@
+---
+dependencies:
+  - fd_from_source
+  - rg_from_source
+  - ctags_from_source

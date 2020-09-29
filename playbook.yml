@@ -2,15 +2,8 @@
 - hosts: local
   gather_facts: true
   roles:
-    - fd_from_source
-    - rg_from_source
-    - ctags_from_source
-    - nvim_from_source
-    - cargo_and_rustup
-    - vim_plug_installer
-    - vim_plugin_update
-    - dotfiles
     - bashrc_like_a_pro
+    - vim_plugin_update
   tasks:
     - name: Make sure some system dependencies are installed
       become: true

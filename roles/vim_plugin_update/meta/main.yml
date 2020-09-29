@@ -1,0 +1,5 @@
+---
+dependencies:
+  - dotfiles
+  - vim_plug_installer
+  - nvim_from_source
