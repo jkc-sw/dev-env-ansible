@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+ctags_repos: "{{ home_dir + '/repos/ctags' }}"

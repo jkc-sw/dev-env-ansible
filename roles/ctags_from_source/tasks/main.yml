@@ -1,0 +1,48 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - git
+    - gcc
+    - make
+    - autoconf
+    - automake
+    - pkg-config
+    - python3-docutils
+    - libseccomp-dev
+    - libjansson-dev
+    - libyaml-dev
+    - libxml2-dev
+
+- name: Check if ctags is installed
+  shell: command -v ctags && echo good || echo bad
+  register: ctags_present
+  changed_when: "'bad' in ctags_present.stdout"
+
+- name: Get latest source code for ctags
+  git:
+    repo: https://github.com/universal-ctags/ctags.git
+    dest: "{{ ctags_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_ctags
+
+- name: Configure before running build for ctags
+  when: git_clone_ctags.changed or ctags_present.changed
+  shell:
+    chdir: "{{ ctags_repos }}"
+    cmd: |
+      ./autogen.sh
+      ./configure
+
+- name: Compile and update ctags
+  when: git_clone_ctags.changed
+  community.general.make:
+    chdir: "{{ ctags_repos }}"
+    target: install
+  become: true
+

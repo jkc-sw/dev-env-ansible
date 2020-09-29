@@ -1,0 +1,50 @@
+---
+- name: Make sure some functions are in bashrc
+  blockinfile:
+    path: "{{ bashrc_path }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    backup: true
+    block: "{{ item }}"
+  with_items:
+    - |
+      # Declare function to add path
+      # https://unix.stackexchange.com/questions/14895/duplicate-entries-in-path-a-problem
+      # Answer from: Gilles
+      # answered Jun 13 '11 at 8:34
+      function addThisPath() {
+          case ":$PATH:" in
+          *":$1:"*) :;; # already there
+          *) PATH="$1:$PATH";; # or PATH="$PATH:$1"
+          esac
+      }
+      addThisPath "$HOME/.cargo/bin"
+      export TERM=xterm-256color
+      if [[ -d "$HOME/.vim/plugged/fzf" ]]; then
+          addThisPath "$HOME/.vim/plugged/fzf/bin"
+          . "$HOME/.vim/plugged/fzf/shell/completion.bash"
+          . "$HOME/.vim/plugged/fzf/shell/key-bindings.bash"
+      fi
+      set -o vi
+      if command -v fd &>/dev/null; then
+          export FZF_DEFAULT_COMMAND='fd --hidden --type file --color=always'
+          export FZF_DEFAULT_OPTS="--ansi"
+      elif command -v fdfind &>/dev/null; then
+          export FZF_DEFAULT_COMMAND='fdfind --hidden --type file --color=always'
+          export FZF_DEFAULT_OPTS="--ansi"
+          alias fd=fdfind
+      fi
+      nv () {
+          if command -v nvim &>/dev/null; then
+              nvim $@
+          fi
+      }
+      if [[ -x "$HOME/.vim/plugged/fzf/bin/fzf" ]]; then
+          addThisPath "$HOME/.vim/plugged/fzf/bin"
+          if [[ -d "$HOME/.vim/plugged/fzf/shell" ]]; then
+              for f in $(ls  "$HOME/.vim/plugged/fzf/shell/"*.bash); do
+                  . "$f"
+              done
+          fi
+          alias his='eval "$(history | tac | sed -n "s/[ 0-9]\+\(.*\)/\1/p" | fzf)"'
+      fi
+

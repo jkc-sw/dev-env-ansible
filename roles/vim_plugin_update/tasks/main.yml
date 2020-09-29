@@ -1,0 +1,9 @@
+---
+- name: Update neovim plugin
+  shell:
+    cmd: nvim -c 'PlugInstall' -c 'PlugUpdate' -c 'qa'
+  args:
+    warn: false
+  register: update_nvim_plugin
+  changed_when: update_nvim_plugin.rc != 0
+

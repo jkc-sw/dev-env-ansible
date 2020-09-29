@@ -1,0 +1,21 @@
+---
+- name: Check cargo and rustup is installed
+  shell: command -v cargo && echo good || echo bad
+  register: cargo_present
+  changed_when: "'bad' in cargo_present.stdout"
+
+- name: Install cargo and rustup
+  shell: curl https://sh.rustup.rs -sSf | bash -s - -y
+  when: cargo_present.changed
+  register: rustup_install
+  args:
+    warn: false
+
+- name: Make sure cargo export is not present in .profile
+  when: rustup_install.changed
+  lineinfile:
+    path: "{{ profile_path }}"
+    line: export PATH="$HOME/.cargo/bin:$PATH"
+    state: absent
+    backup: true
+

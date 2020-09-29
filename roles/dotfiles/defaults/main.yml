@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"

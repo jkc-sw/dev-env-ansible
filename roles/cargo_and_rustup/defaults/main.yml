@@ -1,0 +1,4 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
+profile_path: "{{ home_dir + '/.profile' }}"

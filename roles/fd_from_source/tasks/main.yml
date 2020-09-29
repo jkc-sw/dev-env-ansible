@@ -1,0 +1,21 @@
+---
+- name: Check if fd is installed
+  shell: command -v fd && echo good || echo bad
+  register: fd_present
+  changed_when: "'bad' in fd_present.stdout"
+
+- name: Get latest source code for fd/fd-find
+  git:
+    repo: https://github.com/sharkdp/fd.git
+    dest: "{{ fd_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_fd
+
+- name: Compile and update fd
+  when: git_clone_fd.changed or fd_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo install --path ."
+    chdir: "{{ fd_repos }}"
+

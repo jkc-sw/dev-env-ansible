@@ -1,0 +1,21 @@
+---
+- name: Check if rg is installed
+  shell: command -v rg && echo good || echo bad
+  register: rg_present
+  changed_when: "'bad' in rg_present.stdout"
+
+- name: Get latest source code for ripgrep
+  git:
+    repo: https://github.com/BurntSushi/ripgrep
+    dest: "{{ rg_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_rg
+
+- name: Compile and update rg
+  when: git_clone_rg.changed or rg_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo install --path ."
+    chdir: "{{ rg_repos }}"
+

@@ -1,0 +1,48 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - ninja-build
+    - gettext
+    - libtool
+    - libtool-bin
+    - autoconf
+    - automake
+    - cmake
+    - g++
+    - pkg-config
+    - unzip
+
+- name: Check if nvim is installed
+  shell: command -v nvim && echo good || echo bad
+  register: nvim_present
+  changed_when: "'bad' in nvim_present.stdout"
+
+- name: Get latest source code for neovim
+  git:
+    repo: https://github.com/neovim/neovim.git
+    dest: "{{ nvim_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_neovim
+
+- name: Compile and update neovim
+  when: git_clone_neovim.changed or nvim_present.changed
+  community.general.make:
+    chdir: "{{ nvim_repos }}"
+    target: all
+    params:
+      CMAKE_BUILD_TYPE: RelWithDebInfo
+  register: compile_neovim
+
+- name: Install neovim
+  when: compile_neovim.changed
+  community.general.make:
+    chdir: "{{ nvim_repos }}"
+    target: install
+  become: true
+

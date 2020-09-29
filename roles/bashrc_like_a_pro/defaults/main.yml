@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+bashrc_path: "{{ home_dir + '/.bashrc' }}"
