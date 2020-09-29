@@ -96,9 +96,9 @@
         - libxml2-dev
 
     - name: Check cargo and rustup is installed
-      shell: command -v cargo &>/dev/null && echo good || echo bad
+      shell: command -v cargo && echo good || echo bad
       register: cargo_present
-      changed_when: "cargo_present.stdout is search('bad')"
+      changed_when: "'bad' in cargo_present.stdout"
 
     - name: Install cargo and rustup
       shell: curl https://sh.rustup.rs -sSf | bash -s - -y
@@ -115,6 +115,11 @@
         state: absent
         backup: true
 
+    - name: Check if fd is installed
+      shell: command -v fd && echo good || echo bad
+      register: fd_present
+      changed_when: "'bad' in fd_present.stdout"
+
     - name: Get latest source code for fd/fd-find
       git:
         repo: https://github.com/sharkdp/fd.git
@@ -125,10 +130,15 @@
       register: git_clone_fd
 
     - name: Compile and update fd
-      when: git_clone_fd.changed
+      when: git_clone_fd.changed or fd_present.changed
       shell:
         cmd: "{{ cargo_default_bin }}/cargo install --path ."
         chdir: "{{ fd_repos }}"
+
+    - name: Check if rg is installed
+      shell: command -v rg && echo good || echo bad
+      register: rg_present
+      changed_when: "'bad' in rg_present.stdout"
 
     - name: Get latest source code for ripgrep
       git:
@@ -140,10 +150,15 @@
       register: git_clone_rg
 
     - name: Compile and update rg
-      when: git_clone_rg.changed
+      when: git_clone_rg.changed or rg_present.changed
       shell:
         cmd: "{{ cargo_default_bin }}/cargo install --path ."
         chdir: "{{ rg_repos }}"
+
+    - name: Check if ctags is installed
+      shell: command -v ctags && echo good || echo bad
+      register: ctags_present
+      changed_when: "'bad' in ctags_present.stdout"
 
     - name: Get latest source code for ctags
       git:
@@ -155,7 +170,7 @@
       register: git_clone_ctags
 
     - name: Configure before running build for ctags
-      when: git_clone_ctags.changed
+      when: git_clone_ctags.changed or ctags_present.changed
       shell:
         chdir: "{{ ctags_repos }}"
         cmd: |
@@ -169,6 +184,11 @@
         target: install
       become: true
 
+    - name: Check if nvim is installed
+      shell: command -v nvim && echo good || echo bad
+      register: nvim_present
+      changed_when: "'bad' in nvim_present.stdout"
+
     - name: Get latest source code for neovim
       git:
         repo: https://github.com/neovim/neovim.git
@@ -179,7 +199,7 @@
       register: git_clone_neovim
 
     - name: Compile and update neovim
-      when: git_clone_neovim.changed
+      when: git_clone_neovim.changed or nvim_present.changed
       community.general.make:
         chdir: "{{ nvim_repos }}"
         target: all
@@ -190,7 +210,7 @@
     - name: Install neovim
       when: compile_neovim.changed
       community.general.make:
-        chdir: "{{ git_repos }}"
+        chdir: "{{ nvim_repos }}"
         target: install
       become: true
 
@@ -203,6 +223,7 @@
       file:
         path: "{{ vim_plug_script_path | dirname }}"
         state: directory
+        mode: 1644
 
     - name: If vim-plug script doesn't exist, install it
       when: not vim_plug_script_result.stat.exists
