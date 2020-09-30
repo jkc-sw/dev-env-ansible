@@ -16,6 +16,6 @@
 - name: Compile and update rg
   when: git_clone_rg.changed or rg_present.changed
   shell:
-    cmd: "{{ cargo_default_bin }}/cargo install --path ."
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
     chdir: "{{ rg_repos }}"
 

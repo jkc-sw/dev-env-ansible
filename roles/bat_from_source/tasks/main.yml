@@ -1,0 +1,22 @@
+---
+- name: Check if bat is installed
+  shell: command -v bat && echo good || echo bad
+  register: bat_present
+  changed_when: "'bad' in bat_present.stdout"
+
+- name: Get latest source code for bat
+  git:
+    repo: https://github.com/sharkdp/bat
+    dest: "{{ bat_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+    recursive: true
+  register: git_clone_bat
+
+- name: Compile and update bat
+  when: git_clone_bat.changed or bat_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
+    chdir: "{{ bat_repos }}"
+

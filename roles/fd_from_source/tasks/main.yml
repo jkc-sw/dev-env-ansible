@@ -16,6 +16,6 @@
 - name: Compile and update fd
   when: git_clone_fd.changed or fd_present.changed
   shell:
-    cmd: "{{ cargo_default_bin }}/cargo install --path ."
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
     chdir: "{{ fd_repos }}"
 

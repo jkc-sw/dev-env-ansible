@@ -1,0 +1,21 @@
+---
+- name: Check if dust is installed
+  shell: command -v dust && echo good || echo bad
+  register: dust_present
+  changed_when: "'bad' in dust_present.stdout"
+
+- name: Get latest source code for dust/dust-find
+  git:
+    repo: https://github.com/bootandy/dust.git
+    dest: "{{ dust_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_dust
+
+- name: Compile and update dust
+  when: git_clone_dust.changed or dust_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
+    chdir: "{{ dust_repos }}"
+

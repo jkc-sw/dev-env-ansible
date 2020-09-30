@@ -4,6 +4,8 @@
   roles:
     - bashrc_like_a_pro
     - vim_plugin_update
+    - bat_from_source
+    - dust_from_source
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true
@@ -13,5 +15,6 @@
       with_items:
         - git
         - wget
+        - tree
         - curl
 
