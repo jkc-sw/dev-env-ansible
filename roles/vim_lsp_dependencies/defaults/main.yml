@@ -1,2 +1,5 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
+clangd_name: 'clangd-10'
+clangd_exe_path: "/usr/bin/{{ clangd_name }}"
+clangd_ln_path: '/usr/bin/clangd'
