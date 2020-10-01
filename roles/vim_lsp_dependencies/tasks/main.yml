@@ -9,7 +9,7 @@
     - clangd-10
 
 - name: Make sure clangd is properly symlinked
-  # when: dep_install.changed
+  when: dep_install.changed
   become: true
   shell:
     executable: /bin/bash
