@@ -34,3 +34,11 @@
     line: eval "$(starship init bash)"
     state: present
     backup: true
+
+- name: Add starship to powershell profile
+  lineinfile:
+    path: "{{ pwshrc_path }}"
+    create: true
+    line: iex (& starship init powershell)
+    state: present
+    backup: true
