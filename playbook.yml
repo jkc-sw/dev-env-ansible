@@ -7,6 +7,7 @@
     - bat_from_source
     - dust_from_source
     - starship_from_source
+    - exa_from_source
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true
