@@ -1,0 +1,21 @@
+---
+- name: Check if rust_analyzer is installed
+  shell: command -v rust-analyzer && echo good || echo bad
+  register: rust_analyzer_present
+  changed_when: "'bad' in rust_analyzer_present.stdout"
+
+- name: Get latest source code for rust-analyzer
+  git:
+    repo: https://github.com/rust-analyzer/rust-analyzer.git
+    dest: "{{ rust_analyzer_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_rust_analyzer
+
+- name: Compile and update rust_analyzer
+  when: git_clone_rust_analyzer.changed or rust_analyzer_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo xtask install --server"
+    chdir: "{{ rust_analyzer_repos }}"
+
