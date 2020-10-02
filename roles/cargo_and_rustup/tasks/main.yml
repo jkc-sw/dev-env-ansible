@@ -19,3 +19,6 @@
     state: absent
     backup: true
 
+- name: Install rls
+  shell: "{{ cargo_default_bin }}/rustup component add rls rust-analysis rust-src"
+
