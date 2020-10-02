@@ -19,6 +19,14 @@
     state: absent
     backup: true
 
+- name: Check if rls is installed
+  shell: command -v rls && echo good || echo bad
+  register: rls_present
+  changed_when: "'bad' in rls_present.stdout"
+
 - name: Install rls
-  shell: "{{ cargo_default_bin }}/rustup component add rls rust-analysis rust-src"
+  when: rls_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/rustup component add rls rust-analysis rust-src"
+    executable: /bin/bash
 
