@@ -1,0 +1,5 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
+starship_repos: "{{ home_dir + '/repos/starship' }}"
+bashrc_path: "{{ home_dir + '/.bashrc' }}"
