@@ -1,0 +1,16 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
+crates:
+  - exe: fd
+    crate: fd-find
+  - exe: rg
+    crate: ripgrep
+  - exe: bat
+    crate: bat
+  - exe: starship
+    crate: starship
+  - exe: dust
+    crate: du-dust
+  - exe: exa
+    crate: exa

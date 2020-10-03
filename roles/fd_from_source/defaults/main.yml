@@ -1,4 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
-fd_repos: "{{ home_dir + '/repos/fd' }}"
