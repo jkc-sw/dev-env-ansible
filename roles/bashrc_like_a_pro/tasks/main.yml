@@ -4,9 +4,7 @@
     path: "{{ bashrc_path }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
     backup: true
-    block: "{{ item }}"
-  with_items:
-    - |
+    block: |
       # Declare function to add path
       # https://unix.stackexchange.com/questions/14895/duplicate-entries-in-path-a-problem
       # Answer from: Gilles
