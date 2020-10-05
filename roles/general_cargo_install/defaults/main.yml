@@ -14,3 +14,9 @@ crates:
     crate: du-dust
   - exe: exa
     crate: exa
+  - exe: tokei
+    crate: tokei
+  - exe: procs
+    crate: procs
+  - exe: sd
+    crate: sd
