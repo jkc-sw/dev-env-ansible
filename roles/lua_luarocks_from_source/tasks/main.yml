@@ -1,0 +1,123 @@
+---
+# install lua
+- name: Check if lua is installed
+  shell: command -v lua && echo good || echo bad
+  register: lua_present
+  changed_when: "'bad' in lua_present.stdout"
+
+- name: Download lua distribution
+  when: lua_present.changed
+  get_url:
+    url: "http://www.lua.org/ftp/{{ lua_dist_filename }}"
+    dest: "/tmp"
+
+- name: Extract the source code
+  when: lua_present.changed
+  unarchive:
+    remote_src: true
+    src: "/tmp/{{ lua_dist_filename }}"
+    dest: "/tmp"
+
+- name: Copy to repo to ~/repos
+  when: lua_present.changed
+  copy:
+    remote_src: true
+    src: "/tmp/{{ lua_repo_name }}"
+    dest: "{{ lua_repos | dirname }}"
+
+- name: Remove downloaded files
+  file:
+    path: "{{ item }}"
+    state: 'absent'
+  with_items:
+    - "/tmp/{{ lua_dist_filename }}"
+    - "/tmp/{{ lua_repo_name }}"
+
+- name: Make sure some system dependencies are installed
+  become: true
+  when: lua_present.changed
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - build-essential
+    - libreadline-dev
+
+- name: Compile and update lua
+  when: lua_present.changed
+  community.general.make:
+    chdir: "{{ lua_repos }}"
+    target: all
+  register: compile_lua
+
+- name: Install lua
+  when: compile_lua.changed
+  community.general.make:
+    chdir: "{{ lua_repos }}"
+    target: install
+  become: true
+
+# install luarocks
+- name: Check if luarocks is installed
+  shell: command -v luarocks && echo good || echo bad
+  register: luarocks_present
+  changed_when: "'bad' in luarocks_present.stdout"
+
+- name: Download luarocks distribution
+  when: luarocks_present.changed
+  get_url:
+    url: "https://luarocks.org/releases/{{ luarocks_dist_filename }}"
+    dest: "/tmp"
+
+- name: Extract the source code
+  when: luarocks_present.changed
+  unarchive:
+    remote_src: true
+    src: "/tmp/{{ luarocks_dist_filename }}"
+    dest: "/tmp"
+
+- name: Copy to repo to ~/repos
+  when: luarocks_present.changed
+  copy:
+    remote_src: true
+    src: "/tmp/{{ luarocks_repo_name }}"
+    dest: "{{ luarocks_repos | dirname }}"
+
+- name: Remove downloaded files
+  file:
+    path: "{{ item }}"
+    state: 'absent'
+  with_items:
+    - "/tmp/{{ luarocks_dist_filename }}"
+    - "/tmp/{{ luarocks_repo_name }}"
+
+- name: Make sure some system dependencies are installed
+  become: true
+  when: luarocks_present.changed
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - build-essential
+    - libreadline-dev
+
+- name: Configure before running build for luarocks
+  when: luarocks_present.changed
+  shell:
+    chdir: "{{ luarocks_repos }}"
+    cmd: './configure --with-lua-include=/usr/local/include'
+
+- name: Compile and update luarocks
+  when: luarocks_present.changed
+  community.general.make:
+    chdir: "{{ luarocks_repos }}"
+    target: all
+  register: compile_luarocks
+
+- name: Install luarocks
+  when: compile_luarocks.changed
+  community.general.make:
+    chdir: "{{ luarocks_repos }}"
+    target: install
+  become: true
+

@@ -1,4 +1,4 @@
 ---
 dependencies:
   - rust_analyzer_from_source
-  - luaver_luarocks
+  - lua_luarocks_from_source
