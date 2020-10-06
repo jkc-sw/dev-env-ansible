@@ -1,7 +1,7 @@
 ---
 - name: Update neovim plugin
   shell:
-    cmd: nvim -c 'PlugInstall' -c 'PlugClean!' -c 'PlugUpdate' -c 'qa'
+    cmd: nvim -c 'PlugInstall|PlugClean!|PlugUpdate|LspInstall sumneko_lua' -c 'qa'
   args:
     warn: false
   register: update_nvim_plugin

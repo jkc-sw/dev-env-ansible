@@ -1,0 +1,43 @@
+---
+- name: Git clone luaver
+  git:
+    repo: https://github.com/DhavalKapil/luaver.git
+    dest: "{{ luaver_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_luaver
+
+- name: Make sure some system dependencies are installed
+  become: true
+  when: git_clone_luaver.changed
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - make
+    - wget
+    - curl
+    - libreadline-dev
+
+- name: Install default lua/luarocks
+  when: git_clone_luaver.changed
+  shell:
+    cmd: "{{ item }}"
+    executable: /bin/bash
+  with_items:
+    - "{{ luaver_bin }} install {{ lua_ver_default }}"
+    - "PATH={{ lua_bin | dirname }}:$PATH {{ luaver_bin }} install-luarocks {{ luarocks_ver_default }}"
+
+- name: Make sure luaver is available on prompt
+  when: git_clone_luaver.changed
+  lineinfile:
+    path: "{{ bashrc_path }}"
+    line: "{{ item }}"
+    state: present
+    backup: true
+  with_items:
+    - "[ -s {{ luaver_repos }}/luaver ] && . {{ luaver_repos }}/luaver"
+    - "[ -s {{ luaver_repos }}/completions/luaver.bash ] && . {{ luaver_repos }}/completions/luaver.bash"
+    - "export PATH={{ luarocks_path }}:{{ luarocks_bins }}:{{ lua_bin }}:$PATH"
+
