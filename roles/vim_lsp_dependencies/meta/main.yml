@@ -2,3 +2,4 @@
 dependencies:
   - rust_analyzer_from_source
   - lua_luarocks_from_source
+  - powershell_install
