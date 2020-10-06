@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+pwsh_lsp_repos: "{{ home_dir + '/repos/PowerShellEditorServices' }}"

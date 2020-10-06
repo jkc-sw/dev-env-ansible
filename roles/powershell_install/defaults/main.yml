@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"

@@ -1,0 +1,39 @@
+---
+- name: Make sure invokebuild is installed
+  shell:
+    cmd: |
+      if ('InvokeBuild' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module InvokeBuild -Scope CurrentUser -AcceptLicense
+      }
+    executable: /usr/bin/pwsh
+  register: ps_install_invokebuild
+  changed_when: "ps_install_invokebuild.rc != 0"
+
+- name: Make sure psscriptanalyzer is installed
+  shell:
+    cmd: |
+      if ('PSScriptAnalyzer' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -AcceptLicense
+      }
+    executable: /usr/bin/pwsh
+  register: ps_install_invokebuild
+  changed_when: "ps_install_invokebuild.rc != 0"
+
+- name: Get latest source code for pwsh_lsp
+  git:
+    repo: https://github.com/PowerShell/PowerShellEditorServices.git
+    dest: "{{ pwsh_lsp_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_pwsh_lsp
+
+- name: Compile and update pwsh_lsp
+  when: git_clone_pwsh_lsp.changed
+  shell:
+    cmd: Invoke-Build Build
+    executable: /usr/bin/pwsh
+    chdir: "{{ pwsh_lsp_repos }}"
+  register: compile_pwsh_lsp
