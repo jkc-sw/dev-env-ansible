@@ -16,3 +16,23 @@
   apt:
     pkg: powershell
     state: present
+
+- name: Make sure we can install from PSGallery
+  shell:
+    cmd: |
+      if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
+      {
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+      }
+    executable: /usr/bin/pwsh
+  register: ps_allow_psgallery
+  changed_when: "ps_allow_psgallery.rc != 0"
+
+- name: Configure powershell
+  blockinfile:
+    path: "{{ pwshrc_dir }}"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    backup: true
+    block: |
+      # Set the VI mode
+      Set-PSReadlineOption -EditMode vi
