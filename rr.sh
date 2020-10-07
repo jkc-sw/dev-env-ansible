@@ -14,6 +14,8 @@ else
     # if there are arg for test, run test
     case "$1" in
     'test')
+        # this awesome blog post is worth the read
+        # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
         docker build --tag devenvansible:1.0 . && \
         docker run --rm -it \
