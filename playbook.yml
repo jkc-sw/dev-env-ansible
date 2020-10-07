@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - ansible_dev
     - bashrc_like_a_pro
     - vim_plugin_update
     - docker_install
