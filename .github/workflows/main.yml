@@ -9,5 +9,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - name: TODO replace echo with real deal
-        run: echo Hello, world!
+      - uses: docker/setup-buildx-action@v1
+        id: buildx
+      - name: Run command
+        run: ./rr.sh test

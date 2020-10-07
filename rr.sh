@@ -14,6 +14,9 @@ else
     # if there are arg for test, run test
     case "$1" in
     'test')
+        # build up the command here
+        cmd='cd ./dev-env-ansible && ansible-playbook playbook.yml'
+        cmd="$cmd && ansible-playbook playbook.yml"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
@@ -21,7 +24,7 @@ else
         docker run --rm -it \
             -v $SCRIPT_DIR:/home/developer/dev-env-ansible \
             devenvansible:1.0 \
-            bash -c 'cd ./dev-env-ansible && ansible-playbook playbook.yml'
+            bash -c "$cmd"
         ;;
     *)
         # error out
