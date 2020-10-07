@@ -21,7 +21,7 @@ else
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
         docker build --tag devenvansible:1.0 . && \
-        docker run --rm -it \
+        docker run --rm \
             -v $SCRIPT_DIR:/home/developer/dev-env-ansible \
             devenvansible:1.0 \
             bash -c "$cmd"
