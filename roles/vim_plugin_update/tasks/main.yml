@@ -1,7 +1,7 @@
 ---
 - name: Update neovim plugin
   shell:
-    cmd: nvim -c 'PlugInstall|PlugClean!|PlugUpdate' -c 'qa'
+    cmd: ANSIBLE_UPDATE=1 nvim -c 'PlugInstall|PlugClean!|PlugUpdate|qa'
   args:
     warn: false
   register: update_nvim_plugin
