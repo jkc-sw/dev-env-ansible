@@ -1,4 +1,10 @@
 ---
+- name: Create bashrc when not exist
+  copy:
+    content: ""
+    dest: "{{ bashrc_path }}"
+    force: no
+
 - name: Make sure some functions are in bashrc
   blockinfile:
     path: "{{ bashrc_path }}"
