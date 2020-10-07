@@ -28,6 +28,17 @@
   register: ps_allow_psgallery
   changed_when: "ps_allow_psgallery.rc != 0"
 
+- name: Create profile.ps1 directory
+  file:
+    path: "{{ pwshrc_dir | dirname }}"
+    state: directory
+
+- name: Create profile.ps1 when not exist
+  copy:
+    content: ""
+    dest: "{{ pwshrc_dir }}"
+    force: no
+
 - name: Configure powershell
   blockinfile:
     path: "{{ pwshrc_dir }}"
