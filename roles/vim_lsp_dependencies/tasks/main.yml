@@ -17,9 +17,9 @@
     executable: /bin/bash
     cmd: |
       [[ -e "{{ clangd_ln_path }}" ]] && rm "{{ clangd_ln_path }}"
-      ln -s "{{ clangd_exe_path}}" "{{ clangd_ln_path }}"
+      ln -s "{{ clangd_exe_path }}" "{{ clangd_ln_path }}"
       [[ -e "{{ clang_ln_path }}" ]] && rm "{{ clang_ln_path }}"
-      ln -s "{{ clang_exe_path}}" "{{ clang_ln_path }}"
+      ln -s "{{ clang_exe_path }}" "{{ clang_ln_path }}"
 
 - name: Check if luacheck is installed
   shell: command -v luacheck && echo good || echo bad

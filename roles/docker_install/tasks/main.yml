@@ -1,0 +1,47 @@
+---
+- name: Check if docker is installed
+  shell: command -v docker && echo good || echo bad
+  register: docker_present
+  changed_when: "'bad' in docker_present.stdout"
+
+- name: Make sure some system dependencies are installed
+  when: docker_present.changed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+
+- name: Download and Add docker Key to Apt-Get Keyring
+  become: true
+  apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+
+- name: Add docker Repository into /etc/apt/sources.list - Bionic
+  become: true
+  apt_repository:
+    repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable'
+    state: present
+
+- name: Install docker
+  become: true
+  apt:
+    name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
+    state: present
+  with_items:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+
+- name: Add user to docker group
+  become: true
+  user:
+    name: "{{ ansible_user_id }}"
+    append: true
+    groups: 'docker'

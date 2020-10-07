@@ -4,6 +4,7 @@
   roles:
     - bashrc_like_a_pro
     - vim_plugin_update
+    - docker_install
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true
