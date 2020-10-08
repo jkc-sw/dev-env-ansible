@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include bashrc_like_a_pro"
+      include_role:
+        name: "bashrc_like_a_pro"

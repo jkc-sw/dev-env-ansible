@@ -28,6 +28,8 @@ else
         # build up the command here
         cmd='cd ./dev-env-ansible && ansible-playbook playbook.yml'
         cmd="$cmd && . ~/.bashrc && ansible-playbook playbook.yml"
+        cmd="$cmd | tee ./run1.log && grep changed=0 ./run1.log"
+        cmd="$cmd && grep failed=0 ./run1.log"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
