@@ -7,6 +7,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     sudo
 
+# set local
+ENV LC_ALL C.UTF-8
+ENV LANG C.UTF-8
+
 # Define the default username and home directory as overrideable arguments
 ARG SHELL_USER=developer
 ARG SHELL_UID=1000
