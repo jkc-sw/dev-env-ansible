@@ -1,3 +1,4 @@
 ---
 dependencies:
   - cargo_and_rustup
+  - powershell_install
