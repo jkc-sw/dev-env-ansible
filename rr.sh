@@ -16,7 +16,7 @@ else
     'test')
         # build up the command here
         cmd='cd ./dev-env-ansible && ansible-playbook playbook.yml'
-        cmd="$cmd && ansible-playbook playbook.yml"
+        cmd="$cmd && . ~/.bashrc && ansible-playbook playbook.yml"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
