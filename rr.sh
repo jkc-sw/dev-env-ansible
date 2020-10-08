@@ -28,6 +28,8 @@ check() {
 
 if [[ $# -lt 1 ]]; then
     # run ansible playbook
+    PY_COLORS=1 \
+    ANSIBLE_FORCE_COLOR=1 \
     ansible-playbook playbook.yml -K | tee $TEST_LOG
     # ansible-playbook playbook.yml | tee $TEST_LOG
     check
@@ -44,7 +46,7 @@ else
         ;;
     'test')
         # build up the command here
-        cmd='cd ./dev-env-ansible && ansible-playbook playbook.yml'
+        cmd="cd ./dev-env-ansible && ansible-playbook playbook.yml"
         cmd="$cmd && . ~/.bashrc && ansible-playbook playbook.yml"
         cmd="$cmd | tee $TEST_LOG"
         # this awesome blog post is worth the read
