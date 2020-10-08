@@ -6,11 +6,9 @@
     clone: true
     version: HEAD
     update: true
-  register: git_clone_dotfiles
 
 - name: Make sure some system dependencies are installed
   become: true
-  when: git_clone_dotfiles.changed
   package:
     name: "{{ item }}"
     state: 'present'
@@ -18,11 +16,10 @@
     - stow
 
 - name: Stow the destination
-  when: git_clone_dotfiles.changed
   shell:
-    cmd: |
-      stow -t '{{ home_dir }}' -R tmux
-      stow -t '{{ home_dir }}' -R nvim
+    cmd: stow -t '{{ home_dir }}' -R tmux && stow -t '{{ home_dir }}' -R nvim
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash
+  register: restow
+  changed_when: "restow.rc != 0"
 
