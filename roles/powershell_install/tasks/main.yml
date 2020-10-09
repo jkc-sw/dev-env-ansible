@@ -48,3 +48,15 @@
       # Set the VI mode
       Set-PSReadlineOption -EditMode vi
       Invoke-Expression (& starship init powershell)
+
+- name: Make sure Pester is installed
+  shell:
+    cmd: |
+      if ('Pester' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module Pester -Scope CurrentUser -AcceptLicense
+      }
+    executable: /usr/bin/pwsh
+  register: ps_install_invokebuild
+  changed_when: "ps_install_invokebuild.rc != 0"
+
