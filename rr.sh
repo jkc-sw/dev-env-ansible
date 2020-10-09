@@ -48,7 +48,6 @@ else
         # build up the command here
         cmd="cd ./dev-env-ansible && ansible-playbook playbook.yml"
         cmd="$cmd && . ~/.bashrc && ansible-playbook playbook.yml"
-        cmd="$cmd | tee $TEST_LOG"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
@@ -56,12 +55,7 @@ else
         docker run --rm \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
-            bash -c "$cmd"
-        ret=$?
-        if [[ $ret -ne 0 ]]; then
-            echo "Failed to provision the docker machine" >&2
-            exit $ret
-        fi
+            bash -c "$cmd" | tee $TEST_LOG
         # perform check
         check
         ;;
