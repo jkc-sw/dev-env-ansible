@@ -17,3 +17,4 @@
         - wget
         - tree
         - curl
+        - tmux
