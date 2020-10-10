@@ -1,21 +1,36 @@
 ---
+# - name: Download and Add Powershell Key to Apt-Get Keyring
+#   become: true
+#   apt_key:
+#     url: "https://packages.microsoft.com/keys/microsoft.asc"
+#     state: present
+
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - xz-utils
+
 - name: Download and Add Powershell Key to Apt-Get Keyring
   become: true
-  apt_key:
-    url: "https://packages.microsoft.com/keys/microsoft.asc"
+  apt:
+    deb: "https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb"
     state: present
 
-- name: Add Powershell Repository into /etc/apt/sources.list - Bionic
-  become: true
-  apt_repository:
-    repo: 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/18.04/prod bionic main'
-    state: present
+# - name: Add Powershell Repository into /etc/apt/sources.list - Bionic
+#   become: true
+#   apt_repository:
+#     repo: 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/18.04/prod bionic main'
+#     state: present
 
 - name: Install Powershell
   become: true
   apt:
     pkg: powershell
     state: present
+    update_cache: true
 
 - name: Make sure we can install from PSGallery
   shell:

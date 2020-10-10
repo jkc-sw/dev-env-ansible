@@ -68,7 +68,7 @@ else
         docker run --rm -it \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
-            bash -i -c "$cmd"
+            bash -c "$cmd | bash"
         ;;
     'test')
         # build up the command here
