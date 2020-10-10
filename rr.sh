@@ -14,7 +14,7 @@ TEST_LOG=./test.log
 ANSIBLE_WORKSPACE_PATH=/home/developer/dev-env-ansible
 
 # define a function to perform check
-check() {
+ansibleCheck() {
     # perform test
     if ! grep -q 'changed=0' $TEST_LOG; then
         echo "changed should be 0 at the secound run" >&2
@@ -26,12 +26,20 @@ check() {
     fi
 }
 
+checkCmd() {
+    cmd=$1
+    if ! command -v $cmd &>/dev/null; then
+        echo "$cmd not installed properly" >&2
+        exit 3
+    fi
+}
+
 if [[ $# -lt 1 ]]; then
     # run ansible playbook
     PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
     ansible-playbook playbook.yml -K | tee $TEST_LOG
-    check
+    ansibleCheck
 else
     # if there are arg for test, run test
     case "$1" in
@@ -43,9 +51,10 @@ else
         echo " no arg         : Interactive install on host system asking for password"
         echo " -h|--help|help : Print this help command"
         echo " install        : Install on the host system (mostly container) w/o asking for password"
+        echo " check           : Do simple check on the host system for all executable"
         echo " run            : Start the docker container only"
         echo " run-build      : Start the docker container and run ansible-playbook"
-        echo " test           : Start the docker container and run simple CI test"
+        echo " run-test           : Start the docker container and run simple CI test"
         ;;
     'run')
         # start bash inside container
@@ -55,6 +64,29 @@ else
             "$CONTAINER_TAG" \
             bash
         ;;
+    'check')
+        # below are for the best effort
+        . $HOME/.bashrc
+        cmds=('git' \
+            'docker' \
+            'conda' \
+            'nvim' \
+            'ansible' \
+            'ansible-playbook' \
+            'cargo' \
+            'fd' \
+            'rg' \
+            'exa' \
+            'bat' \
+            'ctags' \
+            'lua' \
+            'luarocks' \
+            'pwsh' \
+        )
+        for c in "${cmds[@]}"; do
+            checkCmd $c
+        done
+       ;;
     'install')
         # install with ansible playbook
         ansible-playbook playbook.yml
@@ -70,7 +102,7 @@ else
             "$CONTAINER_TAG" \
             bash -i -c "$cmd ; bash -i"
         ;;
-    'test')
+    'run-test')
         # build up the command here
         cmd="cd ./dev-env-ansible && ./rr.sh install"
         cmd="$cmd && . ~/.bashrc && ./rr.sh install"
@@ -83,7 +115,7 @@ else
             "$CONTAINER_TAG" \
             bash -c "$cmd" | tee $TEST_LOG
         # perform check
-        check
+        ansibleCheck
         ;;
     *)
         # error out
