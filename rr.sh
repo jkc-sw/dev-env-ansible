@@ -51,10 +51,10 @@ else
         echo " no arg         : Interactive install on host system asking for password"
         echo " -h|--help|help : Print this help command"
         echo " install        : Install on the host system (mostly container) w/o asking for password"
-        echo " check           : Do simple check on the host system for all executable"
+        echo " check          : Do simple check on the host system for all executable"
         echo " run            : Start the docker container only"
         echo " run-build      : Start the docker container and run ansible-playbook"
-        echo " run-test           : Start the docker container and run simple CI test"
+        echo " run-test       : Start the docker container and run simple CI test"
         ;;
     'run')
         # start bash inside container
@@ -105,7 +105,7 @@ else
     'run-test')
         # build up the command here
         cmd="cd ./dev-env-ansible && ./rr.sh install"
-        cmd="$cmd && . ~/.bashrc && ./rr.sh install"
+        cmd="$cmd && . ~/.bashrc && ./rr.sh install && ./rr.sh check"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container
