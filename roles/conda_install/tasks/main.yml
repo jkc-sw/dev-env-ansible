@@ -18,11 +18,15 @@
     warn: false
 
 - name: Init the shells
-  when: conda_present.changed
+  when: conda_install.changed
   shell: "{{ conda_default_bin }} init bash && {{ conda_default_bin }} init powershell"
 
+- name: Do not auto activate base
+  when: conda_install.changed
+  shell: "{{ conda_default_bin }} config --set auto_activate_base false"
+
 - name: Remove installer
-  when: conda_present.changed
+  when: conda_install.changed
   file:
     path: "{{ conda_installer_path }}"
     state: 'absent'
