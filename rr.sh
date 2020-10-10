@@ -31,11 +31,22 @@ if [[ $# -lt 1 ]]; then
     PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
     ansible-playbook playbook.yml -K | tee $TEST_LOG
-    # ansible-playbook playbook.yml | tee $TEST_LOG
     check
 else
     # if there are arg for test, run test
     case "$1" in
+    '-h'|'--help'|'help')
+        # print help here
+        echo "${BASH_SOURCE[0]} [args...]"
+        echo "  Shortcuts for many things"
+        echo "args:"
+        echo " no arg         : Interactive install on host system asking for password"
+        echo " -h|--help|help : Print this help command"
+        echo " install        : Install on the host system (mostly container) w/o asking for password"
+        echo " run            : Start the docker container only"
+        echo " run-build      : Start the docker container and run ansible-playbook"
+        echo " test           : Start the docker container and run simple CI test"
+        ;;
     'run')
         # start bash inside container
         docker build --tag "$CONTAINER_TAG" . && \
@@ -44,10 +55,25 @@ else
             "$CONTAINER_TAG" \
             bash
         ;;
+    'install')
+        # install with ansible playbook
+        ansible-playbook playbook.yml
+        ;;
+    'run-build')
+        # build up the command here
+        cmd="cd ./dev-env-ansible && ./rr.sh install"
+        cmd="$cmd && . ~/.bashrc"
+        # start bash inside container
+        docker build --tag "$CONTAINER_TAG" . && \
+        docker run --rm -it \
+            -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+            "$CONTAINER_TAG" \
+            bash -i -c "$cmd"
+        ;;
     'test')
         # build up the command here
-        cmd="cd ./dev-env-ansible && ansible-playbook playbook.yml"
-        cmd="$cmd && . ~/.bashrc && ansible-playbook playbook.yml"
+        cmd="cd ./dev-env-ansible && ./rr.sh install"
+        cmd="$cmd && . ~/.bashrc && ./rr.sh install"
         # this awesome blog post is worth the read
         # https://www.jeffgeerling.com/blog/2018/testing-your-ansible-roles-molecule
         # build and run the container

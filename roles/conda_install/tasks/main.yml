@@ -1,0 +1,28 @@
+---
+- name: Check conda is installed
+  shell: command -v conda && echo good || echo bad
+  register: conda_present
+  changed_when: "'bad' in conda_present.stdout"
+
+- name: Get the installer
+  when: conda_present.changed
+  get_url:
+    url: https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+    dest: "{{ conda_installer_path }}"
+
+- name: Install conda
+  shell: "bash {{ conda_installer_path }} -b -p {{ conda_install_dir }}"
+  when: conda_present.changed
+  register: conda_install
+  args:
+    warn: false
+
+- name: Init the shells
+  when: conda_present.changed
+  shell: "{{ conda_default_bin }} init bash && {{ conda_default_bin }} init powershell"
+
+- name: Remove installer
+  when: conda_present.changed
+  file:
+    path: "{{ conda_installer_path }}"
+    state: 'absent'
