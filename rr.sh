@@ -4,7 +4,7 @@
 SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
 # make sure we are in the correct folder
-pushd &>/dev/null
+pushd "$SCRIPT_DIR" &>/dev/null
 
 # container tag
 CONTAINER_TAG=devenvansible:1.0
@@ -68,7 +68,7 @@ else
         docker run --rm -it \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
-            bash -c "$cmd | bash"
+            bash -i -c "$cmd ; bash -i"
         ;;
     'test')
         # build up the command here
