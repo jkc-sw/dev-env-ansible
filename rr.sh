@@ -62,9 +62,16 @@ else
         docker run --rm -it \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
-            bash
+            bash -i -c "cd ./dev-env-ansible ; bash -i"
         ;;
     'check')
+        # if not being called from the rr.sh script itself
+        if [[ -z $FROM_RR_CHECK ]]; then
+            # recursively call itself
+            FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} check"
+            # edit when done
+            exit $?
+        fi
         # below are for the best effort
         . $HOME/.bashrc
         # do it here, as I don't want it in bashrc to slow it down

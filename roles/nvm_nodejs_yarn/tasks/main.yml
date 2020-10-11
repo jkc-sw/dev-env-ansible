@@ -1,7 +1,7 @@
 ---
 - name: Check if the nvm is installed
   shell:
-    cmd: "{{ source_bashrc }} && command -v nvm && echo good || echo bad"
+    cmd: "bash -i -c '{{ source_bashrc }} && command -v nvm && echo good || echo bad'"
     executable: /bin/bash
   register: nvm_present
   changed_when: "'bad' in nvm_present.stdout"
@@ -13,7 +13,8 @@
     dest: "{{ nvm_install_script }}"
 
 - name: Install nvm
-  shell: "bash {{ nvm_install_script }}"
+  shell:
+    cmd: "/bin/bash {{ nvm_install_script }}"
   when: nvm_present.changed
   register: nvm_install
   args:
@@ -25,6 +26,12 @@
     path: "{{ nvm_install_script }}"
     state: 'absent'
 
+- name: Install latest node
+  when: nvm_install.changed
+  shell:
+    cmd: "bash -i -c '{{ nvm_bin }} install node'"
+    executable: /bin/bash
+
 # # Do not do this, as it makes every sourcing slow
 # - name: Add the latest node with line to source in bashrc
 #   when: nvm_install.changed
@@ -34,18 +41,12 @@
 #     line: "nvm use node"
 #     insertafter: 'export NVM_DIR="$HOME/.nvm"'
 
-- name: Check if the node is installed
-  shell:
-    cmd: "{{ use_node }} && command -v node && echo good || echo bad"
-    executable: /bin/bash
-  register: node_present
-  changed_when: "'bad' in node_present.stdout"
-
-- name: Install latest node
-  when: node_present.changed
-  shell:
-    cmd: "{{ nvm_bin }} install node"
-    executable: /bin/bash
+# - name: Check if the node is installed
+#   shell:
+#     cmd: "bash -i -c '{{ use_node }} && command -v node && echo good || echo bad'"
+#     executable: /bin/bash
+#   register: node_present
+#   changed_when: "'bad' in node_present.stdout"
 
 - name: Check if the yarn is installed
   shell: command -v yarn && echo good || echo bad

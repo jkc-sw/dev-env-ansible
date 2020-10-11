@@ -1,8 +1,8 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
 nvm_install_script: "/tmp/install.sh"
-nvm_installer: "{{ home_dir + '/.nvm/nvm.sh' }}"
+nvm_sourcer: "{{ home_dir + '/.nvm/nvm.sh' }}"
 bashrc_path: "{{ home_dir + '/.bashrc' }}"
 source_bashrc: ". {{ bashrc_path }}"
-nvm_bin: ". {{ bashrc_path }} && nvm"
+nvm_bin: "{{ source_bashrc }} && nvm"
 use_node: "{{ nvm_bin }} use node"
