@@ -30,7 +30,6 @@
   apt:
     pkg: powershell
     state: present
-    update_cache: true
 
 - name: Make sure we can install from PSGallery
   shell:
