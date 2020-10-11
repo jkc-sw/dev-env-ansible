@@ -1,15 +1,10 @@
 ---
-- name: Create bashrc when not exist
-  copy:
-    content: ""
-    dest: "{{ bashrc_path }}"
-    force: no
-
 - name: Make sure some functions are in bashrc
   blockinfile:
     path: "{{ bashrc_path }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
     backup: true
+    create: true
     block: |
       # Declare function to add path
       # https://unix.stackexchange.com/questions/14895/duplicate-entries-in-path-a-problem

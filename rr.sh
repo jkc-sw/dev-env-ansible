@@ -67,6 +67,9 @@ else
     'check')
         # below are for the best effort
         . $HOME/.bashrc
+        # do it here, as I don't want it in bashrc to slow it down
+        nvm use node
+        # get a list of commands to check
         cmds=('git' \
             'docker' \
             'conda' \
@@ -82,6 +85,9 @@ else
             'lua' \
             'luarocks' \
             'pwsh' \
+            'node' \
+            'nvm' \
+            'yarn'
         )
         for c in "${cmds[@]}"; do
             checkCmd $c
