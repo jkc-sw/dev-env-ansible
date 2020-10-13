@@ -25,6 +25,14 @@
   when: not dev_condaenv_ret.stat.exists
   shell: "{{ conda_default_bin }} create -p {{ dev_condaenv }} python=3.8"
 
-- name: Install pyls and yaml for development
-  when: not dev_condaenv_ret.stat.exists
-  shell: "{{ dev_condaenv }}/bin/python -m pip install 'python-language-server[all]' pyyaml"
+- name: Install many lsp from pip
+  shell:
+    cmd: |
+      {{ dev_condaenv }}/bin/python -m pip install \
+        'python-language-server[all]' \
+        pyyaml \
+        cmake-language-server \
+        hdl-checker
+  register: pipinstall
+  failed_when: "pipinstall.rc != 0"
+  changed_when: "pipinstall.rc != 0"
