@@ -1,0 +1,52 @@
+---
+- name: Check if doxygen is installed
+  shell: command -v doxygen && echo good || echo bad
+  register: doxygen_present
+  changed_when: "'bad' in doxygen_present.stdout"
+
+- name: Get latest source code for doxygen
+  git:
+    repo: https://github.com/doxygen/doxygen.git
+    dest: "{{ doxygen_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+  register: git_clone_doxygen
+
+- name: Make sure some system dependencies are installed
+  when: git_clone_doxygen.changed or doxygen_present.changed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - python
+    - cmake
+    - flex
+    - bison
+
+- name: Create the build folder
+  file:
+    path: "{{ doxygen_repos }}/build"
+    state: 'directory'
+
+- name: Configure before running build for doxygen
+  when: git_clone_doxygen.changed or doxygen_present.changed
+  shell:
+    chdir: "{{ doxygen_repos }}/build"
+    cmd: |
+      cmake -G "Unix Makefiles" ..
+
+- name: Compile and update doxygen
+  when: git_clone_doxygen.changed
+  community.general.make:
+    chdir: "{{ doxygen_repos }}/build"
+  register: doxygen_built
+
+- name: Install doxygen
+  when: doxygen_built.changed
+  community.general.make:
+    chdir: "{{ doxygen_repos }}/build"
+    target: install
+  become: true
+

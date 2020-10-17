@@ -60,6 +60,7 @@ else
         # start bash inside container
         docker build --tag "$CONTAINER_TAG" . && \
         docker run --rm -it \
+            --network="host" \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
             bash -i -c "cd ./dev-env-ansible ; bash -i"
@@ -111,6 +112,7 @@ else
         # start bash inside container
         docker build --tag "$CONTAINER_TAG" . && \
         docker run --rm -it \
+            --network="host" \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
             bash -i -c "$cmd ; bash -i"
@@ -124,6 +126,7 @@ else
         # build and run the container
         docker build --tag "$CONTAINER_TAG" . && \
         docker run --rm \
+            --network="host" \
             -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
             "$CONTAINER_TAG" \
             bash -c "$cmd" | tee $TEST_LOG

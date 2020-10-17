@@ -44,6 +44,12 @@
   when: git_clone_ctags.changed
   community.general.make:
     chdir: "{{ ctags_repos }}"
+  register: ctags_built
+
+- name: Install ctags
+  when: ctags_built.changed
+  community.general.make:
+    chdir: "{{ ctags_repos }}"
     target: install
   become: true
 
