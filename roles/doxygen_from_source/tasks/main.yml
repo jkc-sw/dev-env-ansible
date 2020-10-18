@@ -26,6 +26,7 @@
     - bison
 
 - name: Remove the build folder
+  when: git_clone_doxygen.changed or doxygen_present.changed
   file:
     path: "{{ doxygen_repos }}/build"
     state: 'absent'
