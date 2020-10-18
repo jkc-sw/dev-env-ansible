@@ -25,6 +25,11 @@
     - flex
     - bison
 
+- name: Remove the build folder
+  file:
+    path: "{{ doxygen_repos }}/build"
+    state: 'absent'
+
 - name: Create the build folder
   file:
     path: "{{ doxygen_repos }}/build"
