@@ -100,7 +100,7 @@ else
         for c in "${cmds[@]}"; do
             checkCmd $c
         done
-       ;;
+        ;;
     'install')
         # install with ansible playbook
         ansible-playbook playbook.yml
