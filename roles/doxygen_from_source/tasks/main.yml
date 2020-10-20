@@ -37,13 +37,6 @@
     cmd: |
       cmake -G "Unix Makefiles" ..
 
-- name: Clean the build dir
-  when: git_clone_doxygen.changed
-  community.general.make:
-    chdir: "{{ doxygen_repos }}/build"
-    target: clean
-  register: doxygen_built
-
 - name: Compile and update doxygen
   when: git_clone_doxygen.changed
   community.general.make:
