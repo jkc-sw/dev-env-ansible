@@ -25,7 +25,7 @@
   when: powershell_present.changed
   apt:
     pkg: powershell
-    state: present
+    state: latest
     update_cache: true
 
 - name: Make sure we can install from PSGallery
