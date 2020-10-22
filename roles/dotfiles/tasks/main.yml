@@ -20,6 +20,7 @@
     cmd: |
       stow -t '{{ home_dir }}' -R tmux && \
       stow -t '{{ home_dir }}' -R starship && \
+      stow -t '{{ home_dir }}' -R bashrc && \
       stow -t '{{ home_dir }}' -R nvim
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash

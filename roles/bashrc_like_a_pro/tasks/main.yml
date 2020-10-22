@@ -3,6 +3,7 @@
   blockinfile:
     path: "{{ bashrc_path }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK"
+    state: absent
     backup: true
     create: true
     block: |
@@ -65,9 +66,9 @@
           fi
           if [[ -z $SSH_CLIENT ]]; then
               if ! command -v clip.exe &>/dev/null; then
-                  echoerror "clip.exe is not found either"
+                  echo "clip.exe is not found" >&1
                   if ! command -v xclip &>/dev/null; then
-                      echoerror "xclip is not installed"
+                      echo "xclip is not installed either" >&1
                       exit 1
                   else
                       echo -n "$content" | clip.exe
@@ -80,3 +81,11 @@
               echo -ne "\e]52;c;$content\x07"
           fi
       }
+
+- name: Add bashrc append
+  lineinfile:
+    path: "{{ bashrc_path }}"
+    line: ". '{{ bashrc_append_path }}'"
+    state: present
+    backup: true
+    create: true
