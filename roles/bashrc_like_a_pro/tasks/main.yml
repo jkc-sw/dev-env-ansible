@@ -47,3 +47,37 @@
           alias his='eval "$(history | tac | sed -n "s/[ 0-9]\+\(.*\)/\1/p" | fzf)"'
       fi
       eval "$(starship init bash)"
+      # Alias to trim newline and send to clipboard
+      function toclip() {
+          content=''
+          # handle the different input
+          # https://stackoverflow.com/questions/18761209/how-to-make-a-bash-function-which-can-read-from-standard-input?lq=1
+          if [[ -t 0 ]]; then
+              if [[ $# -gt 0 ]]; then
+                  content="$(echo "$*")"
+              fi
+          else
+              content="$(cat -)"
+          fi
+          if [[ -z $content ]]; then
+              echowarning 'no value to copy to clipboard' >&2
+              exit 1
+          fi
+          if [[ -z $SSH_CLIENT ]]; then
+              if ! command -v xclip &>/dev/null; then
+                  echoerror "xclip is not installed"
+                  exit 1
+                  if ! command -v clip.exe &>/dev/null; then
+                      echoerror "clip.exe is not found either"
+                      exit 1
+                  else
+                      echo -n "$content" | clip.exe
+                  fi
+              else
+                  echo -n "$content" | xclip -selection clipboard
+              fi
+          else
+              content="$(echo -n $content | base64 -)"
+              echo -ne "\e]52;c;$content\x07"
+          fi
+      }
