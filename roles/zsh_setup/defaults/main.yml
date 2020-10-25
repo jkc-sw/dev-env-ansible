@@ -1,0 +1,4 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+omz_installer: "/tmp/omz_install.sh"
+omz_repos: "{{ home_dir + '/repos/oh-my-zsh' }}"

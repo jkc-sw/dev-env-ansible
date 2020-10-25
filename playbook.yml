@@ -4,6 +4,7 @@
   roles:
     - ansible_dev
     - bashrc_like_a_pro
+    - zsh_setup
     - vim_plugin_update
     - docker_install
   pre_tasks:

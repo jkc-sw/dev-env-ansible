@@ -1,0 +1,40 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - git
+    - curl
+    - zsh
+
+- name: Check the omz repo exist
+  stat:
+    path: "{{ omz_repos }}"
+  register: omz_repo_present
+
+- name: Get the installer
+  when: not omz_repo_present.stat.exists
+  get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: "{{ omz_installer }}"
+  register: omz_installer_download
+
+- name: Install omz
+  when: omz_installer_download.changed
+  shell:
+    cmd: "ZSH='{{ omz_repos }}' /bin/bash {{ omz_installer }} --unattended --keep-zshrc"
+    executable: /bin/bash
+
+- name: Change the default shell
+  become: true
+  user:
+    name: "{{ ansible_user_id }}"
+    shell: /bin/zsh
+
+- name: Remove installer
+  when: omz_installer_download.changed
+  file:
+    path: "{{ omz_installer }}"
+    state: 'absent'

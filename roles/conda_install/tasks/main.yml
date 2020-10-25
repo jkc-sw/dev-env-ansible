@@ -11,7 +11,7 @@
     dest: "{{ conda_installer_path }}"
 
 - name: Install conda
-  shell: "bash {{ conda_installer_path }} -b -p {{ conda_install_dir }}"
+  shell: "/bin/bash {{ conda_installer_path }} -b -p {{ conda_install_dir }}"
   when: conda_present.changed
   register: conda_install
   args:
