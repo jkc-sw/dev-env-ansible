@@ -23,7 +23,7 @@
       stow -t '{{ home_dir }}' -R bashrc && \
       stow -t '{{ home_dir }}' -R shellfunc && \
       stow -t '{{ home_dir }}' -R zshrc && \
-      stow -t '{{ home_dir }}' -R nvim
+      stow -t '{{ home_dir }}' -R neovim
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash
   register: restow
