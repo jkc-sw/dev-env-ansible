@@ -18,8 +18,15 @@
     warn: false
 
 - name: Init the shells
-  when: conda_install.changed
-  shell: "{{ conda_default_bin }} init bash && {{ conda_default_bin }} init powershell"
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ conda_default_bin }} init bash && `
+      {{ conda_default_bin }} init powershell && `
+      {{ conda_default_bin }} init zsh
+  register: conda_init_shells
+  changed_when: "conda_init_shells.rc != 0"
+  failed_when: "conda_init_shells.rc != 0"
 
 - name: Do not auto activate base
   when: conda_install.changed
