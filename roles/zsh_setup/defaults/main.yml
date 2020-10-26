@@ -12,3 +12,5 @@ zsh_custom_plugs:
     dst: "{{ omz_custom_dir + '/zsh-syntax-highlighting' }}"
   - url: 'https://github.com/agkozak/zsh-z'
     dst: "{{ omz_custom_dir + '/zsh-z' }}"
+  - url: 'https://github.com/marlonrichert/zsh-autocomplete.git'
+    dst: "{{ omz_custom_dir + '/zsh-autocomplete' }}"
