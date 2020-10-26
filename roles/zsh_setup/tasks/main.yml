@@ -9,35 +9,32 @@
     - curl
     - zsh
 
-- name: Check the omz repo exist
-  stat:
-    path: "{{ omz_repos }}"
-  register: omz_repo_present
+- name: Remove the old installer
+  file:
+    path: "{{ omz_installer }}"
+    state: absent
 
-- name: Get the installer
-  when: not omz_repo_present.stat.exists
+- name: Remove the old repo
+  file:
+    path: "{{ omz_installer }}"
+    state: absent
+
+- name: Ensure the antigen installer folder exist
+  file:
+    path: "{{ antigen_installer | dirname }}"
+    state: directory
+
+- name: Download antigen installer
   get_url:
-    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: "{{ omz_installer }}"
-  register: omz_installer_download
-
-- name: Install omz
-  when: omz_installer_download.changed
-  shell:
-    cmd: "ZSH='{{ omz_repos }}' /bin/bash {{ omz_installer }} --unattended --keep-zshrc"
-    executable: /bin/bash
+    url: https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh
+    dest: "{{ antigen_installer }}"
+    mode: 0755
 
 - name: Change the default shell
   become: true
   user:
     name: "{{ ansible_user_id }}"
     shell: /bin/zsh
-
-- name: Remove installer
-  when: omz_installer_download.changed
-  file:
-    path: "{{ omz_installer }}"
-    state: 'absent'
 
 - name: Add zshrc append
   lineinfile:
@@ -48,12 +45,13 @@
     create: true
     insertbefore: BOF
 
-- name: Install custom plugins
-  git:
-    repo: "{{ item.url }}"
-    dest: "{{ item.dst }}"
-    clone: true
-    version: HEAD
-    update: true
+- name: Remove old custom plugins
+  file:
+    path: "{{ item.dst }}"
+    state: absent
   with_items: "{{ zsh_custom_plugs }}"
 
+- name: Remove old custom plugin folder
+  file:
+    path: "{{ omz_custom_dir }}"
+    state: absent

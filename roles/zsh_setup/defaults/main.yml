@@ -4,9 +4,10 @@ zshrc_path: "{{ home_dir + '/.zshrc' }}"
 zshrc_append_path: "{{ home_dir + '/.zshrc_append' }}"
 antigen_installer: "{{ home_dir + '/.local/share/antigen/antigen.zsh' }}"
 
+# to be deprecated
 omz_installer: "/tmp/omz_install.sh"
 omz_repos: "{{ home_dir + '/repos/oh-my-zsh' }}"
-omz_custom_dir: "{{ home_dir + '/.zsh_custom_plugins/plugins' }}"
+omz_custom_dir: "{{ home_dir + '/.zsh_custom_plugins' }}"
 zsh_custom_plugs:
   - url: 'https://github.com/zsh-users/zsh-autosuggestions'
     dst: "{{ omz_custom_dir + '/zsh-autosuggestions' }}"
