@@ -17,15 +17,10 @@
 
 - name: Stow the destination
   shell:
-    cmd: |
-      stow -t '{{ home_dir }}' -R tmux && \
-      stow -t '{{ home_dir }}' -R starship && \
-      stow -t '{{ home_dir }}' -R bashrc && \
-      stow -t '{{ home_dir }}' -R shellfunc && \
-      stow -t '{{ home_dir }}' -R zshrc && \
-      stow -t '{{ home_dir }}' -R neovim
+    cmd: "stow -t '{{ home_dir }}' -R {{ item }}"
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash
   register: restow
+  with_items: "{{ targets }}"
   changed_when: "restow.rc != 0"
 
