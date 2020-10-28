@@ -21,7 +21,6 @@
     warn: false
 
 - name: Remove installer
-  when: nvm_install.changed
   file:
     path: "{{ nvm_install_script }}"
     state: 'absent'
@@ -32,43 +31,19 @@
     cmd: "bash -i -c '{{ nvm_bin }} install node'"
     executable: /bin/bash
 
-# # Do not do this, as it makes every sourcing slow
-# - name: Add the latest node with line to source in bashrc
-#   when: nvm_install.changed
-#   lineinfile:
-#     path: "{{ bashrc_path }}"
-#     state: 'present'
-#     line: "nvm use node"
-#     insertafter: 'export NVM_DIR="$HOME/.nvm"'
-
-# - name: Check if the node is installed
-#   shell:
-#     cmd: "bash -i -c '{{ use_node }} && command -v node && echo good || echo bad'"
-#     executable: /bin/bash
-#   register: node_present
-#   changed_when: "'bad' in node_present.stdout"
-
-- name: Check if the yarn is installed
-  shell: command -v yarn && echo good || echo bad
-  register: yarn_present
-  changed_when: "'bad' in yarn_present.stdout"
-
 - name: Download and Add yarn Key to Apt-Get Keyring
-  when: yarn_present.changed
   become: true
   apt_key:
     url: "https://dl.yarnpkg.com/debian/pubkey.gpg"
     state: present
 
 - name: Add yarn Repository into /etc/apt/sources.list - Bionic
-  when: yarn_present.changed
   become: true
   apt_repository:
     repo: 'deb [arch=amd64] https://dl.yarnpkg.com/debian/ stable main'
     state: present
 
 - name: Install yarn
-  when: yarn_present.changed
   become: true
   apt:
     name: 'yarn'
