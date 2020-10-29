@@ -25,6 +25,16 @@
     path: "{{ nvm_install_script }}"
     state: 'absent'
 
+- name: Make sure no source line exist
+  lineinfile:
+    path: "{{ bashrc_path }}"
+    regex: '.*NVM_DIR.*'
+    state: absent
+    backup: true
+  with_items:
+    - "{{ bashrc_path }}"
+    - "{{ zshrc_path }}"
+
 - name: Install latest node
   when: nvm_install.changed
   shell:

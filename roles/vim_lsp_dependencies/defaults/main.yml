@@ -6,3 +6,5 @@ clangd_ln_path: '/usr/bin/clangd'
 clang_name: 'clang-10'
 clang_exe_path: "/usr/bin/{{ clang_name }}"
 clang_ln_path: '/usr/bin/clang'
+shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
+source_shellfunc: ". {{ shellfunc_path }}"
