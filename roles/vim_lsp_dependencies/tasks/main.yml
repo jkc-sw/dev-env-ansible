@@ -41,8 +41,12 @@
   changed_when: "which_npm.rc != 0"
 
 - name: Install typescript
+  # use environment workaround here: https://github.com/ansible/ansible/issues/55289
   npm:
-    executable: "{{ which_npm.stdout }}"
     global: true
     name: typescript
     state: present
+    # executable: "{{ which_npm.stdout }}"
+  environment:
+    PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
+

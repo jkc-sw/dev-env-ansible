@@ -1,7 +1,7 @@
 ---
 - name: Check if the nvm is installed
   shell:
-    cmd: "/bin/bash -i -c '{{ source_bashrc }} && command -v nvm && echo good || echo bad'"
+    cmd: "/bin/bash -i -c '{{ source_shellfunc }} && command -v nvm && echo good || echo bad'"
     executable: /bin/bash
   register: nvm_present
   changed_when: "'bad' in nvm_present.stdout"
@@ -41,6 +41,25 @@
     cmd: "bash -i -c '{{ nvm_bin }} install node'"
     executable: /bin/bash
 
+- name: Get the npm path
+  shell:
+    executable: /bin/bash
+    cmd: |
+       {{ source_shellfunc }} && which npm
+  register: which_npm
+  failed_when: "which_npm.rc != 0"
+  changed_when: "which_npm.rc != 0"
+
+- name: Install gtop
+  # use environment workaround here: https://github.com/ansible/ansible/issues/55289
+  npm:
+    global: true
+    name: gtop
+    state: present
+    # executable: "{{ which_npm.stdout }}"
+  environment:
+    PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
+
 - name: Download and Add yarn Key to Apt-Get Keyring
   become: true
   apt_key:
@@ -59,19 +78,3 @@
     name: 'yarn'
     state: present
     install_recommends: false
-
-- name: Get the npm path
-  shell:
-    executable: /bin/bash
-    cmd: |
-       {{ source_shellfunc }} && which npm
-  register: which_npm
-  failed_when: "which_npm.rc != 0"
-  changed_when: "which_npm.rc != 0"
-
-- name: Install gtop
-  npm:
-    executable: "{{ which_npm.stdout }}"
-    global: true
-    name: gtop
-    state: present
