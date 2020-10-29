@@ -32,7 +32,10 @@
   when: luacheck_present.changed
 
 - name: Get the npm path
-  shell: "{{ source_shellfunc }} && which npm"
+  shell:
+    executable: /bin/bash
+    cmd: |
+       {{ source_shellfunc }} && which npm
   register: which_npm
   failed_when: "which_npm.rc != 0"
   changed_when: "which_npm.rc != 0"

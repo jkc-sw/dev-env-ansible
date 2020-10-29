@@ -1,7 +1,7 @@
 ---
 - name: Check if the nvm is installed
   shell:
-    cmd: "bash -i -c '{{ source_bashrc }} && command -v nvm && echo good || echo bad'"
+    cmd: "/bin/bash -i -c '{{ source_bashrc }} && command -v nvm && echo good || echo bad'"
     executable: /bin/bash
   register: nvm_present
   changed_when: "'bad' in nvm_present.stdout"
