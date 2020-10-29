@@ -27,6 +27,10 @@ class Role(object):
             raise Exception(f"Cannot compare {self} with {other}")
 
     def __repr__(self):
+        # if self.children:
+        #     return f"{self.name} -> ({self.children})"
+        # else:
+        #     return f"{self.name}"
         return f"{self.name}"
 
     def __str__(self):
@@ -108,6 +112,12 @@ def resolve_dep(node, resolved, unresolved):
     unresolved.remove(node)
 
 
+def print_deps(node: Role, indent=0):
+    print(f"{' '*indent}{node.name}")
+    for e in node.children:
+        print_deps(e, indent + 2)
+
+
 def main():
 
     # create simple cli
@@ -122,13 +132,14 @@ def main():
 
     # process raw files
     start = read_roles(args.playbook)
-    print(start)
+    print_deps(start)
 
     # resolve dep
     resolved = []
     unresolved = []
     resolve_dep(start, resolved, unresolved)
-    print(resolved)
+    # print(resolved)
+    # print(unresolved)
 
 
 if __name__ == "__main__":
