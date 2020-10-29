@@ -59,3 +59,19 @@
     name: 'yarn'
     state: present
     install_recommends: false
+
+- name: Get the npm path
+  shell:
+    executable: /bin/bash
+    cmd: |
+       {{ source_shellfunc }} && which npm
+  register: which_npm
+  failed_when: "which_npm.rc != 0"
+  changed_when: "which_npm.rc != 0"
+
+- name: Install gtop
+  npm:
+    executable: "{{ which_npm.stdout }}"
+    global: true
+    name: gtop
+    state: present
