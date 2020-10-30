@@ -1,0 +1,6 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+tpm_repos: "{{ home_dir + '/repos/tpm' }}"
+tpm_install_bin: "{{ tpm_repos + '/bin/install_plugins' }}"
+tpm_update_bin: "{{ tpm_repos + '/bin/update_plugins' }}"
+tpm_clean_bin: "{{ tpm_repos + '/bin/clean_plugins' }}"

@@ -1,0 +1,19 @@
+---
+- name: Get my tpm
+  git:
+    repo: https://github.com/tmux-plugins/tpm
+    dest: "{{ tpm_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+
+- name: Update the plugin
+  # get the command from here
+  # https://raw.githubusercontent.com/tmux-plugins/tpm/master/docs/managing_plugins_via_cmd_line.md
+  shell:
+    cmd: "{{ item }}"
+    executable: /bin/bash
+  with_items:
+    - "{{ tpm_install_bin }}"
+    - "{{ tpm_update_bin }} all"
+    - "{{ tpm_clean_bin }}"

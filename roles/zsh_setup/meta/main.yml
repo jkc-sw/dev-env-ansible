@@ -1,4 +1,5 @@
 ---
 dependencies:
   - nvim_from_source
+  - tpm_tmux_setup
   - dotfiles
