@@ -14,6 +14,6 @@
     cmd: "{{ item }}"
     executable: /bin/bash
   with_items:
-    - "{{ tpm_install_bin }}"
-    - "{{ tpm_update_bin }} all"
-    - "{{ tpm_clean_bin }}"
+    - "{{ source_shellfunc }} {{ tpm_install_bin }}"
+    - "{{ source_shellfunc }} {{ tpm_update_bin }} all"
+    - "{{ source_shellfunc }} {{ tpm_clean_bin }}"
