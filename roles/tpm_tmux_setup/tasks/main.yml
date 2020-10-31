@@ -14,9 +14,9 @@
     cmd: "{{ item }}"
     executable: /bin/bash
   with_items:
-    - "{{ source_shellfunc }} {{ tpm_install_bin }}"
-    - "{{ source_shellfunc }} {{ tpm_update_bin }} all"
-    - "{{ source_shellfunc }} {{ tpm_clean_bin }}"
+    - "{{ source_shellfunc }} ; {{ tpm_install_bin }}"
+    - "{{ source_shellfunc }} ; {{ tpm_update_bin }} all"
+    - "{{ source_shellfunc }} ; {{ tpm_clean_bin }}"
   register: tpm_update
   failed_when: "tpm_update.rc != 0"
   changed_when: "tpm_update.rc != 0"
