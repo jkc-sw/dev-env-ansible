@@ -9,13 +9,6 @@
     - python3-pip
     - python3-yaml
 
-- name: Install ansible development related items
-  become: true
-  pip:
-    executable: /usr/bin/pip3
-    name: ['ansible-lint', 'molecule', 'testinfra']
-    state: present
-
 - name: Check if the environment exists
   stat:
     path: "{{ dev_condaenv }}"
@@ -25,14 +18,15 @@
   when: not dev_condaenv_ret.stat.exists
   shell: "{{ conda_default_bin }} create -p {{ dev_condaenv }} python=3.8"
 
-- name: Install many lsp from pip
+- name: Install ansible dev tool
   shell:
     cmd: |
-      {{ dev_condaenv }}/bin/python -m pip install \
-        'python-language-server[all]' \
-        pyyaml \
-        cmake-language-server \
-        hdl-checker
+      {{ dev_condaenv }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        --use-feature=2020-resolver \
+        install \
+        ansible-lint \
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"

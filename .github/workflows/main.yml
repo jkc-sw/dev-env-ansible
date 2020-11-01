@@ -9,10 +9,13 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: ['16', 18']
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: docker/setup-buildx-action@v1
         id: buildx
       - name: Run command
-        run: ./rr.sh run-test
+        run: "./rr.sh run-test ${{ matrix.os }}"

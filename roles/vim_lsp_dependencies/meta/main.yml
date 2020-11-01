@@ -4,3 +4,4 @@ dependencies:
   - lua_luarocks_from_source
   - pwsh_lsp_deps
   - nvm_nodejs_yarn
+  - conda_install

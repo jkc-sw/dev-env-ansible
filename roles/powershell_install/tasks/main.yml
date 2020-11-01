@@ -17,7 +17,7 @@
   become: true
   when: powershell_present.changed
   apt:
-    deb: "https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb"
+    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
     state: present
 
 - name: Install Powershell
@@ -65,4 +65,3 @@
     executable: /usr/bin/pwsh
   register: ps_install_invokebuild
   changed_when: "ps_install_invokebuild.rc != 0"
-

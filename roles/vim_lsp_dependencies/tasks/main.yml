@@ -1,25 +1,24 @@
 ---
-- name: Install LSP dependencies
-  become: true
-  package:
-    name: "{{ item }}"
-    state: 'present'
-  register: dep_install
-  with_items:
-    - clangd-10
-    - unzip
-    - clang-10
+- name: Install LSP dependencies based on disto
+  include_tasks: others.yml
+  when: "ansible_lsb.release == '18.04'"
+  vars:
+    clangd_name: 'clangd-10'
+    clang_name: 'clang-10'
+    pkgs:
+      - unzip
+      - clangd-10
+      - clang-10
 
-- name: Make sure clangd is properly symlinked
-  when: dep_install.changed
-  become: true
-  shell:
-    executable: /bin/bash
-    cmd: |
-      [[ -e "{{ clangd_ln_path }}" ]] && rm "{{ clangd_ln_path }}"
-      ln -s "{{ clangd_exe_path }}" "{{ clangd_ln_path }}"
-      [[ -e "{{ clang_ln_path }}" ]] && rm "{{ clang_ln_path }}"
-      ln -s "{{ clang_exe_path }}" "{{ clang_ln_path }}"
+- name: Install LSP dependencies based on disto
+  include_tasks: others.yml
+  when: "ansible_lsb.release == '16.04'"
+  vars:
+    clangd_name: 'clangd-8'
+    clang_name: 'clang-8'
+    pkgs:
+      - unzip
+      - clang-tools-8
 
 - name: Check if luacheck is installed
   shell: command -v luacheck && echo good || echo bad
@@ -50,3 +49,18 @@
   environment:
     PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
 
+- name: Install many lsp from pip
+  shell:
+    cmd: |
+      {{ dev_condaenv }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        --use-feature=2020-resolver \
+        install \
+        'python-language-server[all]' \
+        pyyaml \
+        cmake-language-server \
+        hdl-checker
+  register: pipinstall
+  failed_when: "pipinstall.rc != 0"
+  changed_when: "pipinstall.rc != 0"

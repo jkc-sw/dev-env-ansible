@@ -13,9 +13,11 @@
       package:
         name: "{{ item }}"
         state: 'present'
+        update_cache: true
       with_items:
         - git
         - wget
         - tree
         - curl
         - tmux
+        - apt-transport-https

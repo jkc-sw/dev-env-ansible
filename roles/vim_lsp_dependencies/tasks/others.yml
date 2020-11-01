@@ -1,0 +1,20 @@
+---
+- name: Install LSP dependencies
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  register: dep_install
+  with_items: "{{ pkgs }}"
+
+- name: Make sure clangd is properly symlinked
+  when: dep_install.changed
+  become: true
+  shell:
+    executable: /bin/bash
+    cmd: |
+      [[ -e "{{ clangd_ln_path }}" ]] && rm "{{ clangd_ln_path }}"
+      ln -s "{{ clangd_exe_path }}" "{{ clangd_ln_path }}"
+      [[ -e "{{ clang_ln_path }}" ]] && rm "{{ clang_ln_path }}"
+      ln -s "{{ clang_exe_path }}" "{{ clang_ln_path }}"
+
