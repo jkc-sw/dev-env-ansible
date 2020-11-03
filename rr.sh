@@ -64,8 +64,8 @@ displayHelp() {
     echo "  -h|--help|h|hel|help  : Print this help command"
     echo ""
     echo "Running the ansible commands or related check"
-    echo "  install-i [-v] [-s] : Install on the host system (when do it on your production machine) prompting for password"
-    echo "  install [-v] [-s]   : Install on the host system (mostly container) w/o asking for password"
+    echo "  install-i [-v] [-b] : Install on the host system (when do it on your production machine) prompting for password"
+    echo "  install [-v] [-b]   : Install on the host system (mostly container) w/o asking for password"
     echo "  check               : Do simple check on the host system for all executable"
     echo ""
     echo "Start a tmux session to develop this repo"
@@ -84,6 +84,7 @@ displayHelp() {
     echo ""
     echo "Options:"
     echo "  -v > Provide the -vvv option to the ansigle command to have debug output"
+    echo "  -b > Use the HEAD for all the git repo"
     echo ""
     echo "Arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
@@ -163,17 +164,21 @@ case "$1" in
 'install')
     # var
     verbose=false
-    stable=false
+    stable=true
 
     # parse the argumetns
     shift
-    while getopts ':vs' opt; do
+    while getopts ':vb' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        s)
-            stable=true
+        b)
+            stable=false
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
             ;;
         esac
     done
@@ -193,17 +198,21 @@ case "$1" in
 'install-i')
     # var
     verbose=false
-    stable=false
+    stable=true
 
     # parse the argumetns
     shift
-    while getopts ':vs' opt; do
+    while getopts ':vb' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        s)
-            stable=true
+        b)
+            stable=false
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
             ;;
         esac
     done
