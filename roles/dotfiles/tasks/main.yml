@@ -5,7 +5,7 @@
     dest: "{{ dotfiles_repos }}"
     clone: true
     version: HEAD
-    update: true
+    update: "{{ update_all_repos | default(true) }}"
 
 - name: Make sure some system dependencies are installed
   become: true
