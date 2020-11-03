@@ -9,8 +9,8 @@
     repo: https://github.com/rust-analyzer/rust-analyzer.git
     dest: "{{ rust_analyzer_repos }}"
     clone: true
-    version: HEAD
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ rustanalyzer_repo_version | default('HEAD') }}"
+    update: true
   register: git_clone_rust_analyzer
 
 - name: Compile and update rust_analyzer

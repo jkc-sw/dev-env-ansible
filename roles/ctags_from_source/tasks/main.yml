@@ -9,8 +9,8 @@
     repo: https://github.com/universal-ctags/ctags.git
     dest: "{{ ctags_repos }}"
     clone: true
-    version: HEAD
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ ctags_repo_version | default('HEAD') }}"
+    update: true
   register: git_clone_ctags
 
 - name: Make sure some system dependencies are installed

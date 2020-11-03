@@ -9,8 +9,8 @@
     repo: https://github.com/doxygen/doxygen.git
     dest: "{{ doxygen_repos }}"
     clone: true
-    version: HEAD
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ doxygen_repo_version | default('HEAD') }}"
+    update: true
   register: git_clone_doxygen
 
 - name: Make sure some system dependencies are installed

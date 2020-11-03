@@ -26,8 +26,8 @@
     repo: https://github.com/PowerShell/PowerShellEditorServices.git
     dest: "{{ pwsh_lsp_repos }}"
     clone: true
-    version: HEAD
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ pwshlsp_repo_version | default('HEAD') }}"
+    update: true
   register: git_clone_pwsh_lsp
 
 - name: Compile and update pwsh_lsp

@@ -4,8 +4,8 @@
     repo: https://github.com/tmux-plugins/tpm
     dest: "{{ tpm_repos }}"
     clone: true
-    version: HEAD
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ tpm_repo_version | default('HEAD') }}"
+    update: true
 
 - name: Update the plugin
   # get the command from here

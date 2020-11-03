@@ -9,8 +9,8 @@
     repo: https://github.com/neovim/neovim.git
     dest: "{{ nvim_repos }}"
     clone: true
-    version: dc14b1468afeb53c9ca0a734a2035cc54b5e1d94
-    update: "{{ update_all_repos | default(false) }}"
+    version: "{{ neovim_repo_version | default('HEAD') }}"
+    update: true
   register: git_clone_neovim
 
 - name: Make sure some system dependencies are installed

@@ -64,9 +64,9 @@ displayHelp() {
     echo "  -h|--help|h|hel|help  : Print this help command"
     echo ""
     echo "Running the ansible commands or related check"
-    echo "  install-i [-v]  : Install on the host system (when do it on your production machine) prompting for password"
-    echo "  install [-v]    : Install on the host system (mostly container) w/o asking for password"
-    echo "  check           : Do simple check on the host system for all executable"
+    echo "  install-i [-v] [-s] : Install on the host system (when do it on your production machine) prompting for password"
+    echo "  install [-v] [-s]   : Install on the host system (mostly container) w/o asking for password"
+    echo "  check               : Do simple check on the host system for all executable"
     echo ""
     echo "Start a tmux session to develop this repo"
     echo "  tmux            : Start the tmux development session"
@@ -161,24 +161,70 @@ case "$1" in
     ;;
 
 'install')
+    # var
+    verbose=false
+    stable=false
+
+    # parse the argumetns
+    shift
+    while getopts ':vs' opt; do
+        case "$opt" in
+        v)
+            verbose=true
+            ;;
+        s)
+            stable=true
+            ;;
+        esac
+    done
+
     # install with ansible playbook
-    if [[ $# -gt 1 ]]; then
+    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
+        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml'
+    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
         ansible-playbook -vvv playbook.yml
+    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
+        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml'
     else
         ansible-playbook playbook.yml
     fi
     ;;
 
 'install-i')
-    # run ansible playbook
-    if [[ $# -gt 1 ]]; then
+    # var
+    verbose=false
+    stable=false
+
+    # parse the argumetns
+    shift
+    while getopts ':vs' opt; do
+        case "$opt" in
+        v)
+            verbose=true
+            ;;
+        s)
+            stable=true
+            ;;
+        esac
+    done
+
+    # install with ansible playbook
+    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -vvv playbook.yml -K | tee $TEST_LOG
+        ansible-playbook -K -vvv playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
+    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K -vvv playbook.yml | tee $TEST_LOG
+    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
     else
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook playbook.yml -K | tee $TEST_LOG
+        ansible-playbook -K playbook.yml | tee $TEST_LOG
     fi
     ansibleCheck
     ;;
