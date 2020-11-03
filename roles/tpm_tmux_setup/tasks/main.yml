@@ -5,7 +5,7 @@
     dest: "{{ tpm_repos }}"
     clone: true
     version: HEAD
-    update: true
+    update: false
 
 - name: Update the plugin
   # get the command from here

@@ -10,7 +10,7 @@
     dest: "{{ rust_analyzer_repos }}"
     clone: true
     version: HEAD
-    update: true
+    update: false
   register: git_clone_rust_analyzer
 
 - name: Compile and update rust_analyzer

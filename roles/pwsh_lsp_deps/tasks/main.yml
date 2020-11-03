@@ -27,7 +27,7 @@
     dest: "{{ pwsh_lsp_repos }}"
     clone: true
     version: HEAD
-    update: true
+    update: false
   register: git_clone_pwsh_lsp
 
 - name: Compile and update pwsh_lsp

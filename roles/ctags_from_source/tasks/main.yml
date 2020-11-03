@@ -10,7 +10,7 @@
     dest: "{{ ctags_repos }}"
     clone: true
     version: HEAD
-    update: true
+    update: false
   register: git_clone_ctags
 
 - name: Make sure some system dependencies are installed
