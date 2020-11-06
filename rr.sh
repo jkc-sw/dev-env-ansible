@@ -11,6 +11,7 @@ CONTAINER_TAG=devenvansible:1.0
 # test log file name
 TEST_LOG=./test.log
 # ansible workspace path
+ANSIBLE_HOME=/home/developer
 ANSIBLE_WORKSPACE_PATH=/home/developer/dev-env-ansible
 # dotfile path
 DOTFILE_PATH="$SCRIPT_DIR/../dotfiles"
@@ -72,12 +73,12 @@ displayHelp() {
     echo "  tmux            : Start the tmux development session"
     echo ""
     echo "This is used to manage the lifetime of the containers"
-    echo "  run [ver]       : Start a new docker container only"
-    echo "  run-build [ver] : Start a new docker container and run ansible-playbook"
-    echo "  commit ID TAG   : Commit a running docker container ID with the TAG specified"
-    echo "  use TAG         : Start a committed image only"
-    echo "  list            : List all the images"
-    echo "  use-build TAG   : Start a committed image and run ansible-playbook"
+    echo "  run [ver]        : Start a new docker container only"
+    echo "  run-build [ver]  : Start a new docker container and run ansible-playbook"
+    echo "  commit ID TAG    : Commit a running docker container ID with the TAG specified"
+    echo "  use TAG [-w dir] : Start a committed image only"
+    echo "  list             : List all the images"
+    echo "  use-build TAG    : Start a committed image and run ansible-playbook"
     echo ""
     echo "This is used by CI to do testing"
     echo "  run-test [ver]  : Start a new docker container and run simple CI test"
@@ -282,7 +283,7 @@ case "$1" in
         -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
         "$CONTAINER_TAG" \
-        bash -i -c "$cmd ; bash -i"
+        bash -i -c "$cmd ; exec zsh"
     ;;
 
 'commit')
@@ -303,15 +304,40 @@ case "$1" in
     ;;
 
 'use')
-    # get arg
-    tag=$2
+    # get tag
+    shift
+    tag=$1
+    shift
+    # parse the rest
+    while getopts ':w:' args; do
+        case "$args" in
+        w)
+            wdir="$OPTARG"
+            if [[ ! -d "$wdir" ]]; then
+                echo "$wdir is not found" >&2
+                exit 1
+            fi
+            ;;
+        esac
+    done
+
     # start bash inside container
-    docker run --rm -it \
-        --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
-        "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "cd ./dev-env-ansible ; bash -i"
+    if [[ -z $wdir ]]; then
+        docker run --rm -it \
+            --network="host" \
+            -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
+            "$DEV_ENV_REPOSITORY_NAME:$tag" \
+            bash -i -c "cd ./dev-env-ansible; exec zsh"
+    else
+        docker run --rm -it \
+            --network="host" \
+            -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+            -v $wdir:"$ANSIBLE_HOME/$(basename "$wdir")" \
+            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
+            "$DEV_ENV_REPOSITORY_NAME:$tag" \
+            bash -i -c "cd ./$(basename "$wdir"); exec zsh"
+    fi
     ;;
 
 'use-build')
@@ -326,7 +352,7 @@ case "$1" in
         -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "$cmd ; bash -i"
+        bash -i -c "$cmd; exec zsh"
     ;;
 
 'run-test')
