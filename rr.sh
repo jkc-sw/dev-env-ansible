@@ -218,24 +218,35 @@ case "$1" in
         esac
     done
 
+    # check if the ansible is installed, if not, install it
+    if ! command -v ansible &>/dev/null; then
+        sudo apt update
+        sudo apt install -y python3 python3-pip
+        sudo -H python3 -m pip install ansible
+    fi
+
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
         ansible-playbook -K -vvv playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
+
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
         ansible-playbook -K -vvv playbook.yml | tee $TEST_LOG
+
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
         ansible-playbook -K playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
+
     else
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
         ansible-playbook -K playbook.yml | tee $TEST_LOG
     fi
+
     ansibleCheck
     ;;
 
@@ -247,6 +258,7 @@ case "$1" in
         tmux new-window -t ansible-env-dev:2 -n docker -c "$SCRIPT_DIR"
         tmux new-window -t ansible-env-dev:3 -n dotfiles -c "$DOTFILE_PATH"
     fi
+
     # attach to the session
     tmux attach-session -t ansible-env-dev:1
     ;;
@@ -257,6 +269,7 @@ case "$1" in
     if [[ $# -gt 1 ]]; then
         ver="$(select_docker_ver $2)"
     fi
+
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
@@ -329,6 +342,7 @@ case "$1" in
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./dev-env-ansible; exec zsh"
+
     else
         docker run --rm -it \
             --network="host" \
@@ -346,6 +360,7 @@ case "$1" in
     # build up the command here
     cmd="cd ./dev-env-ansible && ./rr.sh install"
     cmd="$cmd && . ~/.bashrc"
+
     # start bash inside container
     docker run --rm -it \
         --network="host" \
@@ -364,6 +379,7 @@ case "$1" in
     if [[ $# -gt 1 ]]; then
         ver="$(select_docker_ver $2)"
     fi
+
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm \
