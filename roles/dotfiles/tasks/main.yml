@@ -1,12 +1,4 @@
 ---
-- name: Get my dotfiles
-  git:
-    repo: https://github.com/jkc-sw/dotfiles.git
-    dest: "{{ dotfiles_repos }}"
-    clone: true
-    version: HEAD
-    update: true
-
 - name: Make sure some system dependencies are installed
   become: true
   package:
@@ -15,6 +7,27 @@
   with_items:
     - stow
     - xclip
+    - git
+
+- name: Get my dotfiles
+  git:
+    repo: https://github.com/jkc-sw/dotfiles.git
+    dest: "{{ dotfiles_repos }}"
+    clone: true
+    version: HEAD
+    update: true
+
+- name: Setup the git config
+  community.general.git_config:
+    state: present
+    scope: global
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+  with_items:
+    - name: url.'ssh://git@github.com/'.pushInsteadOf
+      value: https://github.com/
+    - name: core.editor
+      value: nvim
 
 - name: Stow the destination
   shell:
