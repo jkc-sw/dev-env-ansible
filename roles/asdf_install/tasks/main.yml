@@ -1,0 +1,18 @@
+---
+- name: Install system dependencies
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - git
+    - curl
+
+- name: Get asdf
+  git:
+    repo: https://github.com/asdf-vm/asdf.git
+    dest: "{{ asdf_repos }}"
+    clone: true
+    version: "{{ asdf_repo_version | default('HEAD') }}"
+    update: true
+
