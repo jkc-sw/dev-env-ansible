@@ -1,9 +1,4 @@
 ---
-- name: Check if doxygen is installed
-  shell: command -v doxygen && echo good || echo bad
-  register: doxygen_present
-  changed_when: "'bad' in doxygen_present.stdout"
-
 - name: Get latest source code for doxygen
   git:
     repo: https://github.com/doxygen/doxygen.git
@@ -14,7 +9,6 @@
   register: git_clone_doxygen
 
 - name: Make sure some system dependencies are installed
-  when: git_clone_doxygen.changed or doxygen_present.changed
   become: true
   package:
     name: "{{ item }}"
@@ -24,6 +18,9 @@
     - cmake
     - flex
     - bison
+    - build-essential
+    - git
+    - graphviz
 
 - name: Create the build folder
   file:
@@ -31,7 +28,7 @@
     state: 'directory'
 
 - name: Configure before running build for doxygen
-  when: git_clone_doxygen.changed or doxygen_present.changed
+  when: git_clone_doxygen.changed
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |
