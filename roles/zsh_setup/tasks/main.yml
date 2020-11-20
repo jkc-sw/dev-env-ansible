@@ -8,6 +8,7 @@
     - git
     - curl
     - zsh
+    - libcap-ng-dev
 
 - name: Remove the old installer
   file:
