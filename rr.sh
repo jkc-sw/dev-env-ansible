@@ -252,15 +252,17 @@ case "$1" in
 
 'tmux')
     # check if we have a section already
-    if ! (tmux ls | grep -q ansible-env-dev); then
-        # start a new session
-        tmux new-session -s ansible-env-dev -n code -d -c "$SCRIPT_DIR"
-        tmux new-window -t ansible-env-dev:2 -n docker -c "$SCRIPT_DIR"
-        tmux new-window -t ansible-env-dev:3 -n dotfiles -c "$DOTFILE_PATH"
+    if ! (tmux ls | grep -q blah); then
+        if command -v tmuxinator &>/dev/null; then
+            tmuxinator start blah -n blah
+        else
+            echo "Tmuxinator is not installed yet, please install first" >&2
+            exit 1
+        fi
+    else
+        # attach to the session
+        tmux attach-session -t blah
     fi
-
-    # attach to the session
-    tmux attach-session -t ansible-env-dev:1
     ;;
 
 'run')

@@ -4,7 +4,7 @@ name: blah
 root: ~/repos/dev-env-ansible
 
 # Optional tmux socket
-socket_name: blah
+# socket_name: foo
 
 # Runs before everything. Use it to start daemons etc.
 # pre: sudo /etc/rc.d/mysqld start
