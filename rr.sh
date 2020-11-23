@@ -100,7 +100,7 @@ select_docker_ver() {
     # select the version
     case "$ver" in
     20)
-        echo -n "$DOCKER_FILE_UBUNTU_21"
+        echo -n "$DOCKER_FILE_UBUNTU_20"
         ;;
 
     18)

@@ -1,7 +1,7 @@
 ---
 - name: Install LSP dependencies based on disto
   include_tasks: others.yml
-  when: "ansible_lsb.release == '18.04'"
+  when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
   vars:
     clangd_name: 'clangd-10'
     clang_name: 'clang-10'
