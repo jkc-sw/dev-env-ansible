@@ -23,6 +23,7 @@ RUN export uid=${SHELL_UID} gid=${SHELL_GID} && \
     echo "${SHELL_USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${SHELL_USER} && \
     chmod 0440 /etc/sudoers.d/${SHELL_USER} && \
     chown ${uid}:${gid} -R ${HOME}
+RUN echo ${SHELL_USER}:APASSWORD | chpasswd
 
 # Switch to the new user
 USER ${SHELL_USER}
