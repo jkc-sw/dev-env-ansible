@@ -21,8 +21,8 @@
   shell:
     executable: /bin/bash
     cmd: |
-      {{ conda_default_bin }} init bash && `
-      {{ conda_default_bin }} init powershell && `
+      {{ conda_default_bin }} init bash && \
+      {{ conda_default_bin }} init powershell && \
       {{ conda_default_bin }} init zsh
   register: conda_init_shells
   changed_when: "conda_init_shells.rc != 0"
