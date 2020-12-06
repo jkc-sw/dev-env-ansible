@@ -19,3 +19,4 @@
         - curl
         - tmux
         - apt-transport-https
+        - pv
