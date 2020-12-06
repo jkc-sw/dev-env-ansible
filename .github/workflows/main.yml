@@ -15,7 +15,5 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - uses: docker/setup-buildx-action@v1
-        id: buildx
       - name: Run command
         run: "./rr.sh run-test ${{ matrix.os }}"
