@@ -2,7 +2,7 @@
 - name: Update neovim plugin
   shell:
     cmd: |
-      ANSIBLE_UPDATE=1 nvim -c 'qa'
+      ANSIBLE_UPDATE=1 nvim --headless -c 'qa'
   args:
     warn: false
   register: update_nvim_plugin
