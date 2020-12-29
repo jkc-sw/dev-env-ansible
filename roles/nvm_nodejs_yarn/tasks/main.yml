@@ -27,7 +27,7 @@
 
 - name: Make sure no source line exist
   lineinfile:
-    path: "{{ bashrc_path }}"
+    path: "{{ item }}"
     regex: '.*NVM_DIR.*'
     state: absent
     backup: true
@@ -50,15 +50,18 @@
   failed_when: "which_npm.rc != 0"
   changed_when: "which_npm.rc != 0"
 
-- name: Install gtop
+- name: Install many clis
   # use environment workaround here: https://github.com/ansible/ansible/issues/55289
   npm:
     global: true
-    name: gtop
+    name: "{{ item }}"
     state: present
     # executable: "{{ which_npm.stdout }}"
   environment:
     PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
+  with_items:
+    - gtop
+    - tree-sitter-cli
 
 - name: Download and Add yarn Key to Apt-Get Keyring
   become: true

@@ -9,7 +9,13 @@
     - xclip
     - git
 
+- name: Get if dotfile repos is there
+  stat:
+    path: "{{ dotfiles_repos }}"
+  register: dotfiles_repos_ret
+
 - name: Get my dotfiles
+  when: (not dotfiles_repos_ret.stat.exists) or (update_dotfile | default(false))
   git:
     repo: https://github.com/jkc-sw/dotfiles.git
     dest: "{{ dotfiles_repos }}"

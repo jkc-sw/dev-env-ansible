@@ -28,6 +28,8 @@ RUN echo ${SHELL_USER}:APASSWORD | chpasswd
 # Switch to the new user
 USER ${SHELL_USER}
 
+RUN mkdir -p ${HOME}/repos
+
 # Go to user home
 WORKDIR ${HOME}
 

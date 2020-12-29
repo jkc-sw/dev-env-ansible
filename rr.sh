@@ -10,17 +10,23 @@ pushd "$SCRIPT_DIR" &>/dev/null
 CONTAINER_TAG=devenvansible:1.0
 # test log file name
 TEST_LOG=./test.log
+
 # ansible workspace path
 ANSIBLE_HOME=/home/developer
-ANSIBLE_WORKSPACE_PATH=/home/developer/dev-env-ansible
+
+ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 # dotfile path
 DOTFILE_PATH="$SCRIPT_DIR/../dotfiles"
+ANSIBLE_DOTFILE_PATH=$ANSIBLE_DEV_ENV_ANSIBLE_PATH/../dotfiles
+
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
+
 # docker file name
 DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004"
 DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804"
 DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604"
+
 # docker repo name to be managed by rr.sh
 DEV_ENV_REPOSITORY_NAME=devenvansible
 RUN_PREFIX_FOR_NAME=run
@@ -65,9 +71,9 @@ displayHelp() {
     echo "  -h|--help|h|hel|help  : Print this help command"
     echo ""
     echo "Running the ansible commands or related check"
-    echo "  install-i [-v] [-b] : Install on the host system (when do it on your production machine) prompting for password"
-    echo "  install [-v] [-b]   : Install on the host system (mostly container) w/o asking for password"
-    echo "  check               : Do simple check on the host system for all executable"
+    echo "  install-i [-v] [-b]    : Install on the host system (when do it on your production machine) prompting for password"
+    echo "  install [-v] [-b] [-u] : Install on the host system (mostly container) w/o asking for password"
+    echo "  check                  : Do simple check on the host system for all executable"
     echo ""
     echo "Start a tmux session to develop this repo"
     echo "  tmux            : Start the tmux development session"
@@ -86,6 +92,7 @@ displayHelp() {
     echo "Options:"
     echo "  -v > Provide the -vvv option to the ansigle command to have debug output"
     echo "  -b > Use the HEAD for all the git repo"
+    echo "  -u > Will update the dotfile repo"
     echo ""
     echo "Arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
@@ -166,16 +173,20 @@ case "$1" in
     # var
     verbose=false
     stable=true
+    updateDotfile='{"update_dotfile": false}'
 
     # parse the argumetns
     shift
-    while getopts ':vb' opt; do
+    while getopts ':vbu' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
         b)
             stable=false
+            ;;
+        u)
+            updateDotfile='{"update_dotfile": true}'
             ;;
         *)
             echo "Unrecognized option $opt" >&2
@@ -186,13 +197,13 @@ case "$1" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
-        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml'
+        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile"
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
-        ansible-playbook -vvv playbook.yml
+        ansible-playbook -vvv playbook.yml --extra-vars "$updateDotfile"
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml'
+        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile"
     else
-        ansible-playbook playbook.yml
+        ansible-playbook playbook.yml --extra-vars "$updateDotfile"
     fi
     ;;
 
@@ -200,6 +211,7 @@ case "$1" in
     # var
     verbose=false
     stable=true
+    updateDotfile='{"update_dotfile": true}'
 
     # parse the argumetns
     shift
@@ -229,25 +241,23 @@ case "$1" in
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
+        ansible-playbook -K -vvv playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml | tee $TEST_LOG
+        ansible-playbook -K -vvv playbook.yml --extra-vars "$updateDotfile" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml --extra-vars '@./vars/stable.yml' | tee $TEST_LOG
+        ansible-playbook -K playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" | tee $TEST_LOG
 
     else
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml | tee $TEST_LOG
+        ansible-playbook -K playbook.yml --extra-vars "$updateDotfile" | tee $TEST_LOG
     fi
-
-    ansibleCheck
     ;;
 
 'tmux')
@@ -276,15 +286,16 @@ case "$1" in
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
         "$CONTAINER_TAG" \
-        bash -i -c "cd ./dev-env-ansible ; bash -i"
+        bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
     ;;
 
 'run-build')
     # build up the command here
-    cmd="cd ./dev-env-ansible && ./rr.sh install"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
     cmd="$cmd && . ~/.bashrc"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
@@ -295,7 +306,8 @@ case "$1" in
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
         "$CONTAINER_TAG" \
         bash -i -c "$cmd ; exec zsh"
@@ -340,15 +352,17 @@ case "$1" in
     if [[ -z $wdir ]]; then
         docker run --rm -it \
             --network="host" \
-            -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+            -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+            -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./dev-env-ansible; exec zsh"
+            bash -i -c "cd ./repos/dev-env-ansible; exec zsh"
 
     else
         docker run --rm -it \
             --network="host" \
-            -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+            -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+            -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
             -v $wdir:"$ANSIBLE_HOME/$(basename "$wdir")" \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
@@ -360,13 +374,14 @@ case "$1" in
     # get arg
     tag=$2
     # build up the command here
-    cmd="cd ./dev-env-ansible && ./rr.sh install"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
     cmd="$cmd && . ~/.bashrc"
 
     # start bash inside container
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
         bash -i -c "$cmd; exec zsh"
@@ -374,8 +389,8 @@ case "$1" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc && ./rr.sh install && ./rr.sh check"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
+    cmd="$cmd && . ~/.bashrc && ./rr.sh install -u && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
@@ -386,7 +401,7 @@ case "$1" in
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_WORKSPACE_PATH \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
         bash -c "$cmd" | tee $TEST_LOG
     # perform check
