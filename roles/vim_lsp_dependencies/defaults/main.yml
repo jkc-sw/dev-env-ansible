@@ -6,4 +6,4 @@ clang_exe_path: "/usr/bin/{{ clang_name }}"
 clang_ln_path: '/usr/bin/clang'
 shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
 source_shellfunc: ". {{ shellfunc_path }}"
-dev_condaenv: "{{ home_dir + '/repos/dev-env-ansible/env' }}"
+dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
