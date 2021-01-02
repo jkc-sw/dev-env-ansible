@@ -4,6 +4,13 @@
   register: nvim_present
   changed_when: "'bad' in nvim_present.stdout"
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ nvim_repos }}"
+  register: git_fetch_nvim
+  changed_when: git_fetch_nvim.rc != 0
+
 - name: Get latest source code for neovim
   git:
     repo: https://github.com/neovim/neovim.git

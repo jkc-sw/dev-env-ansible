@@ -7,6 +7,13 @@
   with_items:
     - tmuxinator
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ tpm_repos }}"
+  register: git_fetch_tpm
+  changed_when: git_fetch_tpm.rc != 0
+
 - name: Get my tpm
   git:
     repo: https://github.com/tmux-plugins/tpm

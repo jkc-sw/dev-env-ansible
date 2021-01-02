@@ -21,6 +21,13 @@
   register: ps_install_invokebuild
   changed_when: "ps_install_invokebuild.rc != 0"
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ pwsh_lsp_repos }}"
+  register: git_fetch_pwsh_lsp
+  changed_when: git_fetch_pwsh_lsp.rc != 0
+
 - name: Get latest source code for pwsh_lsp
   git:
     repo: https://github.com/PowerShell/PowerShellEditorServices.git

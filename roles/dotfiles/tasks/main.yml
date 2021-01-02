@@ -14,6 +14,13 @@
     path: "{{ dotfiles_repos }}"
   register: dotfiles_repos_ret
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ dotfiles_repos }}"
+  register: git_fetch_dotfiles
+  changed_when: git_fetch_dotfiles.rc != 0
+
 - name: Get my dotfiles
   when: (not dotfiles_repos_ret.stat.exists) or (update_dotfile | default(false))
   git:

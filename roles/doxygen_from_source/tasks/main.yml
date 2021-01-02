@@ -1,4 +1,11 @@
 ---
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ doxygen_repos }}"
+  register: git_fetch_doxygen
+  changed_when: git_fetch_doxygen.rc != 0
+
 - name: Get latest source code for doxygen
   git:
     repo: https://github.com/doxygen/doxygen.git

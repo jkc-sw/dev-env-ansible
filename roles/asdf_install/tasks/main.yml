@@ -8,6 +8,13 @@
     - git
     - curl
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ asdf_repos }}"
+  register: git_fetch_asdf
+  changed_when: git_fetch_asdf.rc != 0
+
 - name: Get asdf
   git:
     repo: https://github.com/asdf-vm/asdf.git

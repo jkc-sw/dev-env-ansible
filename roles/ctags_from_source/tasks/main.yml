@@ -4,6 +4,13 @@
   register: ctags_present
   changed_when: "'bad' in ctags_present.stdout"
 
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ ctags_repos }}"
+  register: git_fetch_ctags
+  changed_when: git_fetch_ctags.rc != 0
+
 - name: Get latest source code for ctags
   git:
     repo: https://github.com/universal-ctags/ctags.git
