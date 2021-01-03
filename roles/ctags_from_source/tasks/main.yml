@@ -4,12 +4,17 @@
   register: ctags_present
   changed_when: "'bad' in ctags_present.stdout"
 
+- name: Check if the folder exists
+  stat:
+    path: "{{ ctags_repos }}"
+  register: ctags_repos_exists
+
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "ctags_repos_exists.stat.exists"
   shell:
     cmd: git fetch --tags -f
     chdir: "{{ ctags_repos }}"
   register: git_fetch_ctags
-  changed_when: git_fetch_ctags.rc != 0
 
 - name: Get latest source code for ctags
   git:

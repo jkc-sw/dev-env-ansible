@@ -8,12 +8,18 @@
     - git
     - curl
 
+- name: Check if the folder exists
+  stat:
+    path: "{{ asdf_repos }}"
+  register: asdf_repos_exists
+
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "asdf_repos_exists.stat.exists"
   shell:
     cmd: git fetch --tags -f
     chdir: "{{ asdf_repos }}"
   register: git_fetch_asdf
-  changed_when: git_fetch_asdf.rc != 0
+  changed_when: "git_fetch_asdf.rc != 0"
 
 - name: Get asdf
   git:

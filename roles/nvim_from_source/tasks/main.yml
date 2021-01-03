@@ -4,12 +4,18 @@
   register: nvim_present
   changed_when: "'bad' in nvim_present.stdout"
 
+- name: Check if the folder exists
+  stat:
+    path: "{{ nvim_repos }}"
+  register: nvim_repos_exists
+
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "nvim_repos_exists.stat.exists"
   shell:
     cmd: git fetch --tags -f
     chdir: "{{ nvim_repos }}"
   register: git_fetch_nvim
-  changed_when: git_fetch_nvim.rc != 0
+  changed_when: "git_fetch_nvim.rc != 0"
 
 - name: Get latest source code for neovim
   git:

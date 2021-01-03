@@ -14,12 +14,18 @@
     path: "{{ dotfiles_repos }}"
   register: dotfiles_repos_ret
 
+- name: Check if the folder exists
+  stat:
+    path: "{{ dotfiles_repos }}"
+  register: dotfiles_repos_exists
+
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "dotfiles_repos_exists.stat.exists"
   shell:
     cmd: git fetch --tags -f
     chdir: "{{ dotfiles_repos }}"
   register: git_fetch_dotfiles
-  changed_when: git_fetch_dotfiles.rc != 0
+  changed_when: "git_fetch_dotfiles.rc != 0"
 
 - name: Get my dotfiles
   when: (not dotfiles_repos_ret.stat.exists) or (update_dotfile | default(false))
