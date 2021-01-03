@@ -15,6 +15,7 @@
     cmd: git fetch --tags -f
     chdir: "{{ ctags_repos }}"
   register: git_fetch_ctags
+  changed_when: "git_fetch_ctags.rc != 0"
 
 - name: Get latest source code for ctags
   git:
