@@ -39,13 +39,20 @@
   failed_when: "which_npm.rc != 0"
   changed_when: "which_npm.rc != 0"
 
-- name: Install typescript
+- name: Install many lsps
   # use environment workaround here: https://github.com/ansible/ansible/issues/55289
   npm:
     global: true
     name: typescript
     state: present
     # executable: "{{ which_npm.stdout }}"
+  with_items:
+    - typescript
+    - typescript-language-server
+    - yaml-language-server
+    - dockerfile-language-server-nodejs
+    - bash-language-server
+    - vscode-json-languageserver
   environment:
     PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
 
@@ -64,3 +71,47 @@
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"
+
+- name: Make sure the dependency is installed for luals
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - ninja-build
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ luals_repos }}"
+  register: luals_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "luals_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ luals_repos }}"
+  register: git_fetch_luals
+  changed_when: "git_fetch_luals.rc != 0"
+
+- name: Get latest source code for luals
+  git:
+    repo: https://github.com/sumneko/lua-language-server
+    dest: "{{ luals_repos }}"
+    clone: true
+    version: "{{ luals_repo_version | default('HEAD') }}"
+    update: true
+    recursive: true
+  register: git_clone_luals
+
+- name: Build from source for luals part 1
+  when: git_clone_luals.changed
+  shell:
+    cmd: ninja -f ninja/linux.ninja
+    chdir: "{{ luals_repos }}/3rd/luamake"
+
+- name: Build from source for luals part 2
+  when: git_clone_luals.changed
+  shell:
+    cmd: ./3rd/luamake/luamake rebuild
+    chdir: "{{ luals_repos }}"
+

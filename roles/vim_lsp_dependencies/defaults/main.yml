@@ -7,3 +7,4 @@ clang_ln_path: '/usr/bin/clang'
 shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
 source_shellfunc: ". {{ shellfunc_path }}"
 dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
+luals_repos: "{{ home_dir + '/repos/lua-language-server' }}"
