@@ -43,7 +43,7 @@
   # use environment workaround here: https://github.com/ansible/ansible/issues/55289
   npm:
     global: true
-    name: typescript
+    name: "{{ item }}"
     state: present
     # executable: "{{ which_npm.stdout }}"
   with_items:
