@@ -1,0 +1,41 @@
+---
+- name: Check caddy plugin installed
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ asdf_bin }} plugin list | grep {{ caddy_name }} && echo good || echo bad
+  register: caddy_plugin_exist
+  changed_when: "'bad' in caddy_plugin_exist.stdout"
+
+- name: Install Caddy plugin
+  when: caddy_plugin_exist.changed
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ asdf_bin }} plugin add {{ caddy_name }} {{ caddy_git_url }}
+  register: add_plugin_caddy
+
+- name: Check caddy installed
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ asdf_bin }} list caddy | grep {{ caddy_name }} && echo good || echo bad
+  register: caddy_bin_exist
+  changed_when: "'bad' in caddy_bin_exist.stdout"
+
+- name: Install Caddy
+  when: caddy_bin_exist.changed
+  shell:
+    executable: /bin/bash
+    cmd: |
+       {{ asdf_bin }} install caddy {{ caddy_version }}
+  register: install_plugin_caddy
+
+- name: Set caddy global
+  shell:
+    executable: /bin/bash
+    cmd: |
+       {{ asdf_bin }} global caddy {{ caddy_version }}
+  register: install_plugin_caddy
+  failed_when: "install_plugin_caddy.rc != 0"
+  changed_when: "install_plugin_caddy.rc != 0"

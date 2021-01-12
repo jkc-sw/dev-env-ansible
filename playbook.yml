@@ -5,6 +5,7 @@
     - ansible_dev
     - zsh_setup
     - vim_plugin_update
+    - caddy_install
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true
