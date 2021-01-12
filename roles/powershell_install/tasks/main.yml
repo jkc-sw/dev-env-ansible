@@ -65,3 +65,15 @@
     executable: /usr/bin/pwsh
   register: ps_install_invokebuild
   changed_when: "ps_install_invokebuild.rc != 0"
+
+- name: Make sure PSSlack is installed
+  shell:
+    cmd: |
+      if ('PSSlack' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module PSSlack -Scope CurrentUser -AcceptLicense
+      }
+    executable: /usr/bin/pwsh
+  register: ps_install_psslack
+  changed_when: "ps_install_psslack.rc != 0"
+

@@ -19,7 +19,7 @@
   shell:
     executable: /bin/bash
     cmd: |
-      {{ asdf_bin }} list caddy | grep {{ caddy_name }} && echo good || echo bad
+      {{ asdf_bin }} list caddy | grep '{{ caddy_version }}' && echo good || echo bad
   register: caddy_bin_exist
   changed_when: "'bad' in caddy_bin_exist.stdout"
 
