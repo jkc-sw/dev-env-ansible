@@ -1,8 +1,8 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
-shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
-source_shellfunc: ". {{ shellfunc_path }}"
-asdf_bin: "{{ source_shellfunc }} && asdf"
+bashrc_path: "{{ home_dir + '/.bashrc' }}"
+source_bashrc: ". {{ bashrc_path }}"
+asdf_bin: "{{ source_bashrc }} && asdf"
 caddy_git_url: 'https://github.com/salasrod/asdf-caddy'
 caddy_name: 'caddy'
 caddy_version: '2.3.0'
