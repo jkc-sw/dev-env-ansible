@@ -88,3 +88,15 @@
   register: ps_install_poshbot
   changed_when: "ps_install_poshbot.rc != 0"
 
+- name: Make sure Microsoft.Graph is installed
+  shell:
+    cmd: |
+      if ('Microsoft.Graph' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module Microsoft.Graph -Scope CurrentUser -AcceptLicense
+      }
+    executable: /usr/bin/pwsh
+  register: ps_install_msgraph
+  changed_when: "ps_install_msgraph.rc != 0"
+
+
