@@ -19,5 +19,6 @@
         - tree
         - curl
         - tmux
+        - gdb
         - apt-transport-https
         - pv
