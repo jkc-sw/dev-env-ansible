@@ -72,46 +72,6 @@
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"
 
-- name: Make sure the dependency is installed for luals
-  become: true
-  package:
-    name: "{{ item }}"
-    state: 'present'
-  with_items:
-    - ninja-build
-
-- name: Check if the folder exists
-  stat:
-    path: "{{ luals_repos }}"
-  register: luals_repos_exists
-
-- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "luals_repos_exists.stat.exists"
-  shell:
-    cmd: git fetch --tags -f
-    chdir: "{{ luals_repos }}"
-  register: git_fetch_luals
-  changed_when: "git_fetch_luals.rc != 0"
-
-- name: Get latest source code for luals
-  git:
-    repo: https://github.com/sumneko/lua-language-server
-    dest: "{{ luals_repos }}"
-    clone: true
-    version: "{{ luals_repo_version | default('HEAD') }}"
-    update: true
-    recursive: true
-  register: git_clone_luals
-
-- name: Build from source for luals part 1
-  when: git_clone_luals.changed
-  shell:
-    cmd: ninja -f ninja/linux.ninja
-    chdir: "{{ luals_repos }}/3rd/luamake"
-
-- name: Build from source for luals part 2
-  when: git_clone_luals.changed
-  shell:
-    cmd: ./3rd/luamake/luamake rebuild
-    chdir: "{{ luals_repos }}"
-
+- name: Install luals for the correct distro
+  include_tasks: luals.yml
+  when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
