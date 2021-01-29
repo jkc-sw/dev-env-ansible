@@ -10,6 +10,16 @@
       - clangd-10
       - clang-10
 
+- name: Install LSP dependencies based on disto
+  include_tasks: others.yml
+  when: "ansible_lsb.release == '16.04'"
+  vars:
+    clangd_name: 'clangd-8'
+    clang_name: 'clang-8'
+    pkgs:
+      - unzip
+      - clang-tools-8
+
 - name: Check if luacheck is installed
   shell: command -v luacheck && echo good || echo bad
   register: luacheck_present

@@ -25,6 +25,7 @@ DOCKER_FILE_DIR=./dockerfiles
 # docker file name
 DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004"
 DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804"
+DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604"
 
 # docker repo name to be managed by rr.sh
 DEV_ENV_REPOSITORY_NAME=devenvansible
@@ -94,7 +95,7 @@ displayHelp() {
     echo "  -u > Will update the dotfile repo"
     echo ""
     echo "Arguments:"
-    echo "  ver > Specify the version to use. Default 18. Currently supported 18', '20'"
+    echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
     echo "  ID  > This is the container name or ID to use to make a commit, full name required"
     echo "  TAG > This is by your preference on how the commited container to be tagged"
 }
@@ -111,6 +112,10 @@ select_docker_ver() {
 
     18)
         echo -n "$DOCKER_FILE_UBUNTU_18"
+        ;;
+
+    16)
+        echo -n "$DOCKER_FILE_UBUNTU_16"
         ;;
 
     *)
