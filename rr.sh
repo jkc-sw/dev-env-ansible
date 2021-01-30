@@ -195,6 +195,13 @@ case "$1" in
         esac
     done
 
+    # check if the ansible is installed, if not, install it
+    if ! command -v ansible &>/dev/null; then
+        sudo apt update
+        sudo apt install -y python3 python3-pip
+        sudo -H python3 -m pip install ansible
+    fi
+
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile"
