@@ -151,11 +151,35 @@ case "$1" in
         'nvim' \
         'ansible' \
         'ansible-playbook' \
+        'ansible-lint' \
+        'caddy' \
         'cargo' \
+        'doxygen' \
+        'rustup' \
+        'rustc' \
         'fd' \
         'rg' \
         'exa' \
         'bat' \
+        'lua' \
+        'luarocks' \
+        'starship' \
+        'dust' \
+        'gtop' \
+        'tmux' \
+        'clang' \
+        'clangd' \
+        'typescript' \
+        'typescript-language-server' \
+        'yaml-language-server' \
+        'dockerfile-language-server-nodejs' \
+        'bash-language-server' \
+        'vscode-json-languageserver' \
+        'tree-sitter-cli' \
+        'tokei' \
+        'procs' \
+        'sd' \
+        'svls' \
         'ctags' \
         'lua' \
         'luarocks' \
