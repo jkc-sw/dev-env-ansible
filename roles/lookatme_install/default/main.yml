@@ -1,0 +1,5 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+conda_install_dir: "{{ home_dir + '/miniconda3' }}"
+conda_default_bin: "{{ conda_install_dir + '/bin/conda' }}"
+dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"

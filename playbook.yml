@@ -6,6 +6,7 @@
     - zsh_setup
     - vim_plugin_update
     - caddy_install
+    - lookatme_install
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true

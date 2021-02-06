@@ -62,7 +62,6 @@
       {{ dev_condaenv }}/bin/python -m pip \
         --disable-pip-version-check \
         --no-python-version-warning \
-        --use-feature=2020-resolver \
         install \
         'python-language-server[all]' \
         pyyaml \

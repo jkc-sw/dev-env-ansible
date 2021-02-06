@@ -1,0 +1,13 @@
+---
+- name: Install Lookatme
+  shell:
+    cmd: |
+      {{ dev_condaenv }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        install \
+        lookatme
+  register: lookatmeinstall
+  failed_when: "lookatmeinstall.rc != 0"
+  changed_when: "lookatmeinstall.rc != 0"
+
