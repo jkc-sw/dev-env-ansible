@@ -6,6 +6,7 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
+        Pygments \
         lookatme
   register: lookatmeinstall
   failed_when: "lookatmeinstall.rc != 0"

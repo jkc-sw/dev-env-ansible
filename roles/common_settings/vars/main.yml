@@ -1,0 +1,90 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+conda_install_dir: "{{ home_dir + '/miniconda3' }}"
+conda_default_bin: "{{ conda_install_dir + '/bin/conda' }}"
+dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
+asdf_repos: "{{ home_dir + '/repos/asdf' }}"
+bashrc_path: "{{ home_dir + '/.bashrc' }}"
+bashrc_append_path: "{{ home_dir + '/.bashrc_append' }}"
+source_bashrc: ". {{ bashrc_path }}"
+asdf_bin: "{{ source_bashrc }} && asdf"
+caddy_git_url: 'https://github.com/salasrod/asdf-caddy'
+caddy_name: 'caddy'
+caddy_version: '2.3.0'
+cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
+profile_path: "{{ home_dir + '/.profile' }}"
+conda_installer_path: "/tmp/Miniconda3-latest-Linux-x86_64.sh"
+ctags_repos: "{{ home_dir + '/repos/ctags' }}"
+dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
+targets:
+ - tmux
+ - starship
+ - bashrc
+ - shellfunc
+ - zshrc
+ - neovim
+ - gdb
+doxygen_repos: "{{ home_dir + '/repos/doxygen' }}"
+pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
+crates:
+ - exe: fd
+   crate: fd-find
+ - exe: rg
+   crate: ripgrep
+ - exe: bat
+   crate: bat
+ - exe: starship
+   crate: starship
+ - exe: dust
+   crate: du-dust
+ - exe: exa
+   crate: exa
+ - exe: tokei
+   crate: tokei
+ - exe: procs
+   crate: procs
+ - exe: sd
+   crate: sd
+ - exe: svls
+   crate: svls
+lua_repo_name: lua-5.4.0
+lua_repos: "{{ home_dir + '/repos/' + lua_repo_name }}"
+lua_dist_filename: "{{ lua_repo_name }}.tar.gz"
+luarocks_repo_name: luarocks-3.3.1
+luarocks_repos: "{{ home_dir + '/repos/' + luarocks_repo_name }}"
+luarocks_dist_filename: "{{ luarocks_repo_name }}.tar.gz"
+nvim_repos: "{{ home_dir + '/repos/neovim' }}"
+nvm_install_script: "/tmp/install.sh"
+nvm_sourcer: "{{ home_dir + '/.nvm/nvm.sh' }}"
+zshrc_path: "{{ home_dir + '/.zshrc' }}"
+shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
+source_shellfunc: ". {{ shellfunc_path }}"
+nvm_path: "{{ ansible_env.PATH }}"
+nvm_bin: "{{ source_shellfunc }} && nvm"
+use_node: "{{ nvm_bin }} use node"
+pwsh_lsp_repos: "{{ home_dir + '/repos/PowerShellEditorServices' }}"
+rust_analyzer_repos: "{{ home_dir + '/repos/rust-analyzer' }}"
+tpm_repos: "{{ home_dir + '/repos/tpm' }}"
+tpm_install_bin: "{{ tpm_repos + '/bin/install_plugins' }}"
+tpm_update_bin: "{{ tpm_repos + '/bin/update_plugins' }}"
+tpm_clean_bin: "{{ tpm_repos + '/bin/clean_plugins' }}"
+clangd_exe_path: "/usr/bin/{{ clangd_name }}"
+clangd_ln_path: '/usr/bin/clangd'
+clang_exe_path: "/usr/bin/{{ clang_name }}"
+clang_ln_path: '/usr/bin/clang'
+luals_repos: "{{ home_dir + '/repos/lua-language-server' }}"
+vim_plug_script_path: "{{ home_dir + '/.local/share/nvim/site/autoload/plug.vim' }}"
+zshrc_append_path: "{{ home_dir + '/.zshrc_append' }}"
+antigen_installer: "{{ home_dir + '/.local/share/antigen/antigen.zsh' }}"
+omz_installer: "/tmp/omz_install.sh"
+omz_repos: "{{ home_dir + '/repos/oh-my-zsh' }}"
+omz_custom_dir: "{{ home_dir + '/.zsh_custom_plugins' }}"
+zsh_custom_plugs:
+ - url: 'https://github.com/zsh-users/zsh-autosuggestions'
+   dst: "{{ omz_custom_dir + '/zsh-autosuggestions' }}"
+ - url: 'https://github.com/zsh-users/zsh-syntax-highlighting.git'
+   dst: "{{ omz_custom_dir + '/zsh-syntax-highlighting' }}"
+ - url: 'https://github.com/agkozak/zsh-z'
+   dst: "{{ omz_custom_dir + '/zsh-z' }}"
+ - url: 'https://github.com/marlonrichert/zsh-autocomplete.git'
+   dst: "{{ omz_custom_dir + '/zsh-autocomplete' }}"

@@ -1,5 +1,6 @@
 ---
 dependencies:
+  - common_settings
   - bashrc_like_a_pro
   - nvim_from_source
   - tpm_tmux_setup

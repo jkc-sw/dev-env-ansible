@@ -1,4 +1,5 @@
 ---
 dependencies:
+  - common_settings
   - conda_install
   - docker_install

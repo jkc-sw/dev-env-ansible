@@ -1,5 +1,6 @@
 ---
 dependencies:
+  - common_settings
   - rust_analyzer_from_source
   - lua_luarocks_from_source
   - pwsh_lsp_deps
