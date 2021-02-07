@@ -58,7 +58,7 @@
     state: present
     # executable: "{{ which_npm.stdout }}"
   environment:
-    PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
+    PATH: "{{ which_npm.stdout | dirname }}:{{ ansible_env.PATH }}"
   with_items:
     - gtop
     - tree-sitter-cli

@@ -54,7 +54,7 @@
     - bash-language-server
     - vscode-json-languageserver
   environment:
-    PATH: "{{ which_npm.stdout | dirname }}:{{ nvm_path }}"
+    PATH: "{{ which_npm.stdout | dirname }}:{{ ansible_env.PATH }}"
 
 - name: Install many lsp from pip
   shell:
