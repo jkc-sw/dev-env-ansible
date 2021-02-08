@@ -7,6 +7,7 @@
         --no-python-version-warning \
         install \
         Pygments \
+        termdown \
         lookatme
   register: lookatmeinstall
   failed_when: "lookatmeinstall.rc != 0"
