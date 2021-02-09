@@ -7,6 +7,7 @@
     - vim_plugin_update
     - caddy_install
     - lookatme_install
+    - networking_tools
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true

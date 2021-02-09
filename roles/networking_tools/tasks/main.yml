@@ -1,8 +1,30 @@
 ---
-- name: Install wireshark
+- name: run apt-get update
+  apt:
+    update_cache: yes
+  become: yes
+
+- name: let non root to capture traffic
+  # Before installing any package, this only sets the preference for the question
+  debconf:
+    name='wireshark-common'
+    question='wireshark-common/install-setuid'
+    vtype='boolean'
+    value='true'
+  become: yes
+
+- name: Install wiresharkcli, gui and tshark
   become: true
   package:
     name: "{{ item }}"
     state: 'present'
   with_items:
     - wireshark
+    - tshark
+
+- name: add current user to wireshark group
+  user:
+    name: "{{ ansible_user_id }}"
+    append: yes
+    groups: wireshark
+  become: yes
