@@ -7,7 +7,7 @@ asdf_repos: "{{ home_dir + '/repos/asdf' }}"
 bashrc_path: "{{ home_dir + '/.bashrc' }}"
 bashrc_append_path: "{{ home_dir + '/.bashrc_append' }}"
 source_bashrc: ". {{ bashrc_path }}"
-asdf_bin: "{{ source_bashrc }} && asdf"
+asdf_bin: "{{ asdf_repos + '/bin/asdf' }}"
 caddy_git_url: 'https://github.com/salasrod/asdf-caddy'
 caddy_name: 'caddy'
 caddy_version: '2.3.0'
@@ -45,8 +45,8 @@ crates:
    crate: procs
  - exe: sd
    crate: sd
- - exe: svls
-   crate: svls
+#  - exe: svls
+#    crate: svls
 lua_repo_name: lua-5.4.0
 lua_repos: "{{ home_dir + '/repos/' + lua_repo_name }}"
 lua_dist_filename: "{{ lua_repo_name }}.tar.gz"

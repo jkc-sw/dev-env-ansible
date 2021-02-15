@@ -179,7 +179,6 @@ case "$1" in
         'tokei' \
         'procs' \
         'sd' \
-        'svls' \
         'ctags' \
         'lua' \
         'luarocks' \
@@ -188,6 +187,7 @@ case "$1" in
         'nvm' \
         'yarn'
     )
+        # 'svls' \
     for c in "${cmds[@]}"; do
         checkCmd $c
     done

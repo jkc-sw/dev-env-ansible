@@ -22,5 +22,5 @@ crates:
     crate: procs
   - exe: sd
     crate: sd
-  - exe: svls
-    crate: svls
+  # - exe: svls
+  #   crate: svls
