@@ -1,0 +1,44 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+    update_cache: true
+  with_items:
+    - make
+
+- name: Check if toclip is installed
+  shell: command -v toclip && echo good || echo bad
+  register: toclip_present
+  changed_when: "'bad' in toclip_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ toclip_repos }}"
+  register: toclip_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "toclip_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ toclip_repos }}"
+  register: git_fetch_toclip
+  changed_when: "git_fetch_toclip.rc != 0"
+
+- name: Get latest source code for toclip
+  git:
+    repo: https://github.com/jkc-sw/toclip.git
+    dest: "{{ toclip_repos }}"
+    clone: true
+    version: "{{ toclip_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_toclip
+
+- name: Install toclip
+  when: git_clone_toclip.changed
+  community.general.make:
+    chdir: "{{ toclip_repos }}"
+    target: install
+  register: toclip_built
+  become: true

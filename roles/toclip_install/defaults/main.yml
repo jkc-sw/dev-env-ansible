@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+toclip_repos: "{{ home_dir + '/repos/toclip' }}"

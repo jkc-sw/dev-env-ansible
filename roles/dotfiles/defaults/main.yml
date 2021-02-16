@@ -1,7 +1,7 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
 dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
-targets:
+stow_targets:
   - tmux
   - starship
   - bashrc
@@ -9,3 +9,4 @@ targets:
   - zshrc
   - neovim
   - gdb
+  - git

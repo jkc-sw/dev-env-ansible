@@ -36,17 +36,10 @@
     version: HEAD
     update: true
 
-- name: Setup the git config
-  community.general.git_config:
-    state: present
-    scope: global
-    name: "{{ item.name }}"
-    value: "{{ item.value }}"
-  with_items:
-    - name: url.'ssh://git@github.com/'.pushInsteadOf
-      value: https://github.com/
-    - name: core.editor
-      value: nvim
+- name: Remove old config
+  file:
+    path: "{{ home_dir + '/.gitconfig' }}"
+    state: 'absent'
 
 - name: Stow the destination
   shell:
@@ -54,6 +47,6 @@
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash
   register: restow
-  with_items: "{{ targets }}"
+  with_items: "{{ stow_targets }}"
   changed_when: "restow.rc != 0"
 

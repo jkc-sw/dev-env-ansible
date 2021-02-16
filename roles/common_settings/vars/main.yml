@@ -16,37 +16,38 @@ profile_path: "{{ home_dir + '/.profile' }}"
 conda_installer_path: "/tmp/Miniconda3-latest-Linux-x86_64.sh"
 ctags_repos: "{{ home_dir + '/repos/ctags' }}"
 dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"
-targets:
- - tmux
- - starship
- - bashrc
- - shellfunc
- - zshrc
- - neovim
- - gdb
+stow_targets:
+  - tmux
+  - starship
+  - bashrc
+  - shellfunc
+  - zshrc
+  - neovim
+  - gdb
+  - git
 doxygen_repos: "{{ home_dir + '/repos/doxygen' }}"
 pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 crates:
- - exe: fd
-   crate: fd-find
- - exe: rg
-   crate: ripgrep
- - exe: bat
-   crate: bat
- - exe: starship
-   crate: starship
- - exe: dust
-   crate: du-dust
- - exe: exa
-   crate: exa
- - exe: tokei
-   crate: tokei
- - exe: procs
-   crate: procs
- - exe: sd
-   crate: sd
-#  - exe: svls
-#    crate: svls
+  - exe: fd
+    crate: fd-find
+  - exe: rg
+    crate: ripgrep
+  - exe: bat
+    crate: bat
+  - exe: starship
+    crate: starship
+  - exe: dust
+    crate: du-dust
+  - exe: exa
+    crate: exa
+  - exe: tokei
+    crate: tokei
+  - exe: procs
+    crate: procs
+  - exe: sd
+    crate: sd
+  # - exe: svls
+  #   crate: svls
 lua_repo_name: lua-5.4.0
 lua_repos: "{{ home_dir + '/repos/' + lua_repo_name }}"
 lua_dist_filename: "{{ lua_repo_name }}.tar.gz"
@@ -79,11 +80,11 @@ omz_installer: "/tmp/omz_install.sh"
 omz_repos: "{{ home_dir + '/repos/oh-my-zsh' }}"
 omz_custom_dir: "{{ home_dir + '/.zsh_custom_plugins' }}"
 zsh_custom_plugs:
- - url: 'https://github.com/zsh-users/zsh-autosuggestions'
-   dst: "{{ omz_custom_dir + '/zsh-autosuggestions' }}"
- - url: 'https://github.com/zsh-users/zsh-syntax-highlighting.git'
-   dst: "{{ omz_custom_dir + '/zsh-syntax-highlighting' }}"
- - url: 'https://github.com/agkozak/zsh-z'
-   dst: "{{ omz_custom_dir + '/zsh-z' }}"
- - url: 'https://github.com/marlonrichert/zsh-autocomplete.git'
-   dst: "{{ omz_custom_dir + '/zsh-autocomplete' }}"
+  - url: 'https://github.com/zsh-users/zsh-autosuggestions'
+    dst: "{{ omz_custom_dir + '/zsh-autosuggestions' }}"
+  - url: 'https://github.com/zsh-users/zsh-syntax-highlighting.git'
+    dst: "{{ omz_custom_dir + '/zsh-syntax-highlighting' }}"
+  - url: 'https://github.com/agkozak/zsh-z'
+    dst: "{{ omz_custom_dir + '/zsh-z' }}"
+  - url: 'https://github.com/marlonrichert/zsh-autocomplete.git'
+    dst: "{{ omz_custom_dir + '/zsh-autocomplete' }}"
