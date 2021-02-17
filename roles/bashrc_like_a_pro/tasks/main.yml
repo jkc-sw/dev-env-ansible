@@ -82,10 +82,10 @@
           fi
       }
 
-- name: Add bashrc append
+- name: Do not bashrc append
   lineinfile:
     path: "{{ bashrc_path }}"
     line: ". '{{ bashrc_append_path }}'"
-    state: present
+    state: absent
     backup: true
     create: true
