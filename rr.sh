@@ -43,14 +43,18 @@ ansibleCheck() {
         echo "failed should be 0 at the secound run" >&2
         exit 2
     fi
+    if ! grep -q 'not installed properly' $TEST_LOG; then
+        echo "checking exe that some are not done right" >&2
+        exit 3
+    fi
 }
 
 # use command to check if cmd is present
 checkCmd() {
     cmd=$1
     if ! command -v $cmd &>/dev/null; then
-        echo "$cmd not installed properly" >&2
-        exit 3
+        echo "$cmd not installed properly"
+        return 1
     fi
 }
 
@@ -74,6 +78,7 @@ displayHelp() {
     echo "  install-i [-v] [-b]    : Install on the host system (when do it on your production machine) prompting for password"
     echo "  install [-v] [-b] [-u] : Install on the host system (mostly container) w/o asking for password"
     echo "  check                  : Do simple check on the host system for all executable"
+    echo "  preupgrade             : Do the necessary stuff to get the system upgraded"
     echo ""
     echo "Start a tmux session to develop this repo"
     echo "  tmux            : Start the tmux development session"
@@ -141,56 +146,78 @@ case "$1" in
         exit $?
     fi
     # below are for the best effort
-    . $HOME/.bashrc
+    . $HOME/.bashrc_append
     # do it here, as I don't want it in bashrc to slow it down
     nvm use node
     # get a list of commands to check
-    cmds=('git' \
-        'docker' \
-        'conda' \
-        'nvim' \
+    cmds=( \
         'ansible' \
         'ansible-playbook' \
-        'ansible-lint' \
+        # 'bash-language-server' \
+        'bat' \
         'caddy' \
         'cargo' \
-        'doxygen' \
-        'rustup' \
-        'rustc' \
-        'fd' \
-        'rg' \
-        'exa' \
-        'bat' \
-        'lua' \
-        'luarocks' \
-        'starship' \
-        'dust' \
-        'gtop' \
-        'tmux' \
         'clang' \
         'clangd' \
-        'typescript' \
-        'typescript-language-server' \
-        'yaml-language-server' \
-        'dockerfile-language-server-nodejs' \
-        'bash-language-server' \
-        'vscode-json-languageserver' \
-        'tree-sitter-cli' \
-        'tokei' \
-        'procs' \
-        'sd' \
+        'conda' \
         'ctags' \
+        'docker' \
+        # 'dockerfile-language-server-nodejs' \
+        'doxygen' \
+        'dust' \
+        'exa' \
+        'fd' \
+        'git' \
+        # 'gtop' \
         'lua' \
         'luarocks' \
-        'pwsh' \
+        'luarocks' \
         'node' \
+        'npm' \
+        'nvim' \
         'nvm' \
-        'yarn'
+        'procs' \
+        'pwsh' \
+        'python3' \
+        'rg' \
+        'rustc' \
+        'rustup' \
+        'sd' \
+        'starship' \
+        'tmux' \
+        'tokei' \
+        # 'tree-sitter-cli' \
+        # 'typescript' \
+        # 'typescript-language-server' \
+        # 'vscode-json-languageserver' \
+        'yaml-language-server' \
+        'yarn' \
     )
         # 'svls' \
+    ret=0
     for c in "${cmds[@]}"; do
         checkCmd $c
+        if [[ $? -ne 0 ]]; then
+            ret=1
+        fi
     done
+    exit $ret
+    ;;
+
+'preupgrade')
+    # if not being called from the rr.sh script itself
+    if [[ -z $FROM_RR_CHECK ]]; then
+        # recursively call itself
+        FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} preupgrade"
+        # edit when done
+        exit $?
+    fi
+    # below are for the best effort
+    . $HOME/.bashrc_append
+    # do it here, as I don't want it in bashrc to slow it down
+    nvm use node
+    # Do the node upgrade
+    nvm install --latest-npm
     ;;
 
 'install')
@@ -327,7 +354,7 @@ case "$1" in
 'run-build')
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc"
+    cmd="$cmd && . ~/.bashrc_append"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
@@ -406,7 +433,7 @@ case "$1" in
     tag=$2
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc"
+    cmd="$cmd && . ~/.bashrc_append"
 
     # start bash inside container
     docker run --rm -it \
@@ -421,7 +448,8 @@ case "$1" in
 'run-test')
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc && ./rr.sh install -u && ./rr.sh check"
+    cmd="$cmd && . ~/.bashrc_append && ./rr.sh install -u && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -u && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
