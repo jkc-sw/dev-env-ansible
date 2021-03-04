@@ -146,6 +146,7 @@ case "$1" in
         exit $?
     fi
     # below are for the best effort
+    . $HOME/.bashrc
     . $HOME/.bashrc_append
     # do it here, as I don't want it in bashrc to slow it down
     nvm use node
@@ -213,6 +214,7 @@ case "$1" in
         exit $?
     fi
     # below are for the best effort
+    . $HOME/.bashrc
     . $HOME/.bashrc_append
     # do it here, as I don't want it in bashrc to slow it down
     nvm use node
@@ -354,7 +356,7 @@ case "$1" in
 'run-build')
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc_append"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
@@ -433,7 +435,7 @@ case "$1" in
     tag=$2
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc_append"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
     docker run --rm -it \
@@ -448,7 +450,7 @@ case "$1" in
 'run-test')
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc_append && ./rr.sh install -u && ./rr.sh check"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install -u && ./rr.sh check"
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -u && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
