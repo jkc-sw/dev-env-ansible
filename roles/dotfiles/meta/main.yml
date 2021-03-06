@@ -1,3 +1,5 @@
 ---
 dependencies:
   - toclip_install
+  - nerd_fonts
+  - kitty_from_source
