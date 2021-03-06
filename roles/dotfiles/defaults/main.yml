@@ -10,3 +10,4 @@ stow_targets:
   - neovim
   - gdb
   - git
+  - kitty

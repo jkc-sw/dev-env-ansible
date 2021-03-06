@@ -39,3 +39,39 @@
     path: "{{ kitty_bin_linked }}"
     src: "{{ kitty_bin }}"
     state: link
+
+- name: Edit the desktop file icon
+  lineinfile:
+    path: "{{ kitty_desk }}"
+    state: present
+    regexp: 'Icon=.*'
+    line: "Icon={{ kitty_icon }}"
+
+- name: Edit the desktop file bin
+  lineinfile:
+    path: "{{ kitty_desk }}"
+    state: present
+    regexp: '^(Exec=).*'
+    line: \g<1>{{ kitty_bin_linked }}
+    backrefs: yes
+    mode: '0755'
+
+- name: Edit the desktop file bin 2
+  lineinfile:
+    path: "{{ kitty_desk }}"
+    state: present
+    regexp: '^(TryExec=).*'
+    line: \g<1>{{ kitty_bin_linked }}
+    backrefs: yes
+
+- name: Symlink the kitty bin
+  file:
+    path: "{{ kitty_bin_linked }}"
+    src: "{{ kitty_bin }}"
+    state: link
+
+- name: Symlink the kitty desktop
+  file:
+    path: "{{ kitty_desk_linked }}"
+    src: "{{ kitty_desk }}"
+    state: link

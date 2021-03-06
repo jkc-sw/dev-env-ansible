@@ -25,6 +25,7 @@ stow_targets:
   - neovim
   - gdb
   - git
+  - kitty
 doxygen_repos: "{{ home_dir + '/repos/doxygen' }}"
 pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 crates:
@@ -96,3 +97,7 @@ local_bin: "{{ home_dir + '/.local/bin' }}"
 kitty_installer: "{{ kitty_repos + '/installer.sh' }}"
 kitty_bin: "{{ kitty_repos + '/kitty.app/bin/kitty' }}"
 kitty_bin_linked: "{{ local_bin + '/kitty' }}"
+kitty_desk: "{{ kitty_repos + '/kitty.app/share/applications/kitty.desktop' }}"
+local_share: "{{ home_dir + '/.local/share' }}"
+kitty_desk_linked: "{{ local_share + '/applications/kitty.desktop' }}"
+kitty_icon: "{{ kitty_repos + '/kitty.app/share/icons/hicolor/256x256/apps/kitty.png' }}"
