@@ -1,5 +1,5 @@
 ---
-kitty_repos: "{{ home_dir + '/kitty' }}"
+kitty_repos: "{{ home_dir + '/repos/kitty' }}"
 local_bin: "{{ home_dir + '/.local/bin' }}"
 kitty_bin: "{{ kitty_repos + '/kitty/launcher/kitty' }}"
 kitty_bin_linked: "{{ local_bin + '/kitty' }}"

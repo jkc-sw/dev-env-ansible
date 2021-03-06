@@ -1,4 +1,13 @@
 ---
+- name: Make sure some system dependencies are installed
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+    update_cache: true
+  with_items:
+    - fontconfig
+
 - name: Make sure autoload folder for fonts
   file:
     path: "{{ font_dir }}"
