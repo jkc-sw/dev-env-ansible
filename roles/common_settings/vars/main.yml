@@ -91,3 +91,8 @@ zsh_custom_plugs:
 firacode_url: 'https://raw.githubusercontent.com/ryanoasis/nerd-fonts/master/patched-fonts/FiraCode/Medium/complete/Fira%20Code%20Medium%20Nerd%20Font%20Complete.ttf'
 font_dir: "{{ home_dir + '/.local/share/fonts' }}"
 firacode_font: "{{ font_dir + '/Fira Code Medium Nerd Font Complete.otf' }}"
+kitty_repos: "{{ home_dir + '/repos/kitty' }}"
+local_bin: "{{ home_dir + '/.local/bin' }}"
+kitty_installer: "{{ kitty_repos + '/installer.sh' }}"
+kitty_bin: "{{ kitty_repos + '/kitty.app/bin/kitty' }}"
+kitty_bin_linked: "{{ local_bin + '/kitty' }}"

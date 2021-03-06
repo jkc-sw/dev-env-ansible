@@ -1,4 +1,4 @@
 ---
 - name: Install kitty
   include_tasks: install.yml
-  when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
+  # when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
