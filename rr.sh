@@ -152,9 +152,16 @@ case "$1" in
     nvm use node
     # get a list of commands to check
     cmds=( \
+        # 'bash-language-server' \
+        # 'dockerfile-language-server-nodejs' \
+        # 'gtop' \
+        # 'svls' \
+        # 'tree-sitter-cli' \
+        # 'typescript' \
+        # 'typescript-language-server' \
+        # 'vscode-json-languageserver' \
         'ansible' \
         'ansible-playbook' \
-        # 'bash-language-server' \
         'bat' \
         'caddy' \
         'cargo' \
@@ -163,13 +170,12 @@ case "$1" in
         'conda' \
         'ctags' \
         'docker' \
-        # 'dockerfile-language-server-nodejs' \
         'doxygen' \
         'dust' \
         'exa' \
         'fd' \
         'git' \
-        # 'gtop' \
+        'kitty' \
         'lua' \
         'luarocks' \
         'luarocks' \
@@ -187,14 +193,9 @@ case "$1" in
         'starship' \
         'tmux' \
         'tokei' \
-        # 'tree-sitter-cli' \
-        # 'typescript' \
-        # 'typescript-language-server' \
-        # 'vscode-json-languageserver' \
         'yaml-language-server' \
         'yarn' \
     )
-        # 'svls' \
     ret=0
     for c in "${cmds[@]}"; do
         checkCmd $c
