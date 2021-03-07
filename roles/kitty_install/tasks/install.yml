@@ -9,6 +9,11 @@
     path: "{{ local_bin }}"
     state: directory
 
+- name: Make sure local bin exist
+  file:
+    path: "{{ kitty_desk_linked | dirname }}"
+    state: directory
+
 - name: Download the kitty
   get_url:
     url: https://sw.kovidgoyal.net/kitty/installer.sh
@@ -63,12 +68,6 @@
     regexp: '^(TryExec=).*'
     line: \g<1>{{ kitty_bin_linked }}
     backrefs: yes
-
-- name: Symlink the kitty bin
-  file:
-    path: "{{ kitty_bin_linked }}"
-    src: "{{ kitty_bin }}"
-    state: link
 
 - name: Symlink the kitty desktop
   file:
