@@ -36,11 +36,6 @@
     version: HEAD
     update: true
 
-- name: Remove old config
-  file:
-    path: "{{ home_dir + '/.gitconfig' }}"
-    state: 'absent'
-
 - name: Stow the destination
   shell:
     cmd: "stow -t '{{ home_dir }}' -R {{ item }}"

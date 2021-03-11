@@ -3,6 +3,9 @@
   apt:
     update_cache: yes
   become: yes
+  register: network_cache_update
+  failed_when: "network_cache_update.failed"
+  changed_when: "network_cache_update.failed"
 
 - name: let non root to capture traffic
   # Before installing any package, this only sets the preference for the question
