@@ -1,0 +1,33 @@
+---
+- name: Check if the folder exists
+  stat:
+    path: "{{ matlab_schemer_repos }}"
+  register: matlab_schemer_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "matlab_schemer_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ matlab_schemer_repos }}"
+  register: git_fetch_matlab_schemer
+  changed_when: "git_fetch_matlab_schemer.rc != 0"
+
+- name: Get latest source code for matlab_schemer
+  git:
+    repo: https://github.com/scottclowe/matlab-schemer.git
+    dest: "{{ matlab_schemer_repos }}"
+    clone: true
+    version: "{{ matlab_schemer_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_matlab_schemer
+
+- name: Add to the startup.m
+  blockinfile:
+    backup: true
+    create: true
+    marker: '% {mark} Add matlab colorschemer'
+    path: "{{ matlab_startup_file }}"
+    state: present
+    block: |
+      addpath '{{ matlab_schemer_repos }}'
+      schemer_import('{{ dotfiles_matlab_colorscheme }}', true);
