@@ -8,6 +8,7 @@
     - caddy_install
     - lookatme_install
     - networking_tools
+    - matlab_schemer
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true
