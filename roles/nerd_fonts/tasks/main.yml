@@ -13,10 +13,13 @@
     path: "{{ font_dir }}"
     state: directory
 
-- name: Download and place the font
-  get_url:
-    url: "{{ firacode_url }}"
-    dest: "{{ firacode_font }}"
+- name: Download the fonts
+  unarchive:
+    remote_src: yes
+    src: "{{ item }}"
+    keep_newer: yes
+    dest: "{{ font_dir }}"
+  with_items: "{{ nerd_font_srcs }}"
 
 - name: Refresh fonts
   shell:
