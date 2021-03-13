@@ -24,3 +24,9 @@
         - gdb
         - apt-transport-https
         - pv
+        - nmap
+        - gawk
+        - xvfb
+        - htop
+        - openssh-server
+        - net-tools
