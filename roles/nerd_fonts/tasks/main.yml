@@ -20,6 +20,9 @@
     keep_newer: yes
     dest: "{{ font_dir }}"
   with_items: "{{ nerd_font_srcs }}"
+  register: download_fonts
+  changed_when: "download_fonts.failed"
+  failed_when: "download_fonts.failed"
 
 - name: Refresh fonts
   shell:
