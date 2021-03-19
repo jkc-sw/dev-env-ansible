@@ -31,3 +31,24 @@
     append: yes
     groups: wireshark
   become: yes
+
+- name: Install nethogs
+  become: true
+  package:
+    name: "{{ item }}"
+    state: 'present'
+  with_items:
+    - nethogs
+
+- name: Get the command path
+  shell:
+    cmd: 'command -v nethogs'
+  register: where_is_nethogs
+
+- name: Set the capability
+  become: true
+  community.general.capabilities:
+    state: present
+    capability: 'cap_net_admin,cap_net_raw+pe'
+    path: "{{ where_is_nethogs.stdout }}"
+
