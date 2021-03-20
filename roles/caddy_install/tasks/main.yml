@@ -31,11 +31,11 @@
        {{ asdf_bin }} install caddy {{ caddy_version }}
   register: install_plugin_caddy
 
-- name: Set caddy global
+- name: Set caddy global and reshims
   shell:
     executable: /bin/bash
     cmd: |
-       {{ asdf_bin }} global caddy {{ caddy_version }}
+       {{ asdf_bin }} global caddy {{ caddy_version }} && {{ asdf_bin }} reshim
   register: install_plugin_caddy
   failed_when: "install_plugin_caddy.rc != 0"
   changed_when: "install_plugin_caddy.rc != 0"

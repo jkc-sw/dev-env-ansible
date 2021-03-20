@@ -1,0 +1,20 @@
+---
+- name: Get the key
+  become: true
+  apt_key:
+    id: ACCAF35C
+    keyserver: keyserver.ubuntu.com
+    state: present
+
+- name: Add repo
+  become: true
+  apt_repository:
+    repo: 'deb [arch=amd64] http://apt.insync.io/ubuntu {{ ansible_lsb.codename }} non-free contrib'
+    state: present
+    update_cache: yes
+
+- name: Install
+  become: true
+  apt:
+    name: insync
+    state: present

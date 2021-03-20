@@ -1,12 +1,11 @@
 ---
-- name: Check if the powershell is installed
-  shell: command -v pwsh && echo good || echo bad
-  register: powershell_present
-  changed_when: "'bad' in powershell_present.stdout"
+# - name: Check if the powershell is installed
+#   shell: command -v pwsh && echo good || echo bad
+#   register: powershell_present
+#   changed_when: "'bad' in powershell_present.stdout"
 
 - name: Make sure some system dependencies are installed
   become: true
-  when: powershell_present.changed
   package:
     name: "{{ item }}"
     state: 'present'
@@ -15,17 +14,15 @@
 
 - name: Download and Add Powershell Key to Apt-Get Keyring
   become: true
-  when: powershell_present.changed
   apt:
     deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
     state: present
 
 - name: Install Powershell
   become: true
-  when: powershell_present.changed
   apt:
     pkg: powershell
-    state: latest
+    state: present
     update_cache: true
 
 - name: Make sure we can install from PSGallery

@@ -9,6 +9,7 @@
     - lookatme_install
     - networking_tools
     - matlab_schemer
+    - insync_install
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true

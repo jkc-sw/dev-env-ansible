@@ -178,7 +178,6 @@ case "$1" in
         'kitty' \
         'lua' \
         'luarocks' \
-        'luarocks' \
         'node' \
         'npm' \
         'nvim' \
@@ -190,6 +189,9 @@ case "$1" in
         'rustc' \
         'rustup' \
         'sd' \
+        'nethogs' \
+        'wireshark' \
+        'tshark' \
         'starship' \
         'tmux' \
         'tokei' \
