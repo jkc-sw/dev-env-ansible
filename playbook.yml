@@ -34,3 +34,4 @@
         - htop
         - openssh-server
         - net-tools
+        - linux-tools-common
