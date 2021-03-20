@@ -35,3 +35,4 @@
         - openssh-server
         - net-tools
         - linux-tools-common
+        - linux-tools-generic
