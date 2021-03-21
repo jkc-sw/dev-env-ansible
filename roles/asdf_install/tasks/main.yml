@@ -1,10 +1,10 @@
 ---
 - name: Install system dependencies
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - git
     - curl
 

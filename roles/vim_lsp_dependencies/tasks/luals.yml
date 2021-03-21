@@ -1,10 +1,10 @@
 ---
 - name: Make sure the dependency is installed for luals
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - ninja-build
 
 - name: Check if the folder exists

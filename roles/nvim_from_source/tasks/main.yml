@@ -28,11 +28,10 @@
 
 - name: Make sure some system dependencies are installed
   become: true
-  when: git_clone_neovim.changed or nvim_present.changed
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - ninja-build
     - gettext
     - libtool

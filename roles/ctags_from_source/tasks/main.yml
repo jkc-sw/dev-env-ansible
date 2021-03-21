@@ -27,12 +27,11 @@
   register: git_clone_ctags
 
 - name: Make sure some system dependencies are installed
-  when: git_clone_ctags.changed or ctags_present.changed
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - git
     - gcc
     - make

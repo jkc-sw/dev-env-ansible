@@ -35,11 +35,10 @@
 
 - name: Make sure some system dependencies are installed
   become: true
-  when: lua_present.changed
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - build-essential
     - libreadline-dev
 
@@ -93,11 +92,10 @@
 
 - name: Make sure some system dependencies are installed
   become: true
-  when: luarocks_present.changed
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - build-essential
     - libreadline-dev
 

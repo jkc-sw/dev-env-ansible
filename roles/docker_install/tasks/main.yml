@@ -5,12 +5,11 @@
   changed_when: "'bad' in docker_present.stdout"
 
 - name: Make sure some system dependencies are installed
-  when: docker_present.changed
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - apt-transport-https
     - ca-certificates
     - curl
@@ -34,7 +33,7 @@
   apt:
     name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
     state: present
-  with_items:
+  loop:
     - docker-ce
     - docker-ce-cli
     - containerd.io

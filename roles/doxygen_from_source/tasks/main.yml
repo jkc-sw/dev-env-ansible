@@ -23,10 +23,10 @@
 
 - name: Make sure some system dependencies are installed
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - python
     - cmake
     - flex

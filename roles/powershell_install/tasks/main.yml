@@ -6,10 +6,10 @@
 
 - name: Make sure some system dependencies are installed
   become: true
-  package:
+  apt:
     name: "{{ item }}"
     state: 'present'
-  with_items:
+  loop:
     - xz-utils
 
 - name: Download and Add Powershell Key to Apt-Get Keyring
@@ -21,7 +21,7 @@
 - name: Install Powershell
   become: true
   apt:
-    pkg: powershell
+    name: powershell
     state: present
     update_cache: true
 

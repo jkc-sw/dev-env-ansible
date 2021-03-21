@@ -1,11 +1,10 @@
 ---
 - name: Install LSP dependencies
   become: true
-  package:
-    name: "{{ item }}"
+  apt:
+    name: "{{ pkgs }}"
     state: 'present'
   register: dep_install
-  with_items: "{{ pkgs }}"
 
 - name: Make sure clangd is properly symlinked
   when: dep_install.changed
