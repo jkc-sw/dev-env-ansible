@@ -43,7 +43,7 @@ ansibleCheck() {
         echo "failed should be 0 at the secound run" >&2
         exit 2
     fi
-    if ! grep -q 'not installed properly' $TEST_LOG; then
+    if grep -q 'not installed properly' $TEST_LOG; then
         echo "checking exe that some are not done right" >&2
         exit 3
     fi
