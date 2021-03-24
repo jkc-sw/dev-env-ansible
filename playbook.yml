@@ -25,6 +25,7 @@
         - tmux
         - smbclient
         - samba-common
+        - cifs-utils
         - gdb
         - apt-transport-https
         - pv
