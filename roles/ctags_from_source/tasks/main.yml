@@ -52,7 +52,13 @@
       ./autogen.sh
       ./configure
 
-- name: Compile and update ctags
+- name: Compile ctags
+  when: git_clone_ctags.changed
+  community.general.make:
+    chdir: "{{ ctags_repos }}"
+  register: ctags_built
+
+- name: update ctags
   when: git_clone_ctags.changed
   community.general.make:
     chdir: "{{ ctags_repos }}"

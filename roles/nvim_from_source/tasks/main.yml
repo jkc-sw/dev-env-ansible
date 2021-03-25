@@ -43,6 +43,13 @@
     - pkg-config
     - unzip
 
+- name: Compile, update neovim
+  when: git_clone_neovim.changed or nvim_present.changed
+  community.general.make:
+    chdir: "{{ nvim_repos }}"
+    params:
+      CMAKE_BUILD_TYPE: RelWithDebInfo
+
 - name: Compile, update and install neovim
   when: git_clone_neovim.changed or nvim_present.changed
   become: true
@@ -51,4 +58,3 @@
     target: install
     params:
       CMAKE_BUILD_TYPE: RelWithDebInfo
-  register: compile_neovim

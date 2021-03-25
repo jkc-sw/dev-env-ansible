@@ -47,7 +47,13 @@
     cmd: |
       cmake -G "Unix Makefiles" ..
 
-- name: Compile and update doxygen
+- name: Compile doxygen
+  when: git_clone_doxygen.changed
+  community.general.make:
+    chdir: "{{ doxygen_repos }}/build"
+  register: doxygen_built
+
+- name: update doxygen
   when: git_clone_doxygen.changed
   community.general.make:
     chdir: "{{ doxygen_repos }}/build"
