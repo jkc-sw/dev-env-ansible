@@ -32,6 +32,10 @@
   when: conda_install.changed
   shell: "{{ conda_default_bin }} config --set auto_activate_base false"
 
+- name: Do not show the env name
+  when: conda_install.changed
+  shell: "{{ conda_default_bin }} config --set changeps1 false"
+
 - name: Remove installer
   when: conda_install.changed
   file:
