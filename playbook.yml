@@ -23,6 +23,8 @@
         - tree
         - curl
         - tmux
+        - figlet
+        - lolcat
         - smbclient
         - samba-common
         - cifs-utils
