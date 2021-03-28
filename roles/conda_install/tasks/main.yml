@@ -31,10 +31,16 @@
 - name: Do not auto activate base
   when: conda_install.changed
   shell: "{{ conda_default_bin }} config --set auto_activate_base false"
+  register: conda_setter
+  changed_when: "conda_setter.rc != 0"
+  failed_when: "conda_setter.rc != 0"
 
 - name: Do not show the env name
   when: conda_install.changed
   shell: "{{ conda_default_bin }} config --set changeps1 false"
+  register: conda_setter
+  changed_when: "conda_setter.rc != 0"
+  failed_when: "conda_setter.rc != 0"
 
 - name: Remove installer
   when: conda_install.changed
