@@ -13,11 +13,12 @@ TEST_LOG=./test.log
 
 # ansible workspace path
 ANSIBLE_HOME=/home/developer
-
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
-# dotfile path
-DOTFILE_PATH="$SCRIPT_DIR/../dotfiles"
-ANSIBLE_DOTFILE_PATH=$ANSIBLE_DEV_ENV_ANSIBLE_PATH/../dotfiles
+
+# docker volumn mount
+DOCKER_VOLUME_MOUNT=" -v $SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles "
+DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH "
+DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim "
 
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
@@ -349,8 +350,7 @@ case "$1" in
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
-        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
+        $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
         "$CONTAINER_TAG" \
         bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
@@ -369,8 +369,7 @@ case "$1" in
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
-        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
+        $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
         "$CONTAINER_TAG" \
         bash -i -c "$cmd ; exec zsh"
@@ -407,6 +406,7 @@ case "$1" in
                 echo "$wdir is not found" >&2
                 exit 1
             fi
+            DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $wdir:$ANSIBLE_HOME/$(basename $wdir) "
             ;;
         esac
     done
@@ -415,8 +415,7 @@ case "$1" in
     if [[ -z $wdir ]]; then
         docker run --rm -it \
             --network="host" \
-            -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
-            -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
+            $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./repos/dev-env-ansible; exec zsh"
@@ -424,9 +423,7 @@ case "$1" in
     else
         docker run --rm -it \
             --network="host" \
-            -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
-            -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
-            -v $wdir:"$ANSIBLE_HOME/$(basename "$wdir")" \
+            $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./$(basename "$wdir"); exec zsh"
@@ -443,8 +440,7 @@ case "$1" in
     # start bash inside container
     docker run --rm -it \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
-        -v $DOTFILE_PATH:$ANSIBLE_DOTFILE_PATH \
+        $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
         bash -i -c "$cmd; exec zsh"

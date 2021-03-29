@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+focus_side_repos: "{{ home_dir + '/repos/focus-side.vim' }}"
