@@ -39,3 +39,5 @@ windows:
         -
   - dotfiles:
       root: ~/repos/dotfiles
+  - focusside:
+      root: ~/repos/focus-side.vim
