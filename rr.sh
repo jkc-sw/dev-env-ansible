@@ -150,17 +150,17 @@ case "$1" in
     . $HOME/.bashrc
     . $HOME/.bashrc_append
     # do it here, as I don't want it in bashrc to slow it down
-    nvm use node
+    nvm use --lts
     # get a list of commands to check
     cmds=( \
-        # 'bash-language-server' \
-        # 'dockerfile-language-server-nodejs' \
-        # 'gtop' \
-        # 'svls' \
-        # 'tree-sitter-cli' \
-        # 'typescript' \
-        # 'typescript-language-server' \
-        # 'vscode-json-languageserver' \
+        'bash-language-server' \
+        'dockerfile-language-server-nodejs' \
+        'gtop' \
+        'svls' \
+        'tree-sitter-cli' \
+        'typescript' \
+        'typescript-language-server' \
+        'vscode-json-languageserver' \
         'ansible' \
         'ansible-playbook' \
         'bat' \
@@ -221,9 +221,9 @@ case "$1" in
     . $HOME/.bashrc
     . $HOME/.bashrc_append
     # do it here, as I don't want it in bashrc to slow it down
-    nvm use node
+    nvm use --lts
     # Do the node upgrade
-    nvm install --latest-npm
+    nvm install-latest-npm
     ;;
 
 'install')

@@ -35,10 +35,10 @@
     - "{{ bashrc_path }}"
     - "{{ zshrc_path }}"
 
-- name: Install latest node
+- name: Install latest node lts
   when: nvm_install.changed
   shell:
-    cmd: "bash -i -c '{{ nvm_bin }} install node'"
+    cmd: "bash -i -c '{{ nvm_bin }} install --lts'"
     executable: /bin/bash
 
 - name: Get the npm path
