@@ -154,11 +154,10 @@ case "$1" in
     # get a list of commands to check
     cmds=( \
         'bash-language-server' \
-        'dockerfile-language-server-nodejs' \
+        'docker-langserver' \
         'gtop' \
-        'svls' \
-        'tree-sitter-cli' \
-        'typescript' \
+        # 'svls' \
+        'tree-sitter' \
         'typescript-language-server' \
         'vscode-json-languageserver' \
         'ansible' \
