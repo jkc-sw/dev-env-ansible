@@ -27,6 +27,8 @@ stow_targets:
   - gdb
   - git
   - kitty
+  - rg
+  - powershell
 doxygen_repos: "{{ home_dir + '/repos/doxygen' }}"
 pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 crates:

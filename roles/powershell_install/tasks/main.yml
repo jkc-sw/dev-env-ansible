@@ -42,15 +42,12 @@
     state: directory
 
 - name: Configure powershell
-  blockinfile:
+  lineinfile:
     path: "{{ pwshrc_dir }}"
     create: true
-    marker: "# {mark} ANSIBLE MANAGED BLOCK"
     backup: true
-    block: |
-      # Set the VI mode
-      Set-PSReadlineOption -EditMode vi
-      Invoke-Expression (& starship init powershell)
+    line: |
+      . '~/.config/powershell/profile_append.ps1'
 
 - name: Make sure Pester is installed
   shell:

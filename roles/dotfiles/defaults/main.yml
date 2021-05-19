@@ -12,3 +12,5 @@ stow_targets:
   - gdb
   - git
   - kitty
+  - rg
+  - powershell
