@@ -1,0 +1,19 @@
+---
+- name: Download and Add p4 Key to Apt-Get Keyring
+  become: true
+  apt_key:
+    url: "https://package.perforce.com/perforce.pubkey"
+    state: present
+
+- name: Add p4 Repository into /etc/apt/sources.list
+  become: true
+  apt_repository:
+    repo: "deb http://package.perforce.com/apt/ubuntu {{ ansible_lsb.codename }} release"
+    state: present
+    update_cache: true
+
+- name: Install p4
+  become: true
+  apt:
+    name: ['helix-p4d', 'helix-proxy']
+    state: present

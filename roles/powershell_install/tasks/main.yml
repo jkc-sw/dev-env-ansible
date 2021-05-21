@@ -1,9 +1,4 @@
 ---
-# - name: Check if the powershell is installed
-#   shell: command -v pwsh && echo good || echo bad
-#   register: powershell_present
-#   changed_when: "'bad' in powershell_present.stdout"
-
 - name: Make sure some system dependencies are installed
   become: true
   apt:

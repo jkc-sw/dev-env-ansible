@@ -197,6 +197,9 @@ case "$1" in
         'tokei' \
         'yaml-language-server' \
         'yarn' \
+        'openconnect' \
+        'p4' \
+        'p4p' \
     )
     ret=0
     for c in "${cmds[@]}"; do

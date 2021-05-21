@@ -1,9 +1,4 @@
 ---
-- name: Check if docker is installed
-  shell: command -v docker && echo good || echo bad
-  register: docker_present
-  changed_when: "'bad' in docker_present.stdout"
-
 - name: Make sure some system dependencies are installed
   become: true
   apt:
@@ -33,10 +28,6 @@
   apt:
     name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
     state: present
-  loop:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
 
 - name: Add user to docker group
   become: true
