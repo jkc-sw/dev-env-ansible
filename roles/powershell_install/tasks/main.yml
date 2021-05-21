@@ -37,11 +37,13 @@
     state: directory
 
 - name: Configure powershell
-  lineinfile:
+  blockinfile:
+    marker: '% {mark} source append files'
+    state: present
     path: "{{ pwshrc_dir }}"
     create: true
     backup: true
-    line: |
+    block: |
       . '~/.config/powershell/profile_append.ps1'
 
 - name: Make sure Pester is installed
