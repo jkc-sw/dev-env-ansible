@@ -38,7 +38,7 @@
 
 - name: Configure powershell
   blockinfile:
-    marker: '% {mark} source append files'
+    marker: '# {mark} source append files'
     state: present
     path: "{{ pwshrc_dir }}"
     create: true
