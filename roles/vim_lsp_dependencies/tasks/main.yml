@@ -53,6 +53,7 @@
     - dockerfile-language-server-nodejs
     - bash-language-server
     - vscode-json-languageserver
+    - pyright
   environment:
     PATH: "{{ which_npm.stdout | dirname }}:{{ ansible_env.PATH }}"
 
