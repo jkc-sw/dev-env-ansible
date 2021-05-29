@@ -17,3 +17,13 @@
   apt:
     name: ['helix-p4d', 'helix-proxy']
     state: present
+
+- name: Allow p4p to run with sudo
+  become: true
+  lineinfile:
+    dest: /etc/sudoers.d/p4p
+    state: present
+    create: true
+    regexp: 'p4p'
+    line: "{{ ansible_user_id }} ALL = (root) NOPASSWD: /usr/sbin/p4p"
+    validate: visudo -cf %s

@@ -43,6 +43,15 @@
     - pkg-config
     - unzip
 
+- name: Cleanout the .dep and build folder
+  when: git_clone_neovim.changed or nvim_present.changed
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ nvim_repos }}/.dep"
+    - "{{ nvim_repos }}/build"
+
 - name: Compile, update neovim
   when: git_clone_neovim.changed or nvim_present.changed
   community.general.make:

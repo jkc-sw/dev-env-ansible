@@ -80,3 +80,13 @@
     target: install
   register: openconnect_built
   become: true
+
+- name: Allow openconnect to run with sudo
+  become: true
+  lineinfile:
+    dest: /etc/sudoers.d/openconnect
+    state: present
+    create: true
+    regexp: 'openconnect'
+    line: "{{ ansible_user_id }} ALL = (root) NOPASSWD: /usr/local/sbin/openconnect"
+    validate: visudo -cf %s
