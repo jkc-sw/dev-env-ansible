@@ -1,4 +1,9 @@
 ---
+- name: Remove system installed package, as I am building from source
+  apt:
+    name: doxygen
+    state: absent
+
 - name: Check if the folder exists
   stat:
     path: "{{ doxygen_repos }}"

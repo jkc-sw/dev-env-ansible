@@ -1,4 +1,9 @@
 ---
+- name: Remove system installed package, as I am building from source
+  apt:
+    name: ctags
+    state: absent
+
 - name: Check if ctags is installed
   shell: command -v ctags && echo good || echo bad
   register: ctags_present

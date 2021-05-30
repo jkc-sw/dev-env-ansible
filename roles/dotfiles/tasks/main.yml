@@ -36,14 +36,9 @@
     version: HEAD
     update: true
 
-- name: Before the stow
-  file:
-    path: "{{ nvim_config_dir }}"
-    state: directory
-
 - name: Stow the destination
   shell:
-    cmd: "stow -t '{{ home_dir }}' -R {{ item }}"
+    cmd: "stow -t '{{ home_dir }}' --no-folding -R {{ item }}"
     chdir: "{{ dotfiles_repos }}"
     executable: /bin/bash
   register: restow
