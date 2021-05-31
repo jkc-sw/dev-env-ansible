@@ -132,6 +132,16 @@ select_docker_ver() {
     esac
 }
 
+# function to install ansible
+install_ansible() {
+    # check if the ansible is installed, if not, install it
+    if ! command -v ansible &>/dev/null; then
+        sudo apt update
+        sudo apt install -y python3 python3-pip
+        sudo -H python3 -m pip install ansible
+    fi
+}
+
 # if there are arg for test, run test
 case "$1" in
 '-h'|'--help'|'h'|'hel'|'help')
@@ -254,12 +264,7 @@ case "$1" in
         esac
     done
 
-    # check if the ansible is installed, if not, install it
-    if ! command -v ansible &>/dev/null; then
-        sudo apt update
-        sudo apt install -y python3 python3-pip
-        sudo -H python3 -m pip install ansible
-    fi
+    install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
@@ -296,12 +301,7 @@ case "$1" in
         esac
     done
 
-    # check if the ansible is installed, if not, install it
-    if ! command -v ansible &>/dev/null; then
-        sudo apt update
-        sudo apt install -y python3 python3-pip
-        sudo -H python3 -m pip install ansible
-    fi
+    install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then

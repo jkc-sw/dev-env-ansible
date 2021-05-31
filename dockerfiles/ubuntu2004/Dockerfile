@@ -1,6 +1,6 @@
 
 # Pull the prebuilt image
-FROM geerlingguy/docker-ubuntu2004-ansible
+FROM ubuntu:20.04
 
 # make sure some depenencies are installed
 RUN apt-get update && \
