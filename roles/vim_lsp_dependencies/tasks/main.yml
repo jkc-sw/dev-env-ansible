@@ -29,7 +29,7 @@
     clang_name: 'clang-8'
     pkgs:
       - unzip
-      - clang-8
+      - clang-tools-8
 
 # # This is tricky to get right, just forget it for now. Currently, clangd cannot find the headers for the std++ lib
 # - name: Check if clangd is installed
