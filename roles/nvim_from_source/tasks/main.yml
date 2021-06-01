@@ -1,5 +1,6 @@
 ---
 - name: Remove system installed package, as I am building from source
+  become: true
   apt:
     name: nvim
     state: absent
