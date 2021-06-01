@@ -9,9 +9,10 @@
     - lookatme_install
     - networking_tools
     - matlab_schemer
-    - insync_install
+    # - insync_install
     - openconnect_vpn
     - p4
+
   pre_tasks:
     - name: Make sure some system dependencies are installed
       become: true

@@ -72,9 +72,7 @@ tpm_repos: "{{ home_dir + '/repos/tpm' }}"
 tpm_install_bin: "{{ tpm_repos + '/bin/install_plugins' }}"
 tpm_update_bin: "{{ tpm_repos + '/bin/update_plugins' }}"
 tpm_clean_bin: "{{ tpm_repos + '/bin/clean_plugins' }}"
-clangd_exe_path: "/usr/bin/{{ clangd_name }}"
 clangd_ln_path: '/usr/bin/clangd'
-clang_exe_path: "/usr/bin/{{ clang_name }}"
 clang_ln_path: '/usr/bin/clang'
 luals_repos: "{{ home_dir + '/repos/lua-language-server' }}"
 vim_plug_script_path: "{{ home_dir + '/.local/share/nvim/site/autoload/plug.vim' }}"

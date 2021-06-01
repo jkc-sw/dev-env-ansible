@@ -1,7 +1,18 @@
 ---
-- name: Install LSP dependencies based on disto
+- name: Install LSP dependencies for 20
   include_tasks: others.yml
-  when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
+  when: "ansible_lsb.release == '20.04'"
+  vars:
+    clangd_name: 'clangd-11'
+    clang_name: 'clang-11'
+    pkgs:
+      - unzip
+      - clangd-11
+      - clang-11
+
+- name: Install LSP dependencies for 18
+  include_tasks: others.yml
+  when: "ansible_lsb.release == '18.04'"
   vars:
     clangd_name: 'clangd-10'
     clang_name: 'clang-10'
@@ -10,7 +21,7 @@
       - clangd-10
       - clang-10
 
-- name: Install LSP dependencies based on disto
+- name: Install LSP dependencies for 16
   include_tasks: others.yml
   when: "ansible_lsb.release == '16.04'"
   vars:
@@ -18,7 +29,44 @@
     clang_name: 'clang-8'
     pkgs:
       - unzip
-      - clang-tools-8
+      - clang-8
+
+# # This is tricky to get right, just forget it for now. Currently, clangd cannot find the headers for the std++ lib
+# - name: Check if clangd is installed
+#   shell: command -v clangd && echo good || echo bad
+#   register: clangd_present
+#   changed_when: "'bad' in clangd_present.stdout"
+#
+# - name: install the clangd from the source
+#   when: clangd_present.changed
+#   get_url:
+#     url: 'https://github.com/clangd/clangd/releases/download/12.0.0/clangd-linux-12.0.0.zip'
+#     dest: /tmp/clangd-linux-12.0.0.zip
+#
+# - name: Extract the clangd bin
+#   when: clangd_present.changed
+#   become: true
+#   unarchive:
+#     remote_src: true
+#     src: /tmp/clangd-linux-12.0.0.zip
+#     dest: "/tmp"
+#
+# - name: Copy clangd
+#   when: clangd_present.changed
+#   become: true
+#   copy:
+#     remote_src: true
+#     src: "/tmp/clangd_12.0.0/bin/clangd"
+#     dest: "/usr/local/bin"
+#     mode: 0755
+#
+# - name: Copy clangd include
+#   # when: clangd_present.changed
+#   become: true
+#   copy:
+#     remote_src: true
+#     src: "/tmp/clangd_12.0.0/lib/clang"
+#     dest: "/usr/local/include"
 
 - name: Check if luacheck is installed
   shell: command -v luacheck && echo good || echo bad

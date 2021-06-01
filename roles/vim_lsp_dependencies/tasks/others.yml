@@ -7,13 +7,16 @@
   register: dep_install
 
 - name: Make sure clangd is properly symlinked
-  when: dep_install.changed
   become: true
-  shell:
-    executable: /bin/bash
-    cmd: |
-      [[ -e "{{ clangd_ln_path }}" ]] && rm "{{ clangd_ln_path }}"
-      ln -s "{{ clangd_exe_path }}" "{{ clangd_ln_path }}"
-      [[ -e "{{ clang_ln_path }}" ]] && rm "{{ clang_ln_path }}"
-      ln -s "{{ clang_exe_path }}" "{{ clang_ln_path }}"
+  file:
+    path: "{{ clangd_ln_path }}"
+    src: "{{ clangd_exe_path }}"
+    state: link
+
+- name: Make sure clang is properly symlinked
+  become: true
+  file:
+    path: "{{ clang_ln_path }}"
+    src: "{{ clang_exe_path }}"
+    state: link
 
