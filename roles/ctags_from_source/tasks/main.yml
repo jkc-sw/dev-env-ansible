@@ -59,13 +59,13 @@
       ./configure
 
 - name: Compile ctags
-  when: git_clone_ctags.changed
+  when: git_clone_ctags.changed or ctags_present.changed
   community.general.make:
     chdir: "{{ ctags_repos }}"
   register: ctags_built
 
 - name: update ctags
-  when: git_clone_ctags.changed
+  when: git_clone_ctags.changed or ctags_present.changed
   community.general.make:
     chdir: "{{ ctags_repos }}"
     target: install

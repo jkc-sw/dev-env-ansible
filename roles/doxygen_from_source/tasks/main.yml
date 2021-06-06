@@ -5,6 +5,11 @@
     name: doxygen
     state: absent
 
+- name: Check if doxygen is installed
+  shell: command -v doxygen && echo good || echo bad
+  register: doxygen_present
+  changed_when: "'bad' in doxygen_present.stdout"
+
 - name: Check if the folder exists
   stat:
     path: "{{ doxygen_repos }}"
@@ -47,20 +52,20 @@
     state: 'directory'
 
 - name: Configure before running build for doxygen
-  when: git_clone_doxygen.changed
+  when: git_clone_doxygen.changed or doxygen_present.changed
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |
       cmake -G "Unix Makefiles" ..
 
 - name: Compile doxygen
-  when: git_clone_doxygen.changed
+  when: git_clone_doxygen.changed or doxygen_present.changed
   community.general.make:
     chdir: "{{ doxygen_repos }}/build"
   register: doxygen_built
 
 - name: update doxygen
-  when: git_clone_doxygen.changed
+  when: git_clone_doxygen.changed or doxygen_present.changed
   community.general.make:
     chdir: "{{ doxygen_repos }}/build"
     target: install

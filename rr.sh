@@ -327,18 +327,13 @@ case "$1" in
     ;;
 
 'tmux')
-    # check if we have a section already
     if ! (tmux ls | grep -q blah); then
-        if command -v tmuxinator &>/dev/null; then
-            tmuxinator start blah -n blah
-        else
-            echo "Tmuxinator is not installed yet, please install first" >&2
-            exit 1
-        fi
-    else
-        # attach to the session
-        tmux attach-session -t blah
+        tmux new-session -d -s blah -n dev-env-ansible -c "$SCRIPT_DIR"
+        tmux new-window -d -t blah: -n dockers -c "$SCRIPT_DIR"
+        tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
+        tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
     fi
+    tmux attach-session -t blah
     ;;
 
 'run')

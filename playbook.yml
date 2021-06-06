@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - kernel_tools
     - ansible_dev
     - zsh_setup
     - vim_plugin_update
@@ -25,7 +26,6 @@
         - wget
         - tree
         - curl
-        - tmux
         - figlet
         - lolcat
         - smbclient
@@ -40,5 +40,3 @@
         - htop
         - openssh-server
         - net-tools
-        - linux-tools-common
-        - linux-tools-generic

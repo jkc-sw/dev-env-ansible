@@ -1,5 +1,3 @@
 ---
 dependencies:
   - common_settings
-  - tmux_from_source
-  - dotfiles
