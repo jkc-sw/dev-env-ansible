@@ -40,3 +40,4 @@
         - htop
         - openssh-server
         - net-tools
+        - cppcheck
