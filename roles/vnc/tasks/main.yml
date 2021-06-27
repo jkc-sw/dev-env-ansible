@@ -1,0 +1,9 @@
+---
+- name: Install the TurboVNC server
+  become: true
+  apt:
+    deb: "{{ item }}"
+    state: 'present'
+  loop:
+    - "https://sourceforge.net/projects/turbovnc/files/{{ turbovnc_deb_version }}/turbovnc_{{ turbovnc_deb_version }}_amd64.deb/download"
+
