@@ -3,12 +3,12 @@
   include_tasks: others.yml
   when: "ansible_lsb.release == '20.04'"
   vars:
-    clangd_name: 'clangd-11'
-    clang_name: 'clang-11'
+    clangd_name: 'clangd-10'
+    clang_name: 'clang-10'
     pkgs:
       - unzip
-      - clangd-11
-      - clang-11
+      - clangd-10
+      - clang-10
 
 - name: Install LSP dependencies for 18
   include_tasks: others.yml
