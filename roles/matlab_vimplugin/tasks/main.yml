@@ -1,0 +1,22 @@
+---
+- name: Check if the folder exists
+  stat:
+    path: "{{ vim_matlab_repos }}"
+  register: vim_matlab_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "vim_matlab_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ vim_matlab_repos }}"
+  register: git_fetch_vim_matlab
+  changed_when: "git_fetch_vim_matlab.rc != 0"
+
+- name: Get latest source code for vim_matlab
+  git:
+    repo: https://github.com/jkc-sw/vim-matlab.git
+    dest: "{{ vim_matlab_repos }}"
+    clone: true
+    version: "{{ vim_matlab_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_vim_matlab

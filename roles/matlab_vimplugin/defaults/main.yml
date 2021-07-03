@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+vim_matlab_repos: "{{ home_dir + '/repos/vim-matlab.vim' }}"

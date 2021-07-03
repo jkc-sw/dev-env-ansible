@@ -109,3 +109,5 @@ dotfiles_matlab_colorscheme: "{{ dotfiles_repos + '/matlab/ColorSchemeForMATLAB.
 openconnect_repos: "{{ home_dir + '/repos/openconnect' }}"
 tmux_repos: "{{ home_dir + '/repos/tmux' }}"
 turbovnc_deb_version: '2.2.6'
+focus_side_repos: "{{ home_dir + '/repos/focus-side.vim' }}"
+vim_matlab_repos: "{{ home_dir + '/repos/vim-matlab.vim' }}"

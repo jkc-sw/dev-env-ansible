@@ -5,3 +5,4 @@ dependencies:
   - vim_plug_installer
   - vim_lsp_dependencies
   - nvim_from_source
+  - matlab_vimplugin
