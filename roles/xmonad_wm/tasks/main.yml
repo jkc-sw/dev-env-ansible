@@ -4,7 +4,7 @@
   when: install_all | default(false)
   apt:
     name: "{{ item }}"
-    state: absent
+    state: present
   loop:
     - xmonad
     - libghc-xmonad-contrib-dev
