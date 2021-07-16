@@ -457,7 +457,7 @@ case "$1" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install -a -u"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install -a -u && ./rr.sh check"
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -a -u && ./rr.sh check"
     # select docker
