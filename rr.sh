@@ -76,10 +76,10 @@ displayHelp() {
     echo "  -h|--help|h|hel|help  : Print this help command"
     echo ""
     echo "Running the ansible commands or related check"
-    echo "  install-i [-v] [-b]    : Install on the host system (when do it on your production machine) prompting for password"
-    echo "  install [-v] [-b] [-u] : Install on the host system (mostly container) w/o asking for password"
-    echo "  check                  : Do simple check on the host system for all executable"
-    echo "  preupgrade             : Do the necessary stuff to get the system upgraded"
+    echo "  install-i [-v] [-b] [-a]    : Install on the host system (when do it on your production machine) prompting for password"
+    echo "  install [-v] [-b] [-u] [-a] : Install on the host system (mostly container) w/o asking for password"
+    echo "  check                       : Do simple check on the host system for all executable"
+    echo "  preupgrade                  : Do the necessary stuff to get the system upgraded"
     echo ""
     echo "Start a tmux session to develop this repo"
     echo "  tmux            : Start the tmux development session"
@@ -99,6 +99,7 @@ displayHelp() {
     echo "  -v > Provide the -vvv option to the ansigle command to have debug output"
     echo "  -b > Use the HEAD for all the git repo"
     echo "  -u > Will update the dotfile repo"
+    echo "  -a > Install all, like xmonad, etc"
     echo ""
     echo "Arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
@@ -210,6 +211,9 @@ case "$1" in
         'openconnect' \
         'p4' \
         'p4p' \
+        'xmonad' \
+        'xmobar' \
+        'dmenu' \
     )
     ret=0
     for c in "${cmds[@]}"; do
@@ -243,16 +247,20 @@ case "$1" in
     verbose=false
     stable=true
     updateDotfile='{"update_dotfile": false}'
+    installAll='{"install_all": false}'
 
     # parse the argumetns
     shift
-    while getopts ':vbu' opt; do
+    while getopts ':avbu' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
         b)
             stable=false
+            ;;
+        a)
+            installAll='{"install_all": true}'
             ;;
         u)
             updateDotfile='{"update_dotfile": true}'
@@ -268,13 +276,13 @@ case "$1" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
-        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile"
+        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
-        ansible-playbook -vvv playbook.yml --extra-vars "$updateDotfile"
+        ansible-playbook -vvv playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll"
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile"
+        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
     else
-        ansible-playbook playbook.yml --extra-vars "$updateDotfile"
+        ansible-playbook playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll"
     fi
     ;;
 
@@ -283,13 +291,17 @@ case "$1" in
     verbose=false
     stable=true
     updateDotfile='{"update_dotfile": true}'
+    installAll='{"install_all": false}'
 
     # parse the argumetns
     shift
-    while getopts ':vb' opt; do
+    while getopts ':avb' opt; do
         case "$opt" in
         v)
             verbose=true
+            ;;
+        a)
+            installAll='{"install_all": true}'
             ;;
         b)
             stable=false
@@ -307,22 +319,22 @@ case "$1" in
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" | tee $TEST_LOG
+        ansible-playbook -K -vvv playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml --extra-vars "$updateDotfile" | tee $TEST_LOG
+        ansible-playbook -K -vvv playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" | tee $TEST_LOG
+        ansible-playbook -K playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     else
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml --extra-vars "$updateDotfile" | tee $TEST_LOG
+        ansible-playbook -K playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
     fi
     ;;
 
@@ -446,8 +458,8 @@ case "$1" in
 'run-test')
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install -u && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -u && ./rr.sh check"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install -a -u && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -a -u && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then

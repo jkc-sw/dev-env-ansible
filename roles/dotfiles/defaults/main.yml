@@ -14,3 +14,5 @@ stow_targets:
   - kitty
   - rg
   - powershell
+  - xmonad
+  - xmobar

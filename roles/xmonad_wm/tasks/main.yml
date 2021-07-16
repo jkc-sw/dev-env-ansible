@@ -1,0 +1,12 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  when: install_all | default(false)
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - xmonad
+    - libghc-xmonad-contrib-dev
+    - dmenu
+    - xmobar

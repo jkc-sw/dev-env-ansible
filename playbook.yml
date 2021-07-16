@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - xmonad_wm
     - vnc
     - kernel_tools
     - ansible_dev
