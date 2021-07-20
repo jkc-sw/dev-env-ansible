@@ -30,6 +30,7 @@
 - name: Download antigen installer
   get_url:
     url: https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh
+    force: true
     dest: "{{ antigen_installer }}"
     mode: 0755
 

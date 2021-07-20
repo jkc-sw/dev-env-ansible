@@ -17,6 +17,7 @@
 - name: Download the kitty
   get_url:
     url: https://sw.kovidgoyal.net/kitty/installer.sh
+    force: true
     dest: "{{ kitty_installer }}"
     mode: 0755
 
