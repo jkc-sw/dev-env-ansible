@@ -18,7 +18,6 @@
     # - gnome-volume-manager  # not found
     - build-essential
     - libffi-dev
-    - libffi7
     - libgmp-dev
     - libgmp10
     - libncurses-dev
