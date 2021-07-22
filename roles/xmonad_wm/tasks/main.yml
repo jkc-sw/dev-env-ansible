@@ -23,18 +23,24 @@
     - libncurses-dev
     - libncurses5
     - libtinfo5
+    - libx11
+    - libxext
+    - libxinerama
+    - libxrandr
+    - libxscreensaver
+    - libxft-dev
 
-- name: Install the xmonad
-  shell:
-    cmd: |
-      export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 # any nonzero value for noninteractive installation
-      export BOOTSTRAP_HASKELL_NO_UPGRADE=0 # any nonzero value to not trigger the upgrade
-      export GHCUP_USE_XDG_DIRS=1 # any nonzero value to respect The XDG Base Directory Specification
-      export BOOTSTRAP_HASKELL_VERBOSE=1 # any nonzero value for more verbose installation
-      export BOOTSTRAP_HASKELL_INSTALL_STACK=1 # whether to install latest stack
-      export BOOTSTRAP_HASKELL_INSTALL_HLS=1 # whether to install latest hls
-      export BOOTSTRAP_HASKELL_ADJUST_BASHRC=  # whether to adjust PATH in bashrc (prepend)
-      curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-  register: ghcup_install
-  failed_when: "ghcup_install.rc != 0"
-  changed_when: "ghcup_install.rc != 0"
+# - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
+#   shell:
+#     cmd: |
+#       export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 # any nonzero value for noninteractive installation
+#       export BOOTSTRAP_HASKELL_NO_UPGRADE=0 # any nonzero value to not trigger the upgrade
+#       export GHCUP_USE_XDG_DIRS=1 # any nonzero value to respect The XDG Base Directory Specification
+#       export BOOTSTRAP_HASKELL_VERBOSE=1 # any nonzero value for more verbose installation
+#       export BOOTSTRAP_HASKELL_INSTALL_STACK=1 # whether to install latest stack
+#       export BOOTSTRAP_HASKELL_INSTALL_HLS=1 # whether to install latest hls
+#       export BOOTSTRAP_HASKELL_ADJUST_BASHRC=  # whether to adjust PATH in bashrc (prepend)
+#       curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+#   register: ghcup_install
+#   failed_when: "ghcup_install.rc != 0"
+#   changed_when: "ghcup_install.rc != 0"
