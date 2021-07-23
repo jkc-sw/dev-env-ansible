@@ -23,11 +23,6 @@
     - libncurses-dev
     - libncurses5
     - libtinfo5
-    - libx11
-    - libxext
-    - libxinerama
-    - libxrandr
-    - libxscreensaver
     - libxft-dev
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
