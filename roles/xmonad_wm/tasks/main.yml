@@ -30,6 +30,7 @@
     - pavucontrol
     - pulseaudio
     - arandr
+    - feh
 
 - name: Make sure some system dependencies are installed
   become: true
