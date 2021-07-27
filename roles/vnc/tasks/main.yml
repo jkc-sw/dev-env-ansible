@@ -7,14 +7,14 @@
   loop:
     - "https://sourceforge.net/projects/turbovnc/files/{{ turbovnc_deb_version }}/turbovnc_{{ turbovnc_deb_version }}_amd64.deb/download"
 
-- name: Uninstall the TurboVNC server
-  become: true
-  apt:
-    name: 'turbovnc'
-    state: 'absent'
+# - name: Uninstall the TurboVNC server
+#   become: true
+#   apt:
+#     name: 'turbovnc'
+#     state: 'absent'
 
 - name: Install the tigervnc server
   become: true
   apt:
     name: 'tigervnc-standalone-server'
-    state: 'present'
+    state: 'absent'
