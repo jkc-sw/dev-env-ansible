@@ -27,6 +27,10 @@
     - stalonetray
     - xautolock
     - xbacklight
+    - pavucontrol
+    - pulsemixer
+    - pulseaudio
+    - arandr
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:
