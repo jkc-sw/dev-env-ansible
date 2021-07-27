@@ -28,9 +28,17 @@
     - xautolock
     - xbacklight
     - pavucontrol
-    - pulsemixer
     - pulseaudio
     - arandr
+
+- name: Make sure some system dependencies are installed
+  become: true
+  when: "ansible_lsb.release != '16.04' and install_all | default(false)"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - pulsemixer
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:
