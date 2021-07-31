@@ -14,8 +14,8 @@
     - xscreensaver
     - scrot
     - alsa-utils
-    - gnome-power-manager
-    # - gnome-volume-manager  # not found
+    - xfce4-power-manager
+    - compton
     - build-essential
     - libffi-dev
     - libgmp-dev
