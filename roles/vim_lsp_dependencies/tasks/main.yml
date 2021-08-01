@@ -112,7 +112,7 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
-        'python-language-server[all]' \
+        'python-lsp-server[all]' \
         pyyaml \
         cmake-language-server \
         hdl-checker
