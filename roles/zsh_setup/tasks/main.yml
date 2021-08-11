@@ -22,17 +22,17 @@
     path: "{{ omz_installer }}"
     state: absent
 
-- name: Ensure the antigen installer folder exist
+- name: Ensure the antigen installer folder NOT exist
   file:
     path: "{{ antigen_installer | dirname }}"
-    state: directory
+    state: absent
 
-- name: Download antigen installer
-  get_url:
-    url: https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh
-    force: true
-    dest: "{{ antigen_installer }}"
-    mode: 0755
+# - name: Download antigen installer
+#   get_url:
+#     url: https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh
+#     force: true
+#     dest: "{{ antigen_installer }}"
+#     mode: 0755
 
 - name: Change the default shell
   become: true
@@ -42,6 +42,14 @@
     state: present
     append: yes
     groups: 'dialout'
+
+- name: Update zsh plugins
+  shell:
+    cmd: |
+      {{ source_shellfunc }} && update-zsh-plugins
+    executable: /usr/bin/zsh
+  register: zsh_plugin_update
+  changed_when: "zsh_plugin_update.rc != 0"
 
 - name: Add zshrc append
   lineinfile:

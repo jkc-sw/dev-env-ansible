@@ -52,6 +52,8 @@ crates:
     crate: procs
   - exe: sd
     crate: sd
+  - exe: zoxide
+    crate: zoxide
   # - exe: svls
   #   crate: svls
 lua_repo_name: lua-5.4.0
@@ -65,7 +67,7 @@ nvm_install_script: "/tmp/install.sh"
 nvm_sourcer: "{{ home_dir + '/.nvm/nvm.sh' }}"
 zshrc_path: "{{ home_dir + '/.zshrc' }}"
 shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
-source_shellfunc: ". {{ shellfunc_path }}"
+source_shellfunc: ". {{ shellfunc_path }} && sdev "
 nvm_bin: "{{ source_shellfunc }} && nvm"
 use_node: "{{ nvm_bin }} use --lts"
 pwsh_lsp_repos: "{{ home_dir + '/repos/PowerShellEditorServices' }}"
