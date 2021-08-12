@@ -28,7 +28,7 @@
   changed_when: "git_fetch_dotfiles.rc != 0"
 
 - name: Get my dotfiles
-  when: (not dotfiles_repos_ret.stat.exists) and (update_dotfile | default(false))
+  when: (not dotfiles_repos_ret.stat.exists) or (update_dotfile | default(false))
   git:
     repo: https://github.com/jkc-sw/dotfiles.git
     dest: "{{ dotfiles_repos }}"
