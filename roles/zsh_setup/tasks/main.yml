@@ -46,7 +46,7 @@
 - name: Update zsh plugins
   shell:
     cmd: |
-      . {{ zshrc_append_path }} && update-zsh-plugins
+      . {{ zshrc_append_path }} && update_zsh_plugins
     executable: /usr/bin/zsh
   register: zsh_plugin_update
   changed_when: "zsh_plugin_update.rc != 0"
