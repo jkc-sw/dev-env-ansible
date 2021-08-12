@@ -20,7 +20,7 @@
   register: dotfiles_repos_exists
 
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "dotfiles_repos_exists.stat.exists"
+  when: (dotfiles_repos_exists.stat.exists) and (update_dotfile | default(false))
   shell:
     cmd: git fetch --tags -f
     chdir: "{{ dotfiles_repos }}"
@@ -28,7 +28,7 @@
   changed_when: "git_fetch_dotfiles.rc != 0"
 
 - name: Get my dotfiles
-  when: (not dotfiles_repos_ret.stat.exists) or (update_dotfile | default(false))
+  when: (not dotfiles_repos_ret.stat.exists) and (update_dotfile | default(false))
   git:
     repo: https://github.com/jkc-sw/dotfiles.git
     dest: "{{ dotfiles_repos }}"

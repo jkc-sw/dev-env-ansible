@@ -299,7 +299,7 @@ case "$1" in
 
     # parse the argumetns
     shift
-    while getopts ':avb' opt; do
+    while getopts ':avbu' opt; do
         case "$opt" in
         v)
             verbose=true
@@ -309,6 +309,9 @@ case "$1" in
             ;;
         b)
             stable=false
+            ;;
+        u)
+            updateDotfile='{"update_dotfile": true}'
             ;;
         *)
             echo "Unrecognized option $opt" >&2
