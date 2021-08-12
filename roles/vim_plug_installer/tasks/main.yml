@@ -1,13 +1,22 @@
 ---
-- name: Make sure autoload folder for vimplug exists
-  file:
-    path: "{{ vim_plug_script_path | dirname }}"
-    state: directory
+- name: Check if the folder exists
+  stat:
+    path: "{{ packer_repos }}"
+  register: packer_repos_exists
 
-- name: Install vim-plug installer
-  get_url:
-    url: https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    force: true
-    dest: "{{ vim_plug_script_path }}"
-    mode: 0755
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "packer_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ packer_repos }}"
+  register: git_fetch_packer
+  changed_when: "git_fetch_packer.rc != 0"
 
+- name: Get latest source code for packer
+  git:
+    repo: https://github.com/wbthomason/packer.nvim
+    dest: "{{ packer_repos }}"
+    clone: true
+    version: "{{ packer_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_packer

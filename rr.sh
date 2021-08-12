@@ -157,11 +157,15 @@ case "$1" in
         # edit when done
         exit $?
     fi
+
     # below are for the best effort
     . $HOME/.bashrc
     . $HOME/.bashrc_append
+    sdev
+
     # do it here, as I don't want it in bashrc to slow it down
     nvm use --lts
+
     # get a list of commands to check
     cmds=( \
         'bash-language-server' \
