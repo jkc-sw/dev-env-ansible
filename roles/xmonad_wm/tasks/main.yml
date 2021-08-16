@@ -31,6 +31,7 @@
     - pulseaudio
     - arandr
     - feh
+    - pcmanfm
 
 - name: Make sure some system dependencies are installed
   become: true
