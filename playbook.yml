@@ -15,6 +15,7 @@
     # - insync_install
     - openconnect_vpn
     - p4
+    - ghdl
 
   pre_tasks:
     - name: Make sure some system dependencies are installed

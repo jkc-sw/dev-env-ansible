@@ -163,8 +163,8 @@ case "$1" in
     . $HOME/.bashrc_append
     sdev
 
-    # do it here, as I don't want it in bashrc to slow it down
-    nvm use --lts
+    # # do it here, as I don't want it in bashrc to slow it down
+    # nvm use --lts
 
     # get a list of commands to check
     cmds=( \

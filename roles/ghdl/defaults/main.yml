@@ -1,0 +1,3 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+ghdl_repos: "{{ home_dir + '/repos/ghdl' }}"
