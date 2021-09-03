@@ -44,4 +44,5 @@
         - openssh-server
         - net-tools
         - cppcheck
+        - moreutils
         - util-linux
