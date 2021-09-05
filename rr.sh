@@ -240,6 +240,7 @@ case "$1" in
     # below are for the best effort
     . $HOME/.bashrc
     . $HOME/.bashrc_append
+    sdev
     # do it here, as I don't want it in bashrc to slow it down
     nvm use --lts
     # Do the node upgrade
