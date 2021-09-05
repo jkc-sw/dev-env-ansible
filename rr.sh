@@ -72,36 +72,45 @@ displayHelp() {
     echo "${BASH_SOURCE[0]} [...]"
     echo " One-stop shop for to do everything related to this repository"
     echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "Display Help"
-    echo "  -h|--help|h|hel|help  : Print this help command"
+    echo " -h|--help|h|hel|help  : Print this help command"
     echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "Running the ansible commands or related check"
-    echo "  install-i [-v] [-b] [-a]    : Install on the host system (when do it on your production machine) prompting for password"
-    echo "  install [-v] [-b] [-u] [-a] : Install on the host system (mostly container) w/o asking for password"
-    echo "  check                       : Do simple check on the host system for all executable"
-    echo "  preupgrade                  : Do the necessary stuff to get the system upgraded"
+    echo " install-i [-v] [-b] [-a]    : Install on the host system (when do it on your production machine) prompting for password"
+    echo " install [-v] [-b] [-u] [-a] : Install on the host system (mostly container) w/o asking for password"
+    echo " check                       : Do simple check on the host system for all executable"
+    echo " preupgrade                  : Do the necessary stuff to get the system upgraded"
     echo ""
+    echo "  where"
+    echo "   -v > Provide the -vvv option to the ansigle command to have debug output"
+    echo "   -b > Use the HEAD for all the git repo"
+    echo "   -u > Will update the dotfile repo"
+    echo "   -a > Install all, like xmonad, etc"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Create a new row template"
+    echo " new-role NAME : Create a new role with some default"
+    echo ""
+    echo "  where:"
+    echo "   NAME : The name of the role appears in the folder"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "Start a tmux session to develop this repo"
-    echo "  tmux            : Start the tmux development session"
+    echo " tmux : Start the tmux development session"
     echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
-    echo "  run [ver]        : Start a new docker container only"
-    echo "  run-build [ver]  : Start a new docker container and run ansible-playbook"
-    echo "  commit ID TAG    : Commit a running docker container ID with the TAG specified"
-    echo "  use TAG [-w dir] : Start a committed image only"
-    echo "  list             : List all the images"
-    echo "  use-build TAG    : Start a committed image and run ansible-playbook"
+    echo " run [ver]        : Start a new docker container only"
+    echo " run-build [ver]  : Start a new docker container and run ansible-playbook"
+    echo " commit ID TAG    : Commit a running docker container ID with the TAG specified"
+    echo " use TAG [-w dir] : Start a committed image only"
+    echo " list             : List all the images"
+    echo " use-build TAG    : Start a committed image and run ansible-playbook"
+    echo " run-test [ver]   : Start a new docker container and run simple CI test"
     echo ""
-    echo "This is used by CI to do testing"
-    echo "  run-test [ver]  : Start a new docker container and run simple CI test"
-    echo ""
-    echo "Options:"
-    echo "  -v > Provide the -vvv option to the ansigle command to have debug output"
-    echo "  -b > Use the HEAD for all the git repo"
-    echo "  -u > Will update the dotfile repo"
-    echo "  -a > Install all, like xmonad, etc"
-    echo ""
-    echo "Arguments:"
+    echo " arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
     echo "  ID  > This is the container name or ID to use to make a commit, full name required"
     echo "  TAG > This is by your preference on how the commited container to be tagged"
@@ -147,6 +156,49 @@ install_ansible() {
 case "$1" in
 '-h'|'--help'|'h'|'hel'|'help')
     displayHelp
+    ;;
+
+'new-role')
+    # need 1 argrs
+    shift
+    if test "$#" -ne 1; then
+        echo "Need 1 argument <NAME> for the role to be created" >&2
+        exit 1
+    fi
+    name="$1"
+
+    # create the folders
+    mkdir -p "$SCRIPT_DIR/roles/$name/meta"
+    mkdir -p "$SCRIPT_DIR/roles/$name/tasks"
+    mkdir -p "$SCRIPT_DIR/roles/$name/defaults"
+
+    # write meta
+    echo '---'                      >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo 'dependencies:'            >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo '  - common_settings'      >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo ''                         >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo '# vim:et ts=4 sts=4 sw=4' >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+
+    # write tasks
+    echo '---'                                      >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo '- name: PLACEHOLDER'                      >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo '  fail:'                                  >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo ''                                         >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo '# vim:et ts=4 sts=4 sw=4'                 >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+
+    # write defaults
+    echo '---'                      >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo ''                         >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo '# vim:et ts=4 sts=4 sw=4' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+
+    # add to playbook in case I forgot
+    awk "1;/roles:/{print \"    - $name\"}" "$SCRIPT_DIR/playbook.yml" > "$SCRIPT_DIR/playbook.yml.tmp"
+    if test "$?" -eq 0; then
+        test -r "$SCRIPT_DIR/playbook.yml.tmp" && mv "$SCRIPT_DIR/playbook.yml.tmp" "$SCRIPT_DIR/playbook.yml"
+    else
+        test -r "$SCRIPT_DIR/playbook.yml.tmp" && rm "$SCRIPT_DIR/playbook.yml.tmp"
+    fi
     ;;
 
 'check')
