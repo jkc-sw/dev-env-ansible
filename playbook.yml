@@ -46,3 +46,4 @@
         - cppcheck
         - moreutils
         - util-linux
+        - coreutils
