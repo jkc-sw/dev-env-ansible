@@ -2,6 +2,8 @@
 - hosts: local
   gather_facts: true
   roles:
+    - openjdk_install
+    - lttng_install
     - xmonad_wm
     - vnc
     - kernel_tools

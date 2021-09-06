@@ -1,0 +1,14 @@
+---
+- name: Install OpenJDK
+  when: "ansible_lsb.release != '16.04'"
+  become: true
+  apt:
+    name: ['openjdk-11-jdk']
+
+- name: Install OpenJDK
+  when: "ansible_lsb.release == '16.04'"
+  become: true
+  apt:
+    name: ['openjdk-8-jdk']
+
+# vim:et ts=2 sts=2 sw=2

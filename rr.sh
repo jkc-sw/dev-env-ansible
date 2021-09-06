@@ -177,7 +177,7 @@ case "$1" in
     echo 'dependencies:'            >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
     echo '  - common_settings'      >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
     echo ''                         >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
-    echo '# vim:et ts=4 sts=4 sw=4' >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
 
     # write tasks
     echo '---'                                      >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
@@ -185,12 +185,12 @@ case "$1" in
     echo '  fail:'                                  >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
     echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
     echo ''                                         >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo '# vim:et ts=4 sts=4 sw=4'                 >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
 
     # write defaults
     echo '---'                      >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
     echo ''                         >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo '# vim:et ts=4 sts=4 sw=4' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
 
     # add to playbook in case I forgot
     awk "1;/roles:/{print \"    - $name\"}" "$SCRIPT_DIR/playbook.yml" > "$SCRIPT_DIR/playbook.yml.tmp"

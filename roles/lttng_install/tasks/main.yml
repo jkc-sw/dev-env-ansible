@@ -1,0 +1,15 @@
+---
+- name: Add lttng repo
+  become: true
+  apt_repository:
+    repo: ppa:lttng/ppa
+    state: present
+    update_cache: true
+
+- name: Install babeltrace2
+  become: true
+  apt:
+    name: ['babeltrace2']
+    state: present
+
+# vim:et ts=2 sts=2 sw=2
