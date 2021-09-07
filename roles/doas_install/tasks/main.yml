@@ -48,9 +48,11 @@
 
 - name: Create config file for doas
   become: true
-  template:
-    backup: true
-    src: doas.conf.j2
-    dest: '/usr/local/etc/doas.conf'
+  lineinfile:
+    create: true
+    path: /usr/local/etc/doas.conf
+    state: present
+    line: "permit {{ ansible_user_id }} as root"
+    regexp: "permit {{ ansible_user_id }} as root"
 
 # vim:et ts=2 sts=2 sw=2
