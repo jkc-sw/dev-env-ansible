@@ -1,0 +1,56 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+  loop:
+    - build-essential
+    - make
+    - bison
+    - flex
+    - libpam0g-dev
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ doas_repos }}"
+  register: doas_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "doas_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ doas_repos }}"
+  register: git_fetch_doas
+  changed_when: "git_fetch_doas.rc != 0"
+
+- name: Get latest source code for doas
+  git:
+    repo: https://github.com/slicer69/doas.git
+    dest: "{{ doas_repos }}"
+    clone: true
+    version: "{{ doas_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_doas
+
+- name: Compile doas
+  when: git_clone_doas.changed
+  community.general.make:
+    chdir: "{{ doas_repos }}"
+  register: doas_built
+
+- name: Install doas
+  when: doas_built.changed
+  community.general.make:
+    chdir: "{{ doas_repos }}"
+    target: install
+  become: true
+
+- name: Create config file for doas
+  become: true
+  template:
+    backup: true
+    src: doas.conf.j2
+    dest: '/usr/local/etc/doas.conf'
+
+# vim:et ts=2 sts=2 sw=2

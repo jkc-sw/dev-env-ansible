@@ -45,3 +45,13 @@
   with_items: "{{ stow_targets }}"
   changed_when: "restow.rc != 0"
 
+- name: Stow the destination with sudo
+  become: true
+  shell:
+    cmd: "stow -t / --no-folding -R {{ item }}"
+    chdir: "{{ dotfiles_repos }}"
+    executable: /bin/bash
+  register: restow
+  with_items: "{{ stow_targets_with_root }}"
+  changed_when: "restow.rc != 0"
+

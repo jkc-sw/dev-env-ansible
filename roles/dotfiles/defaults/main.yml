@@ -16,3 +16,5 @@ stow_targets:
   - powershell
   - xmonad
   - xmobar
+stow_targets_with_root:
+  - doas_root
