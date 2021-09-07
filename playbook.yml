@@ -50,3 +50,4 @@
         - moreutils
         - util-linux
         - coreutils
+        - software-properties-common

@@ -1,10 +1,21 @@
 ---
 - name: Add lttng repo
+  when: "ansible_lsb.release != '18.04'"
   become: true
   apt_repository:
     repo: ppa:lttng/stable-2.12
     state: present
     update_cache: true
+
+- name: Add lttng repo
+  when: "ansible_lsb.release == '18.04'"
+  become: true
+  shell:
+    cmd: 'add-apt-repository -y ppa:lttng/stable-2.12'
+    executable: /bin/bash
+  register: add_lttng_repo
+  changed_when: 'add_lttng_repo.rc != 0'
+  failed_when: 'add_lttng_repo.rc != 0'
 
 - name: Install babeltrace2
   become: true
