@@ -2,7 +2,7 @@
 - name: Add lttng repo
   become: true
   apt_repository:
-    repo: ppa:lttng/ppa
+    repo: ppa:lttng/stable-2.12
     state: present
     update_cache: true
 
