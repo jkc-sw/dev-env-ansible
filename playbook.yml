@@ -51,3 +51,12 @@
         - util-linux
         - coreutils
         - software-properties-common
+
+    - name: Make sure some system dependencies are installed without Ubuntu 16.04
+      become: true
+      when: "ansible_lsb.release != '16.04'"
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - rclone
