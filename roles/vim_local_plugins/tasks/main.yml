@@ -1,0 +1,9 @@
+---
+- name: Install local plugins
+  include_tasks: do.yml
+  vars:
+    vim_lplugin_repos: "{{ item.repo }}"
+    vim_lplugin_url: "{{ item.url }}"
+  with_items: "{{ vim_local_plugins }}"
+
+# vim:et ts=2 sts=2 sw=2

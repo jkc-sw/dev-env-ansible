@@ -32,8 +32,13 @@
     - arandr
     - feh
     - pcmanfm
+    - dunst
+    - lxsession
+    - network-manager
+    - volumeicon-alsa
+    - bluez
 
-- name: Make sure some system dependencies are installed
+- name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
   when: "ansible_lsb.release != '16.04' and install_all | default(false)"
   apt:

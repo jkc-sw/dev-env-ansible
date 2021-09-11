@@ -1,0 +1,9 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+vim_local_plugins:
+  - repo: "{{ home_dir + '/repos/vim-matlab.vim' }}"
+    url: https://github.com/jkc-sw/vim-matlab.git
+  - repo: "{{ home_dir + '/repos/focus-side.vim' }}"
+    url: https://github.com/jkc-sw/focus-side.vim.git
+
+# vim:et ts=2 sts=2 sw=2

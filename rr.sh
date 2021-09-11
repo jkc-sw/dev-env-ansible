@@ -347,7 +347,7 @@ case "$1" in
     # var
     verbose=false
     stable=true
-    updateDotfile='{"update_dotfile": true}'
+    updateDotfile='{"update_dotfile": false}'
     installAll='{"install_all": false}'
 
     # parse the argumetns
