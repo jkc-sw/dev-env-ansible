@@ -220,15 +220,11 @@ case "$1" in
 
     # get a list of commands to check
     cmds=( \
-        'bash-language-server' \
-        'docker-langserver' \
-        'gtop' \
         # 'svls' \
-        'tree-sitter' \
-        'typescript-language-server' \
-        'vscode-json-languageserver' \
         'ansible' \
         'ansible-playbook' \
+        'asdf' \
+        'bash-language-server' \
         'bat' \
         'caddy' \
         'cargo' \
@@ -236,19 +232,29 @@ case "$1" in
         'clangd' \
         'conda' \
         'ctags' \
+        'dmenu' \
+        'doas' \
         'docker' \
+        'docker-langserver' \
         'doxygen' \
         'dust' \
         'exa' \
         'fd' \
         'git' \
+        'gtop' \
+        'java' \
+        'javac' \
         'kitty' \
         'lua' \
         'luarocks' \
+        'nethogs' \
         'node' \
         'npm' \
         'nvim' \
         'nvm' \
+        'openconnect' \
+        'p4' \
+        'p4p' \
         'procs' \
         'pwsh' \
         'python3' \
@@ -256,20 +262,21 @@ case "$1" in
         'rustc' \
         'rustup' \
         'sd' \
-        'nethogs' \
-        'wireshark' \
-        'tshark' \
         'starship' \
         'tmux' \
+        'toclip' \
         'tokei' \
+        'tree-sitter' \
+        'tshark' \
+        'typescript-language-server' \
+        'vncserver' \
+        'vscode-json-languageserver' \
+        'wireshark' \
+        'xclip' \
+        'xmobar' \
+        'xmonad' \
         'yaml-language-server' \
         'yarn' \
-        'openconnect' \
-        'p4' \
-        'p4p' \
-        'xmonad' \
-        'xmobar' \
-        'dmenu' \
     )
     ret=0
     for c in "${cmds[@]}"; do
