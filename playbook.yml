@@ -6,9 +6,7 @@
     - openjdk_install
     - lttng_install
     - xmonad_wm
-    - vnc
     - kernel_tools
-    - ansible_dev
     - zsh_setup
     - vim_plugin_update
     - caddy_install
