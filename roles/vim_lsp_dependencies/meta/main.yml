@@ -6,3 +6,4 @@ dependencies:
   - pwsh_lsp_deps
   - nvm_nodejs_yarn
   - conda_install
+  - ansible_dev
