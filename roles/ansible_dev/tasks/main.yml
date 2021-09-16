@@ -26,6 +26,8 @@
         --no-python-version-warning \
         install \
         ansible-lint \
+        lxml \
+        requests
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"
