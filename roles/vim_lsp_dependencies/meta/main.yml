@@ -7,3 +7,4 @@ dependencies:
   - nvm_nodejs_yarn
   - conda_install
   - ansible_dev
+  - llvm_from_source

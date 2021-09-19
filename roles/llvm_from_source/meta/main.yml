@@ -2,3 +2,5 @@
 dependencies:
   - common_settings
   - cmake_from_source
+
+# vim:et ts=2 sts=2 sw=2

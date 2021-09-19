@@ -18,3 +18,4 @@ stow_targets:
   - xmobar
 stow_targets_with_root:
   - doas_root
+  - xmobar_root

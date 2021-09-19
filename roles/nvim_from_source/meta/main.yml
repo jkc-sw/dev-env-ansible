@@ -4,3 +4,4 @@ dependencies:
   - ctags_from_source
   - doxygen_from_source
   - general_cargo_install
+  - cmake_from_source

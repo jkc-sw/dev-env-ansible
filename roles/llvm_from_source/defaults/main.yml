@@ -1,0 +1,5 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+llvm_repos: "{{ home_dir + '/repos/llvm' }}"
+
+# vim:et ts=2 sts=2 sw=2

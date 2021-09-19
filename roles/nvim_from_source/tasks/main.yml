@@ -44,7 +44,6 @@
     - libtool-bin
     - autoconf
     - automake
-    - cmake
     - g++
     - pkg-config
     - unzip

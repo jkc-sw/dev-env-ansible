@@ -39,7 +39,6 @@
     state: 'present'
   loop:
     - python
-    - cmake
     - flex
     - bison
     - build-essential

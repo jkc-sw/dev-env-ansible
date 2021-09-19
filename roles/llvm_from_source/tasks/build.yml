@@ -1,0 +1,79 @@
+---
+- name: Check if clang is installed
+  shell: command -v clang && echo good || echo bad
+  register: llvm_present
+  changed_when: "'bad' in llvm_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ llvm_repos }}"
+  register: llvm_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "llvm_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --depth 1 --tags -f
+    chdir: "{{ llvm_repos }}"
+  register: git_fetch_llvm
+  changed_when: "git_fetch_llvm.rc != 0"
+
+- name: Get latest source code for llvm
+  git:
+    repo: https://github.com/llvm/llvm-project.git
+    dest: "{{ llvm_repos }}"
+    depth: 1
+    clone: true
+    version: "{{ llvm_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_llvm
+
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+  loop:
+    - ninja-build
+    - build-essential
+    - make
+    - python3
+    - zlib1g-dev
+    - g++
+
+- name: Create the build folder
+  file:
+    path: "{{ llvm_repos }}/build"
+    state: 'directory'
+
+- name: Configure before running build for llvm
+  when: git_clone_llvm.changed or llvm_present.changed
+  shell:
+    chdir: "{{ llvm_repos }}/build"
+    cmd: |
+      cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
+        -DLIBCLANG_BUILD_STATIC=ON \
+        -DLLVM_TARGETS_TO_BUILD=host \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DLLVM_ENABLE_PIC=OFF \
+        -DLLVM_BUILD_LLVM_DYLIB=OFF \
+        -DLLVM_BUILD_LLVM_C_DYLIB=OFF \
+        -DLLVM_ENABLE_TERMINFO=OFF \
+        -G "Ninja" \
+        ../llvm
+
+- name: Compile, update llvm
+  when: git_clone_llvm.changed or llvm_present.changed
+  shell:
+    chdir: "{{ llvm_repos }}/build"
+    cmd: |
+      ninja
+
+- name: Compile, update and install llvm
+  when: git_clone_llvm.changed or llvm_present.changed
+  become: true
+  shell:
+    chdir: "{{ llvm_repos }}/build"
+    cmd: |
+      ninja install

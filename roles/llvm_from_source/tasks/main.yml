@@ -1,0 +1,26 @@
+---
+- name: Remove clang from ubuntu 20
+  become: true
+  when: "ansible_lsb.release == '20.04'"
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - clangd-10
+    - clang-10
+
+- name: Remove clang from ubuntu 18
+  become: true
+  when: "ansible_lsb.release == '18.04'"
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - clangd-10
+    - clang-10
+
+- name: Build llvm clang clangd for Ubuntu 18 and up
+  include_tasks: build.yml
+  when: "ansible_lsb.release != '16.04'"
+
+# vim:et ts=2 sts=2 sw=2
