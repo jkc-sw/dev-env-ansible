@@ -44,6 +44,7 @@
     - build-essential
     - git
     - graphviz
+    - ninja-build
 
 - name: Create the build folder
   file:
@@ -55,19 +56,24 @@
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |
-      cmake -G "Unix Makefiles" ..
+      cmake -G "Ninja" \
+        -DCMAKE_BUILD_TYPE=Release \
+        "-DCMAKE_FIND_LIBRARY_SUFFIXES=.a" \
+        -Duse_libclang=YES \
+        ..
 
 - name: Compile doxygen
   when: git_clone_doxygen.changed or doxygen_present.changed
-  community.general.make:
-    chdir: "{{ doxygen_repos }}/build"
-  register: doxygen_built
+  shell:
+    chdir: "{{ llvm_repos }}/build"
+    cmd: |
+      ninja
 
 - name: update doxygen
   when: git_clone_doxygen.changed or doxygen_present.changed
-  community.general.make:
-    chdir: "{{ doxygen_repos }}/build"
-    target: install
-  register: doxygen_built
   become: true
+  shell:
+    chdir: "{{ llvm_repos }}/build"
+    cmd: |
+      ninja install
 

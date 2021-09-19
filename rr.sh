@@ -230,6 +230,7 @@ case "$1" in
         'cargo' \
         'clang' \
         'clangd' \
+        'cmake' \
         'conda' \
         'ctags' \
         'dmenu' \
@@ -270,7 +271,7 @@ case "$1" in
         'tshark' \
         'typescript-language-server' \
         'vncserver' \
-        'vscode-json-languageserver' \
+        'vscode-json-language-server' \
         'wireshark' \
         'xclip' \
         'xmobar' \
