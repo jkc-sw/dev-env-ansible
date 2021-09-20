@@ -1,0 +1,27 @@
+---
+- name: Verbose description
+  debug:
+    msg: "Working on {{ repo_url }}"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ repo_name }}"
+  register: repo_name_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "repo_name_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ repo_name }}"
+  register: git_fetch_repo
+  changed_when: "git_fetch_repo.rc != 0"
+
+- name: Get latest source code for
+  git:
+    repo: "{{ repo_url }}"
+    dest: "{{ repo_name }}"
+    clone: true
+    version: "{{ repo_version | default('HEAD') }}"
+    update: true
+
+# vim:et ts=2 sts=2 sw=2

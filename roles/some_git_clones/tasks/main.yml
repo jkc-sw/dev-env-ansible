@@ -1,0 +1,18 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+  loop:
+    - git
+
+- name: Check out many repos
+  include_tasks: do.yml
+  vars:
+    repo_name: "{{ item.repo }}"
+    repo_url: "{{ item.url }}"
+    repo_version: "{{ item.version }}"
+  with_items: "{{ some_git_clones }}"
+
+# vim:et ts=2 sts=2 sw=2

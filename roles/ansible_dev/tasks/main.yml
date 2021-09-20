@@ -27,6 +27,8 @@
         install \
         ansible-lint \
         lxml \
+        pyqtgraph \
+        docker-compose \
         requests
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
