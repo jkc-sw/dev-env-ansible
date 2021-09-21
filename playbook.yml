@@ -47,6 +47,7 @@
         - cppcheck
         - moreutils
         - util-linux
+        - parallel
         - coreutils
         - software-properties-common
 

@@ -45,6 +45,24 @@
     path: "{{ llvm_repos }}/build"
     state: 'directory'
 
+# - name: Configure before running build for llvm
+#   when: git_clone_llvm.changed or llvm_present.changed
+#   shell:
+#     chdir: "{{ llvm_repos }}/build"
+#     cmd: |
+#       cmake \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
+#         -DLLVM_TARGETS_TO_BUILD=host \
+#         -DLIBCLANG_BUILD_STATIC=ON \
+#         -DBUILD_SHARED_LIBS=OFF \
+#         -DLLVM_ENABLE_PIC=OFF \
+#         -DLLVM_BUILD_LLVM_DYLIB=OFF \
+#         -DLLVM_BUILD_LLVM_C_DYLIB=OFF \
+#         -DLLVM_ENABLE_TERMINFO=OFF \
+#         -G "Ninja" \
+#         ../llvm
+
 - name: Configure before running build for llvm
   when: git_clone_llvm.changed or llvm_present.changed
   shell:

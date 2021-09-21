@@ -51,18 +51,20 @@
     path: "{{ doxygen_repos }}/build"
     state: 'directory'
 
-- name: Configure before running build for doxygen
-  when: ansible_lsb.release != '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
-  shell:
-    chdir: "{{ doxygen_repos }}/build"
-    cmd: |
-      cmake -G "Ninja" \
-        -DCMAKE_BUILD_TYPE=Release \
-        -Duse_libclang=YES \
-        ..
+# - name: Configure before running build for doxygen
+#   when: ansible_lsb.release != '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
+#   shell:
+#     chdir: "{{ doxygen_repos }}/build"
+#     cmd: |
+#       cmake -G "Ninja" \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DCMAKE_FIND_LIBRARY_SUFFIXES=.a \
+#         -Duse_libclang=YES \
+#         ..
 
 - name: Configure before running build for doxygen
-  when: ansible_lsb.release == '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
+  # when: ansible_lsb.release == '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
+  when: git_clone_doxygen.changed or doxygen_present.changed
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |

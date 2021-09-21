@@ -20,7 +20,7 @@
     - clang-10
 
 - name: Build llvm clang clangd for Ubuntu 18 and up
-  include_tasks: build.yml
+  include_tasks: other.yml
   when: "ansible_lsb.release != '16.04'"
 
 # vim:et ts=2 sts=2 sw=2
