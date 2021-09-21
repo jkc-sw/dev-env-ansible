@@ -52,8 +52,7 @@
     state: 'directory'
 
 - name: Configure before running build for doxygen
-  when: "ansible_lsb.release != '16.04'"
-  when: git_clone_doxygen.changed or doxygen_present.changed
+  when: ansible_lsb.release != '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |
@@ -63,8 +62,7 @@
         ..
 
 - name: Configure before running build for doxygen
-  when: "ansible_lsb.release == '16.04'"
-  when: git_clone_doxygen.changed or doxygen_present.changed
+  when: ansible_lsb.release == '16.04' and (git_clone_doxygen.changed or doxygen_present.changed)
   shell:
     chdir: "{{ doxygen_repos }}/build"
     cmd: |
@@ -75,7 +73,7 @@
 - name: Compile doxygen
   when: git_clone_doxygen.changed or doxygen_present.changed
   shell:
-    chdir: "{{ llvm_repos }}/build"
+    chdir: "{{ doxygen_repos }}/build"
     cmd: |
       ninja
 
@@ -83,7 +81,7 @@
   when: git_clone_doxygen.changed or doxygen_present.changed
   become: true
   shell:
-    chdir: "{{ llvm_repos }}/build"
+    chdir: "{{ doxygen_repos }}/build"
     cmd: |
       ninja install
 
