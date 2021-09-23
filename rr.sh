@@ -256,6 +256,7 @@ case "$1" in
         'openconnect' \
         'p4' \
         'p4p' \
+        'p4v' \
         'procs' \
         'pwsh' \
         'python3' \
@@ -267,6 +268,7 @@ case "$1" in
         'tmux' \
         'toclip' \
         'tokei' \
+        'tracecompass' \
         'tree-sitter' \
         'tshark' \
         'typescript-language-server' \
