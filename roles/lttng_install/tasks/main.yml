@@ -23,4 +23,36 @@
     name: ['babeltrace2']
     state: present
 
+- name: Make sure local bin exist
+  file:
+    path: "{{ local_bin }}"
+    state: directory
+
+- name: See if tracecompass is there already
+  stat:
+    path: "{{ tracecompass_bin }}"
+  register: tracecompass_present
+
+- name: Make sure tracecompass dir is there
+  file:
+    path: "{{ tracecompass_dir }}"
+    state: directory
+
+- name: Install tracecompass
+  when: "not tracecompass_present.stat.exists"
+  unarchive:
+    remote_src: yes
+    src: "https://mirrors.jevincanders.net/eclipse/tracecompass/releases/7.1.0/rcp/trace-compass-7.1.0-20210908-1318-linux.gtk.x86_64.tar.gz"
+    keep_newer: yes
+    dest: "{{ local_dir }}"
+  register: download_fonts
+  changed_when: "download_fonts.failed"
+  failed_when: "download_fonts.failed"
+
+- name: Make sure tracecompass is properly symlinked
+  file:
+    path: "{{ tracecompass_link }}"
+    src: "{{ tracecompass_bin }}"
+    state: link
+
 # vim:et ts=2 sts=2 sw=2

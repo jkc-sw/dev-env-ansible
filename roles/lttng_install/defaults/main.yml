@@ -1,3 +1,9 @@
 ---
+home_dir: "{{ ansible_env.HOME }}"
+local_dir: "{{ home_dir + '/.local' }}"
+local_bin: "{{ local_dir + '/bin' }}"
+tracecompass_dir: "{{ local_dir + '/trace-compass' }}"
+tracecompass_bin: "{{ tracecompass_dir + '/tracecompass' }}"
+tracecompass_link: "{{ local_bin + '/tracecompass' }}"
 
 # vim:et ts=2 sts=2 sw=2

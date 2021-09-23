@@ -3,7 +3,6 @@
   gather_facts: true
   roles:
     - doas_install
-    - openjdk_install
     - lttng_install
     - xmonad_wm
     - kernel_tools
