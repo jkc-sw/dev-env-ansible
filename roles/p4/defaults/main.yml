@@ -1,0 +1,10 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+local_dir: "{{ home_dir + '/.local' }}"
+p4v_url: https://ftp.perforce.com/perforce/r21.2/bin.linux26x86_64/p4v.tgz
+p4v_checksum: sha256:77c6012f5d1afa25ef9ace21f00afdad2f9fafc4bb45a3a5a2ac3b639c509d5b
+p4v_src_tgz: "{{ local_dir + '/p4v.tgz' }}"
+p4v_src_dir: "{{ local_dir + '/p4v-2021.2.2138880' }}"
+p4v_dir: "{{ local_dir + '/p4v' }}"
+
+# vim:et ts=2 sts=2 sw=2

@@ -27,13 +27,6 @@
     path: "{{ antigen_installer | dirname }}"
     state: absent
 
-# - name: Download antigen installer
-#   get_url:
-#     url: https://raw.githubusercontent.com/zsh-users/antigen/master/bin/antigen.zsh
-#     force: true
-#     dest: "{{ antigen_installer }}"
-#     mode: 0755
-
 - name: Change the default shell
   become: true
   user:
