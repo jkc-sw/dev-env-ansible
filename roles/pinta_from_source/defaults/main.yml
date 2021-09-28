@@ -1,5 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-pinta_repos: "{{ home_dir + '/repos/pinta' }}"
-
-# vim:et ts=2 sts=2 sw=2

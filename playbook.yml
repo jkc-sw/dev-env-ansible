@@ -2,7 +2,6 @@
 - hosts: local
   gather_facts: true
   roles:
-    - pinta_from_source
     - doas_install
     - lttng_install
     - xmonad_wm
