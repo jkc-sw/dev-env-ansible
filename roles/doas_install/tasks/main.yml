@@ -36,7 +36,6 @@
 - name: Compile doas
   when: git_clone_doas.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ doas_repos }}"
   register: doas_built
 

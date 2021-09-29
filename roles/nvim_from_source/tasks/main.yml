@@ -60,7 +60,6 @@
 - name: Compile, update neovim
   when: git_clone_neovim.changed or nvim_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ nvim_repos }}"
     params:
       CMAKE_BUILD_TYPE: RelWithDebInfo

@@ -45,7 +45,6 @@
 - name: Compile and update lua
   when: lua_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ lua_repos }}"
     target: all
   register: compile_lua
@@ -109,7 +108,6 @@
 - name: Compile and update luarocks
   when: luarocks_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ luarocks_repos }}"
     target: all
   register: compile_luarocks

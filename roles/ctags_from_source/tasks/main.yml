@@ -61,7 +61,6 @@
 - name: Compile ctags
   when: git_clone_ctags.changed or ctags_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ ctags_repos }}"
   register: ctags_built
 

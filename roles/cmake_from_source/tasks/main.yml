@@ -53,7 +53,6 @@
 - name: Compile cmake
   when: git_clone_cmake.changed or cmake_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ cmake_repos }}"
   register: cmake_built
 

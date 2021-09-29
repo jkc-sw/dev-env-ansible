@@ -70,7 +70,6 @@
 - name: Compile openconnect
   when: git_clone_openconnect.changed or openconnect_present.changed
   community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ openconnect_repos }}"
   register: openconnect_built
 
