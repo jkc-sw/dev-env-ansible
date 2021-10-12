@@ -29,6 +29,7 @@
         lxml \
         pyqtgraph \
         docker-compose \
+        more_itertools \
         requests
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
