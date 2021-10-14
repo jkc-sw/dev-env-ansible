@@ -8,3 +8,4 @@ ps_modules:
   - name: 'Microsoft.Graph'
   - name: 'PSFzf'
   - name: 'InvokeBuild'
+  - name: 'Profiler'
