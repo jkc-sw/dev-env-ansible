@@ -9,3 +9,4 @@ ps_modules:
   - name: 'PSFzf'
   - name: 'InvokeBuild'
   - name: 'Profiler'
+  - name: 'JiraPS'

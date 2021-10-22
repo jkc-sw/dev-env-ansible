@@ -241,6 +241,7 @@ case "$1" in
         'dust' \
         'exa' \
         'fd' \
+        'fzf' \
         'git' \
         'gtop' \
         'java' \
