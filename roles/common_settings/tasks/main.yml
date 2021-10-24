@@ -1,0 +1,44 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+    update_cache: true
+  loop:
+    - git
+    - wget
+    - tree
+    - curl
+    - figlet
+    - lolcat
+    - smbclient
+    - samba-common
+    - cifs-utils
+    - gdb
+    - apt-transport-https
+    - pv
+    - nmap
+    - gawk
+    - xvfb
+    - htop
+    - openssh-server
+    - net-tools
+    - cppcheck
+    - moreutils
+    - util-linux
+    - parallel
+    - coreutils
+    - software-properties-common
+    - pdfgrep
+
+- name: Make sure some system dependencies are installed without Ubuntu 16.04
+  become: true
+  when: "ansible_lsb.release != '16.04'"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - rclone
+
+# vim:et ts=2 sts=2 sw=2
