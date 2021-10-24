@@ -221,6 +221,7 @@ case "$1" in
     # get a list of commands to check
     cmds=( \
         # 'svls' \
+        # 'fzf' \
         'ansible' \
         'ansible-playbook' \
         'asdf' \
@@ -241,7 +242,6 @@ case "$1" in
         'dust' \
         'exa' \
         'fd' \
-        'fzf' \
         'git' \
         'gtop' \
         'java' \
