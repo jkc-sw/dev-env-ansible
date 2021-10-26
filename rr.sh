@@ -33,6 +33,32 @@ DEV_ENV_REPOSITORY_NAME=devenvansible
 RUN_PREFIX_FOR_NAME=run
 USE_PREFIX_FOR_NAME=use
 
+# Temp playbook
+TEMP_PLAYBOOK_PATH="$SCRIPT_DIR/anyrole.yml"
+WHOLE_PLAYBOOK_PATH="$SCRIPT_DIR/playbook.yml"
+
+# Write playbook
+# @brief Create temp playbook for a role
+# @param role - The name of the role to put in the playbook
+writePlaybook() {
+    # role is
+    role="$1"
+
+    # Find all the roles
+    if ! ls "$SCRIPT_DIR/roles" | grep -q "$role"; then
+        echo "role $role cannot be found in the ./roles folder" >&2
+        exit 1
+    fi
+
+    cat <<EOF > "$TEMP_PLAYBOOK_PATH"
+---
+- hosts: local
+  gather_facts: true
+  roles:
+    - $role
+EOF
+}
+
 # define a function to perform check
 ansibleCheck() {
     # perform test
@@ -78,10 +104,13 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Running the ansible commands or related check"
-    echo " install-i [-v] [-b] [-a]    : Install on the host system (when do it on your production machine) prompting for password"
-    echo " install [-v] [-b] [-u] [-a] : Install on the host system (mostly container) w/o asking for password"
-    echo " check                       : Do simple check on the host system for all executable"
-    echo " preupgrade                  : Do the necessary stuff to get the system upgraded"
+    echo " install [-v] [-b] [-a]                 : Install on the host system (when do it on your production machine) prompting for password"
+    echo " install-i [-v] [-b] [-u] [-a]          : Install on the host system (mostly container) w/o asking for password"
+    echo " roles                                  : List all the roles"
+    echo " role [-v] [-b] [-u] [-a] [-r <role>]   : Run a role on the host system (mostly container) prompting for password"
+    echo " role-i [-v] [-b] [-u] [-a] [-r <role>] : Run a role on the host system (mostly container) w/o asking for password"
+    echo " check                                  : Do simple check on the host system for all executable"
+    echo " preupgrade                             : Do the necessary stuff to get the system upgraded"
     echo ""
     echo "  where"
     echo "   -v > Provide the -vvv option to the ansigle command to have debug output"
@@ -193,11 +222,11 @@ case "$1" in
     echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
 
     # add to playbook in case I forgot
-    awk "1;/roles:/{print \"    - $name\"}" "$SCRIPT_DIR/playbook.yml" > "$SCRIPT_DIR/playbook.yml.tmp"
+    awk "1;/roles:/{print \"    - $name\"}" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
     if test "$?" -eq 0; then
-        test -r "$SCRIPT_DIR/playbook.yml.tmp" && mv "$SCRIPT_DIR/playbook.yml.tmp" "$SCRIPT_DIR/playbook.yml"
+        test -r "$WHOLE_PLAYBOOK_PATH.tmp" && mv "$WHOLE_PLAYBOOK_PATH.tmp" "$WHOLE_PLAYBOOK_PATH"
     else
-        test -r "$SCRIPT_DIR/playbook.yml.tmp" && rm "$SCRIPT_DIR/playbook.yml.tmp"
+        test -r "$WHOLE_PLAYBOOK_PATH.tmp" && rm "$WHOLE_PLAYBOOK_PATH.tmp"
     fi
     ;;
 
@@ -310,16 +339,24 @@ case "$1" in
     nvm install-latest-npm
     ;;
 
-'install')
+'roles')
+    # List all the roles
+    ls "$SCRIPT_DIR/roles" \
+    | sort \
+    | xargs printf 'role: %s\n'
+    ;;
+
+'role-i')
     # var
     verbose=false
     stable=true
     updateDotfile='{"update_dotfile": false}'
     installAll='{"install_all": false}'
+    role=''
 
     # parse the argumetns
     shift
-    while getopts ':avbu' opt; do
+    while getopts ':avbur:' opt; do
         case "$opt" in
         v)
             verbose=true
@@ -333,6 +370,9 @@ case "$1" in
         u)
             updateDotfile='{"update_dotfile": true}'
             ;;
+        r)
+            role="$OPTARG"
+            ;;
         *)
             echo "Unrecognized option $opt" >&2
             displayHelp
@@ -340,17 +380,94 @@ case "$1" in
         esac
     done
 
+    # need a role
+    if test -z "$role"; then
+        echo "No role specified, use -r <role> to run a role" >&2
+        exit 1
+    fi
+
+    # Write the role
+    writePlaybook "$role"
+
     install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
-        ansible-playbook -vvv playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
+        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
-        ansible-playbook -vvv playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll"
+        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        ansible-playbook playbook.yml --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
+        ansible-playbook "$TEMP_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
     else
-        ansible-playbook playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll"
+        ansible-playbook "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    fi
+    ;;
+
+'role')
+    # var
+    verbose=false
+    stable=true
+    updateDotfile='{"update_dotfile": false}'
+    installAll='{"install_all": false}'
+    role=''
+
+    # parse the argumetns
+    shift
+    while getopts ':avbur:' opt; do
+        case "$opt" in
+        v)
+            verbose=true
+            ;;
+        b)
+            stable=false
+            ;;
+        a)
+            installAll='{"install_all": true}'
+            ;;
+        u)
+            updateDotfile='{"update_dotfile": true}'
+            ;;
+        r)
+            role="$OPTARG"
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    # need a role
+    if test -z "$role"; then
+        echo "No role specified, use -r <role> to run a role" >&2
+        exit 1
+    fi
+
+    # Write the role
+    writePlaybook "$role"
+
+    install_ansible
+
+    # install with ansible playbook
+    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+
+    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+
+    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+
+    else
+        PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
     fi
     ;;
 
@@ -368,6 +485,50 @@ case "$1" in
         v)
             verbose=true
             ;;
+        b)
+            stable=false
+            ;;
+        a)
+            installAll='{"install_all": true}'
+            ;;
+        u)
+            updateDotfile='{"update_dotfile": true}'
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    install_ansible
+
+    # install with ansible playbook
+    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
+        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
+        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
+        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    else
+        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    fi
+    ;;
+
+'install')
+    # var
+    verbose=false
+    stable=true
+    updateDotfile='{"update_dotfile": false}'
+    installAll='{"install_all": false}'
+
+    # parse the argumetns
+    shift
+    while getopts ':avbu' opt; do
+        case "$opt" in
+        v)
+            verbose=true
+            ;;
         a)
             installAll='{"install_all": true}'
             ;;
@@ -390,22 +551,22 @@ case "$1" in
     if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
 
     else
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K playbook.yml --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
     fi
     ;;
 
@@ -438,7 +599,7 @@ case "$1" in
 
 'run-build')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
@@ -514,7 +675,7 @@ case "$1" in
     # get arg
     tag=$2
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
@@ -528,9 +689,9 @@ case "$1" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install -a -u"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install -a -u && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install -a -u && ./rr.sh check"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -a -u"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -a -u && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -a -u && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
