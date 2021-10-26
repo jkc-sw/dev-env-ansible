@@ -39,6 +39,7 @@
     - bluez
     - gimp
     - blueman
+    - x11vnc
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
