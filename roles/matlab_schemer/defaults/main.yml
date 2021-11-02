@@ -1,4 +1,5 @@
 ---
+home_dir: "{{ ansible_env.HOME }}"
 matlab_schemer_repos: "{{ home_dir + '/repos/matlab-schemer' }}"
 matlab_startup_file: "{{ home_dir + '/Documents/MATLAB/startup.m' }}"
 dotfiles_repos: "{{ home_dir + '/repos/dotfiles' }}"

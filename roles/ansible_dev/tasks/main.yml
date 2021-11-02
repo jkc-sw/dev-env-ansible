@@ -30,6 +30,7 @@
         pyqtgraph \
         docker-compose \
         more_itertools \
+        python-lsp-server[all] \
         requests
   register: pipinstall
   failed_when: "pipinstall.rc != 0"

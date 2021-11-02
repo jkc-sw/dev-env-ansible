@@ -1,19 +1,26 @@
 ---
 - hosts: local
   gather_facts: true
-  roles:
-    - common_settings
-    - doas_install
-    - lttng_install
-    - xmonad_wm
-    - kernel_tools
-    - zsh_setup
-    - vim_plugin_update
-    - caddy_install
-    - lookatme_install
-    - networking_tools
-    - matlab_schemer
-    # - insync_install
-    - openconnect_vpn
-    - p4
-    - ghdl
+  tasks:
+    - name: "Run required role"
+      include_role:
+        name: "{{ each_role }}"
+      loop_control:
+        loop_var: each_role
+      loop:
+        - qtile
+        - common_settings
+        - doas_install
+        - lttng_install
+        - xmonad_wm
+        - kernel_tools
+        - zsh_setup
+        - vim_plugin_update
+        - caddy_install
+        - lookatme_install
+        - networking_tools
+        - matlab_schemer
+        # - insync_install
+        - openconnect_vpn
+        - p4
+        - ghdl

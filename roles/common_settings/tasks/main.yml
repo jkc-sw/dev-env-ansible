@@ -42,4 +42,57 @@
   loop:
     - rclone
 
+- name: Make sure some system dependencies are installed
+  become: true
+  when: install_all | default(false)
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - dmenu
+    - xscreensaver
+    - scrot
+    - alsa-utils
+    - xfce4-power-manager
+    - compton
+    - xautolock
+    - xbacklight
+    - pavucontrol
+    - pulseaudio
+    - arandr
+    - feh
+    - pcmanfm
+    - dunst
+    - lxsession
+    - network-manager
+    - volumeicon-alsa
+    - bluez
+    - gimp
+    - blueman
+    - x11vnc
+    - curl
+
+- name: Make sure some system dependencies are installed without Ubuntu 16.04
+  become: true
+  when: "ansible_lsb.release != '16.04' and install_all | default(false)"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - pulsemixer
+
+# - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
+#   shell:
+#     cmd: |
+#       export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 # any nonzero value for noninteractive installation
+#       export BOOTSTRAP_HASKELL_NO_UPGRADE=0 # any nonzero value to not trigger the upgrade
+#       export GHCUP_USE_XDG_DIRS=1 # any nonzero value to respect The XDG Base Directory Specification
+#       export BOOTSTRAP_HASKELL_VERBOSE=1 # any nonzero value for more verbose installation
+#       export BOOTSTRAP_HASKELL_INSTALL_STACK=1 # whether to install latest stack
+#       export BOOTSTRAP_HASKELL_INSTALL_HLS=1 # whether to install latest hls
+#       export BOOTSTRAP_HASKELL_ADJUST_BASHRC=  # whether to adjust PATH in bashrc (prepend)
+#       curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+#   register: ghcup_install
+#   failed_when: "ghcup_install.rc != 0"
+#   changed_when: "ghcup_install.rc != 0"
 # vim:et ts=2 sts=2 sw=2
