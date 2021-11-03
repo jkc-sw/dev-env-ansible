@@ -15,6 +15,7 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
+        mypy \
         cffi \
         xdg \
         dbus_next \

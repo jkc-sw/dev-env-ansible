@@ -104,19 +104,20 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Running the ansible commands or related check"
-    echo " install [-v] [-b] [-a]                 : Install on the host system (when do it on your production machine) prompting for password"
-    echo " install-i [-v] [-b] [-u] [-a]          : Install on the host system (mostly container) w/o asking for password"
-    echo " roles                                  : List all the roles"
-    echo " role [-v] [-b] [-u] [-a] [-r <role>]   : Run a role on the host system (mostly container) prompting for password"
-    echo " role-i [-v] [-b] [-u] [-a] [-r <role>] : Run a role on the host system (mostly container) w/o asking for password"
-    echo " check                                  : Do simple check on the host system for all executable"
-    echo " preupgrade                             : Do the necessary stuff to get the system upgraded"
+    echo " install [-v] [-t 'tag1[,tag2 ...]']            : Install on the host system (when do it on your production machine) prompting for password"
+    echo " install-i [-v] [-t 'tag1[,tag2 ...]']          : Install on the host system (mostly container) w/o asking for password"
+    echo " tags                                           : List all the tags"
+    echo " roles                                          : List all the roles"
+    echo " role [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]   : Run a role on the host system (mostly container) prompting for password"
+    echo " role-i [-v] [-t 'tag1[,tag2 ...]'] [-r <role>] : Run a role on the host system (mostly container) w/o asking for password"
+    echo " check                                          : Do simple check on the host system for all executable"
+    echo " preupgrade                                     : Do the necessary stuff to get the system upgraded"
     echo ""
     echo "  where"
     echo "   -v > Provide the -vvv option to the ansigle command to have debug output"
-    echo "   -b > Use the HEAD for all the git repo"
     echo "   -u > Will update the dotfile repo"
     echo "   -a > Install all, like xmonad, etc"
+    echo "   -t > Tags to use, comma separated, no space"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Create a new row template"
@@ -182,14 +183,16 @@ install_ansible() {
 }
 
 # if there are arg for test, run test
-case "$1" in
+subcmd="$1"
+shift
+case "$subcmd" in
 '-h'|'--help'|'h'|'hel'|'help')
     displayHelp
+    exit 1
     ;;
 
 'new-role')
     # need 1 argrs
-    shift
     if test "$#" -ne 1; then
         echo "Need 1 argument <NAME> for the role to be created" >&2
         exit 1
@@ -346,32 +349,29 @@ case "$1" in
     | xargs printf 'role: %s\n'
     ;;
 
+'tags')
+    # List all the tags
+    echo "Listing all the tags"
+    ansible-playbook "$WHOLE_PLAYBOOK_PATH" --list-tags
+    ;;
+
 'role-i')
     # var
     verbose=false
-    stable=true
-    updateDotfile='{"update_dotfile": false}'
-    installAll='{"install_all": false}'
+    tags='untagged'
     role=''
 
     # parse the argumetns
-    shift
-    while getopts ':avbur:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        b)
-            stable=false
-            ;;
-        a)
-            installAll='{"install_all": true}'
-            ;;
-        u)
-            updateDotfile='{"update_dotfile": true}'
-            ;;
         r)
             role="$OPTARG"
+            ;;
+        t)
+            tags="$tags,$OPTARG"
             ;;
         *)
             echo "Unrecognized option $opt" >&2
@@ -392,40 +392,27 @@ case "$1" in
     install_ansible
 
     # install with ansible playbook
-    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
-        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
-        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        ansible-playbook "$TEMP_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    else
-        ansible-playbook "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    if [[ "$verbose" == 'true' ]]; then
+        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --tags "$tags"
+    elif [[ "$verbose" == 'false' ]]; then
+        ansible-playbook "$TEMP_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
 'role')
     # var
     verbose=false
-    stable=true
-    updateDotfile='{"update_dotfile": false}'
-    installAll='{"install_all": false}'
+    tags='untagged'
     role=''
 
     # parse the argumetns
-    shift
-    while getopts ':avbur:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        b)
-            stable=false
-            ;;
-        a)
-            installAll='{"install_all": true}'
-            ;;
-        u)
-            updateDotfile='{"update_dotfile": true}'
+        t)
+            tags="$tags,$OPTARG"
             ;;
         r)
             role="$OPTARG"
@@ -449,50 +436,31 @@ case "$1" in
     install_ansible
 
     # install with ansible playbook
-    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
+    if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
 
-    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
+    elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
-
-    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
-
-    else
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
     fi
     ;;
 
 'install-i')
     # var
     verbose=false
-    stable=true
-    updateDotfile='{"update_dotfile": false}'
-    installAll='{"install_all": false}'
+    tags='untagged'
 
     # parse the argumetns
-    shift
-    while getopts ':avbu' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        b)
-            stable=false
-            ;;
-        a)
-            installAll='{"install_all": true}'
-            ;;
-        u)
-            updateDotfile='{"update_dotfile": true}'
+        t)
+            tags="$tags,$OPTARG"
             ;;
         *)
             echo "Unrecognized option $opt" >&2
@@ -504,39 +472,26 @@ case "$1" in
     install_ansible
 
     # install with ansible playbook
-    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
-        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
-        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --extra-vars '@./vars/stable.yml' --extra-vars "$updateDotfile" --extra-vars "$installAll"
-    else
-        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll"
+    if [[ "$verbose" == 'true' ]]; then
+        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+    elif [[ "$verbose" == 'false' ]]; then
+        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
 'install')
     # var
     verbose=false
-    stable=true
-    updateDotfile='{"update_dotfile": false}'
-    installAll='{"install_all": false}'
+    tags='untagged'
 
     # parse the argumetns
-    shift
-    while getopts ':avbu' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
         v)
             verbose=true
             ;;
-        a)
-            installAll='{"install_all": true}'
-            ;;
-        b)
-            stable=false
-            ;;
-        u)
-            updateDotfile='{"update_dotfile": true}'
+        t)
+            tags="$tags,$OPTARG"
             ;;
         *)
             echo "Unrecognized option $opt" >&2
@@ -548,25 +503,15 @@ case "$1" in
     install_ansible
 
     # install with ansible playbook
-    if [[ "$verbose" == 'true' && "$stable" == 'true' ]]; then
+    if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
 
-    elif [[ "$verbose" == 'true' && "$stable" == 'false' ]]; then
+    elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
-
-    elif [[ "$verbose" == 'false' && "$stable" == 'true' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --extra-vars "@./vars/stable.yml" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
-
-    else
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --extra-vars "$updateDotfile" --extra-vars "$installAll" | tee $TEST_LOG
+        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
     fi
     ;;
 
@@ -635,7 +580,6 @@ case "$1" in
 
 'use')
     # get tag
-    shift
     tag=$1
     shift
     # parse the rest
@@ -675,7 +619,7 @@ case "$1" in
     # get arg
     tag=$2
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
@@ -689,9 +633,9 @@ case "$1" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -a -u"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -a -u && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -a -u && ./rr.sh check"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
     if [[ $# -gt 1 ]]; then
@@ -717,3 +661,44 @@ case "$1" in
     exit 1
     ;;
 esac
+
+# # Some great links: https://web.archive.org/web/20170203212120/http://www.ibm.com/developerworks/opensource/library/l-bash-parameters/index.html
+# showopts () {
+#   while getopts ":pq:" optname
+#     do
+#       case "$optname" in
+#         "p")
+#           echo "Option $optname is specified"
+#           ;;
+#         "q")
+#           echo "Option $optname has value $OPTARG"
+#           ;;
+#         "?")
+#           echo "Unknown option $OPTARG"
+#           ;;
+#         ":")
+#           echo "No argument value for option $OPTARG"
+#           ;;
+#         *)
+#         # Should not occur
+#           echo "Unknown error while processing options"
+#           ;;
+#       esac
+#     done
+#   return $OPTIND
+# }
+#  
+# showargs () {
+#   for p in "$@"
+#     do
+#       echo "[$p]"
+#     done
+# }
+#  
+# optinfo=$(showopts "$@")
+# argstart=$?
+# arginfo=$(showargs "${@:$argstart}")
+# echo "Arguments are:"
+# echo "$arginfo"
+# echo "Options are:"
+# echo "$optinfo"
