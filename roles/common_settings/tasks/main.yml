@@ -42,9 +42,21 @@
   loop:
     - rclone
 
+- name: Update dotfiles
+  tags:
+    - dotfiles
+  set_fact:
+    update_dotfile: true
+
+- name: Update dotfiles
+  tags:
+    - gui
+  set_fact:
+    gui: true
+
 - name: Make sure some system dependencies are installed
   become: true
-  when: install_all | default(false)
+  when: gui | default(false)
   apt:
     name: "{{ item }}"
     state: present
@@ -71,10 +83,13 @@
     - blueman
     - x11vnc
     - curl
+    - libgconf-2-4
+    - libappindicator1
+    - libc++1
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
-  when: "ansible_lsb.release != '16.04' and install_all | default(false)"
+  when: "ansible_lsb.release != '16.04' and gui | default(false)"
   apt:
     name: "{{ item }}"
     state: present

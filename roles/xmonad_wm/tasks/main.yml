@@ -1,7 +1,7 @@
 ---
 - name: Make sure some system dependencies are installed
   become: true
-  when: install_all | default(false)
+  when: gui | default(false)
   apt:
     name: "{{ item }}"
     state: present

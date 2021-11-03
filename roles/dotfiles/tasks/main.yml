@@ -19,12 +19,6 @@
     path: "{{ dotfiles_repos }}"
   register: dotfiles_repos_exists
 
-- name: Request to update dotfiles
-  tags:
-    - dotfiles
-  set_fact:
-    update_dotfile: true
-
 - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
   when: (dotfiles_repos_exists.stat.exists) and (update_dotfile | default(false))
   shell:
