@@ -5,7 +5,6 @@
     name: "{{ item }}"
     state: 'present'
   loop:
-    - xserver-xorg
     - libpangocairo-1.0-0
 
 - name: Install first
