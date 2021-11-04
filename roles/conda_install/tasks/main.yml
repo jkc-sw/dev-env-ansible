@@ -1,6 +1,6 @@
 ---
 - name: Check conda is installed
-  shell: command -v conda && echo good || echo bad
+  shell: command -v '{{ conda_default_bin }}' && echo good || echo bad
   register: conda_present
   changed_when: "'bad' in conda_present.stdout"
 
