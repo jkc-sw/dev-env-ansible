@@ -51,7 +51,7 @@ def read_roles(path: str) -> Role:
     roles = []
     for sec in book:
         if 'roles' in sec:
-            roles = sec['roles']
+            roles.extend(sec['roles'])
 
     # return if no roles to depend on
     if not roles:

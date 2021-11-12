@@ -1,24 +1,27 @@
 ---
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    name: "{{ item }}"
-    state: 'present'
-  loop:
-    - xz-utils
-
 - name: Download and Add Powershell Key to Apt-Get Keyring
   become: true
   apt:
     deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
     state: present
 
-- name: Install Powershell
+- name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: powershell
-    state: present
+    name: "{{ item }}"
+    state: 'present'
     update_cache: true
+  loop:
+    - xz-utils
+
+- name: Install Powershell and .Net 6 SDK
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - powershell
+    - dotnet-sdk-6.0
 
 - name: Make sure we can install from PSGallery
   shell:
