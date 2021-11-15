@@ -77,6 +77,12 @@
     src: qtile-session.j2
     dest: /usr/bin/qtile-session
 
+- name: Make sure the folder exist
+  become: true
+  file:
+    path: "/usr/share/xsessions"
+    state: directory
+
 - name: Create desktop file
   become: true
   template:
