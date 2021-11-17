@@ -96,7 +96,7 @@ compose_container_name() {
 displayHelp() {
     # print help here
     echo "${BASH_SOURCE[0]} [...]"
-    echo " One-stop shop for to do everything related to this repository"
+    echo " One-stop shop to do everything related to this repository"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Display Help"
@@ -104,14 +104,29 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Running the ansible commands or related check"
-    echo " install [-v] [-t 'tag1[,tag2 ...]']            : Install on the host system (when do it on your production machine) prompting for password"
-    echo " install-i [-v] [-t 'tag1[,tag2 ...]']          : Install on the host system (mostly container) w/o asking for password"
-    echo " tags                                           : List all the tags"
-    echo " roles                                          : List all the roles"
-    echo " role [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]   : Run a role on the host system (mostly container) prompting for password"
-    echo " role-i [-v] [-t 'tag1[,tag2 ...]'] [-r <role>] : Run a role on the host system (mostly container) w/o asking for password"
-    echo " check                                          : Do simple check on the host system for all executable"
-    echo " preupgrade                                     : Do the necessary stuff to get the system upgraded"
+    echo " install [-v] [-t 'tag1[,tag2 ...]']"
+    echo "   Install on the host system (when do it on your production machine) prompting for password"  # desc
+    echo ""
+    echo " install-i [-v] [-t 'tag1[,tag2 ...]']"
+    echo "   Install on the host system (mostly container) w/o asking for password"  # desc
+    echo ""
+    echo " tags"
+    echo "   List all the tags"  # desc
+    echo ""
+    echo " roles"
+    echo "   List all the roles"  # desc
+    echo ""
+    echo " role [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]"
+    echo "   Run a role on the host system (mostly container) prompting for password"  # desc
+    echo ""
+    echo " role-i [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]"
+    echo "   Run a role on the host system (mostly container) w/o asking for password"  # desc
+    echo ""
+    echo " check"
+    echo "   Do simple check on the host system for all executable"  # desc
+    echo ""
+    echo " preupgrade"
+    echo "   Do the necessary stuff to get the system upgraded"  # desc
     echo ""
     echo "  where"
     echo "   -v > Provide the -vvv option to the ansigle command to have debug output"
@@ -132,13 +147,26 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
-    echo " run [ver]        : Start a new docker container only"
-    echo " run-build [ver]  : Start a new docker container and run ansible-playbook"
-    echo " commit ID TAG    : Commit a running docker container ID with the TAG specified"
-    echo " use TAG [-w dir] : Start a committed image only"
-    echo " list             : List all the images"
-    echo " use-build TAG    : Start a committed image and run ansible-playbook"
-    echo " run-test [ver]   : Start a new docker container and run simple CI test"
+    echo " run [ver]"
+    echo "   Start a new docker container only"  # desc
+    echo ""
+    echo " run-build [ver]"
+    echo "   Start a new docker container and run ansible-playbook"  # desc
+    echo ""
+    echo " commit ID TAG"
+    echo "   Commit a running docker container ID with the TAG specified"  # desc
+    echo ""
+    echo " use TAG [-w dir]"
+    echo "   Start a committed image only"  # desc
+    echo ""
+    echo " list"
+    echo "   List all the images"  # desc
+    echo ""
+    echo " use-build TAG"
+    echo "   Start a committed image and run ansible-playbook"  # desc
+    echo ""
+    echo " run-test [ver]"
+    echo "   Start a new docker container and run simple CI test"  # desc
     echo ""
     echo " arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
@@ -181,6 +209,12 @@ install_ansible() {
         sudo -H python3 -m pip install ansible
     fi
 }
+
+# if args, print help
+if test "$#" -eq 0; then
+    displayHelp
+    exit 0
+fi
 
 # if there are arg for test, run test
 subcmd="$1"

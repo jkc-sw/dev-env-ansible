@@ -11,7 +11,7 @@
 
 - name: Check if the environment exists
   stat:
-    path: "{{ dev_condaenv }}"
+    path: "{{ dev_condaenv }}/bin/python"
   register: dev_condaenv_ret
 
 - name: Create conda env for development of this repo

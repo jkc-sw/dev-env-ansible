@@ -83,6 +83,7 @@
     - blueman
     - x11vnc
     - curl
+    - x11-utils
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
@@ -92,6 +93,21 @@
     state: present
   loop:
     - pulsemixer
+
+- name: Make sure the folder exist
+  become: true
+  file:
+    path: "/etc/X11/xorg.conf.d"
+    state: directory
+
+- name: Create the xorg for trackpad
+  become: true
+  tags:
+    - laptop
+  template:
+    mode: '644'
+    src: 70-libinput.conf.j2
+    dest: /etc/X11/xorg.conf.d/70-libinput.conf
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:
