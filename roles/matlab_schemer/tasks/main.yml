@@ -31,4 +31,5 @@
     block: |
       addpath '{{ matlab_schemer_repos }}'
       schemer_import('{{ dotfiles_matlab_colorscheme }}', true);
+      % From https://www.mathworks.com/matlabcentral/answers/488045-alt-key-in-live-script
       com.mathworks.desktop.mnemonics.MnemonicsManagers.get.disable
