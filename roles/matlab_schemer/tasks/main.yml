@@ -31,3 +31,4 @@
     block: |
       addpath '{{ matlab_schemer_repos }}'
       schemer_import('{{ dotfiles_matlab_colorscheme }}', true);
+      com.mathworks.desktop.mnemonics.MnemonicsManagers.get.disable
