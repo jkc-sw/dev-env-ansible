@@ -26,3 +26,5 @@ crates:
     crate: zoxide
   - exe: svls
     crate: svls
+  - exe: svlint
+    crate: svlint

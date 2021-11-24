@@ -562,8 +562,8 @@ case "$subcmd" in
 'run')
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
-    if [[ $# -gt 1 ]]; then
-        ver="$(select_docker_ver $2)"
+    if [[ $# -gt 0 ]]; then
+        ver="$(select_docker_ver $1)"
     fi
 
     # start bash inside container
@@ -571,7 +571,7 @@ case "$subcmd" in
     docker run --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
+        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
         "$CONTAINER_TAG" \
         bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
     ;;
@@ -582,23 +582,23 @@ case "$subcmd" in
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
-    if [[ $# -gt 1 ]]; then
-        ver="$(select_docker_ver $2)"
+    if [[ $# -gt 0 ]]; then
+        ver="$(select_docker_ver $1)"
     fi
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$2")" \
+        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
         "$CONTAINER_TAG" \
         bash -i -c "$cmd ; exec zsh"
     ;;
 
 'commit')
     # get args
-    ident=$2
-    tag=$3
+    ident=$1
+    tag=$2
     # make a commit
     docker commit "$ident" "$DEV_ENV_REPOSITORY_NAME:$tag"
     ;;
@@ -651,7 +651,7 @@ case "$subcmd" in
 
 'use-build')
     # get arg
-    tag=$2
+    tag=$1
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
@@ -672,8 +672,8 @@ case "$subcmd" in
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_18"
-    if [[ $# -gt 1 ]]; then
-        ver="$(select_docker_ver $2)"
+    if [[ $# -gt 0 ]]; then
+        ver="$(select_docker_ver $1)"
     fi
 
     # start bash inside container
@@ -689,7 +689,7 @@ case "$subcmd" in
 
 *)
     # error out
-    echo "subcommand $1 invalid" >&2
+    echo "subcommand $subcmd invalid" >&2
     # print help
     displayHelp
     exit 1
