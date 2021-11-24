@@ -23,4 +23,16 @@
   include_tasks: other.yml
   when: "ansible_lsb.release != '16.04'"
 
+- name: Install clangd with ubuntu 16
+  include_tasks: apt.yml
+  when: "ansible_lsb.release == '16.04'"
+  vars:
+    clangd_name: 'clangd-8'
+    clang_name: 'clang-8'
+    pkgs:
+      - unzip
+      - clang-tools-8
+      - libclang-8-dev
+      - clang-8
+
 # vim:et ts=2 sts=2 sw=2

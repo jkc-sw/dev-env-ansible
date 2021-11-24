@@ -1,9 +1,5 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
-clangd_exe_path: "/usr/bin/{{ clangd_name }}"
-clangd_ln_path: '/usr/bin/clangd'
-clang_exe_path: "/usr/bin/{{ clang_name }}"
-clang_ln_path: '/usr/bin/clang'
 dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
 luals_repos: "{{ home_dir + '/repos/lua-language-server' }}"
 shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
