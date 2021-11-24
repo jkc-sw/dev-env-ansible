@@ -18,6 +18,18 @@
   when: not dev_condaenv_ret.stat.exists
   shell: "{{ conda_default_bin }} create -p {{ dev_condaenv }} python=3.8"
 
+- name: Update pip
+  shell:
+    cmd: |
+      {{ dev_condaenv }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        install -U \
+        pip
+  register: pipinstall
+  failed_when: "pipinstall.rc != 0"
+  changed_when: "pipinstall.rc != 0"
+
 - name: Install ansible dev tool
   shell:
     cmd: |
@@ -32,6 +44,6 @@
         more_itertools \
         python-lsp-server[all] \
         requests
-  register: pipinstall
-  failed_when: "pipinstall.rc != 0"
-  changed_when: "pipinstall.rc != 0"
+  register: many_install
+  failed_when: "many_install.rc != 0"
+  changed_when: "many_install.rc != 0"
