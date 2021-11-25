@@ -73,7 +73,9 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
-        git+https://github.com/cocotb/cocotb@{{ cocotb_repo_version }}
+        git+https://github.com/cocotb/cocotb@{{ cocotb_repo_version }} \
+        git+https://github.com/alexforencich/cocotbext-axi@{{ cocotbext_axi_repo_version }} \
+        git+https://github.com/themperek/cocotb-test@{{ cocotb_test_repo_version }}
   register: cocotb_install
   failed_when: "cocotb_install.rc != 0"
   changed_when: "cocotb_install.rc != 0"
