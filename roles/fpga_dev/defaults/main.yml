@@ -1,6 +1,8 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
+ghdl_repos: "{{ home_dir + '/repos/ghdl' }}"
 conda_install_dir: "{{ home_dir + '/miniconda3' }}"
 conda_bin_fullpath: "{{ conda_install_dir + '/bin/conda' }}"
+conda_bin: ". {{ conda_install_dir }}/etc/profile.d/conda.sh && conda"
 dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
-dev_condaenv2: "{{ home_dir + '/miniconda3/envs/dev_env_ansible2' }}"
+dev_condaenv_condabin: "{{ conda_bin }} activate {{ dev_condaenv }} && conda"

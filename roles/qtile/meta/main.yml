@@ -3,5 +3,6 @@ dependencies:
   - common_settings
   - ansible_dev
   - dotfiles
+  - desktop
 
 # vim:et ts=2 sts=2 sw=2

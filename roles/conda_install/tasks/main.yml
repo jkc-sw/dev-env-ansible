@@ -1,6 +1,6 @@
 ---
 - name: Check conda is installed
-  shell: command -v '{{ conda_default_bin }}' && echo good || echo bad
+  shell: command -v '{{ conda_bin_fullpath }}' && echo good || echo bad
   register: conda_present
   changed_when: "'bad' in conda_present.stdout"
 
@@ -21,21 +21,21 @@
   shell:
     executable: /bin/bash
     cmd: |
-      {{ conda_default_bin }} init bash && \
-      {{ conda_default_bin }} init powershell && \
-      {{ conda_default_bin }} init zsh
+      {{ conda_bin_fullpath }} init bash && \
+      {{ conda_bin_fullpath }} init powershell && \
+      {{ conda_bin_fullpath }} init zsh
   register: conda_init_shells
   changed_when: "conda_init_shells.rc != 0"
   failed_when: "conda_init_shells.rc != 0"
 
 - name: Do not auto activate base
-  shell: "{{ conda_default_bin }} config --set auto_activate_base false"
+  shell: "{{ conda_bin_fullpath }} config --set auto_activate_base false"
   register: conda_setter
   changed_when: "conda_setter.rc != 0"
   failed_when: "conda_setter.rc != 0"
 
 - name: Do not show the env name
-  shell: "{{ conda_default_bin }} config --set changeps1 false"
+  shell: "{{ conda_bin_fullpath }} config --set changeps1 false"
   register: conda_setter
   changed_when: "conda_setter.rc != 0"
   failed_when: "conda_setter.rc != 0"

@@ -34,13 +34,13 @@ RUN_PREFIX_FOR_NAME=run
 USE_PREFIX_FOR_NAME=use
 
 # Temp playbook
-TEMP_PLAYBOOK_PATH="$SCRIPT_DIR/anyrole.yml"
 WHOLE_PLAYBOOK_PATH="$SCRIPT_DIR/playbook.yml"
+WORKFLOW_PATH="$SCRIPT_DIR/.github/workflows/main.yml"
 
 # Write playbook
-# @brief Create temp playbook for a role
+# @brief Return the name for the playbook
 # @param role - The name of the role to put in the playbook
-writePlaybook() {
+playbookName() {
     # role is
     role="$1"
 
@@ -50,13 +50,29 @@ writePlaybook() {
         exit 1
     fi
 
-    cat <<EOF > "$TEMP_PLAYBOOK_PATH"
+    echo -n "$SCRIPT_DIR/testbook_$role.yml"
+}
+
+# Write playbook
+# @brief Create temp playbook for a role
+# @param role - The name of the role to put in the playbook
+writePlaybook() {
+    # role is
+    role="$1"
+
+    # playname
+    playpath="$(playbookName "$role")"
+
+    cat <<EOF > "$playpath"
 ---
 - hosts: local
   gather_facts: true
   roles:
     - $role
 EOF
+
+    # return the name
+    echo -n "$playpath"
 }
 
 # define a function to perform check
@@ -168,6 +184,9 @@ displayHelp() {
     echo " run-test [ver]"
     echo "   Start a new docker container and run simple CI test"  # desc
     echo ""
+    echo " run-role <ver> <role>"
+    echo "   Start a new docker container and run a role"  # desc
+    echo ""
     echo " arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
     echo "  ID  > This is the container name or ID to use to make a commit, full name required"
@@ -262,8 +281,12 @@ case "$subcmd" in
     awk "1;/roles:/{print \"    - $name\"}" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
     if test "$?" -eq 0; then
         test -r "$WHOLE_PLAYBOOK_PATH.tmp" && mv "$WHOLE_PLAYBOOK_PATH.tmp" "$WHOLE_PLAYBOOK_PATH"
-    else
-        test -r "$WHOLE_PLAYBOOK_PATH.tmp" && rm "$WHOLE_PLAYBOOK_PATH.tmp"
+    fi
+
+    # add to workflow in case I forgot
+    awk "1;/role:/{print \"          '$name',\"}" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
+    if test "$?" -eq 0; then
+        test -r "$WORKFLOW_PATH.tmp" && mv "$WORKFLOW_PATH.tmp" "$WORKFLOW_PATH"
     fi
     ;;
 
@@ -280,13 +303,13 @@ case "$subcmd" in
     . $HOME/.bashrc
     . $HOME/.bashrc_append
     sdev
+    nv
 
     # # do it here, as I don't want it in bashrc to slow it down
     # nvm use --lts
 
     # get a list of commands to check
     cmds=( \
-        # 'svls' \
         # 'fzf' \
         'ansible' \
         'ansible-playbook' \
@@ -308,8 +331,11 @@ case "$subcmd" in
         'dust' \
         'exa' \
         'fd' \
+        'ghdl' \
         'git' \
         'gtop' \
+        'hdl_checker' \
+        'iverilog' \
         'java' \
         'javac' \
         'kitty' \
@@ -328,10 +354,12 @@ case "$subcmd" in
         'pwsh' \
         'python3' \
         'rg' \
+        'rofi' \
         'rustc' \
         'rustup' \
         'sd' \
         'starship' \
+        'svls' \
         'tmux' \
         'toclip' \
         'tokei' \
@@ -421,15 +449,18 @@ case "$subcmd" in
     fi
 
     # Write the role
-    writePlaybook "$role"
+    playpath="$(writePlaybook "$role")"
+
+    # trap remove
+    trap "rm $playpath" EXIT SIGINT SIGTERM KILL
 
     install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        ansible-playbook -vvv "$TEMP_PLAYBOOK_PATH" --tags "$tags"
+        ansible-playbook -vvv "$playpath" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        ansible-playbook "$TEMP_PLAYBOOK_PATH" --tags "$tags"
+        ansible-playbook "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -465,7 +496,10 @@ case "$subcmd" in
     fi
 
     # Write the role
-    writePlaybook "$role"
+    playpath="$(writePlaybook "$role")"
+
+    # trap remove
+    trap "rm $playpath" EXIT SIGINT SIGTERM KILL
 
     install_ansible
 
@@ -473,12 +507,12 @@ case "$subcmd" in
     if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$TEMP_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$playpath" --tags "$tags" | tee $TEST_LOG
 
     elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$TEMP_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K "$playpath" --tags "$tags" | tee $TEST_LOG
     fi
     ;;
 
@@ -561,7 +595,7 @@ case "$subcmd" in
 
 'run')
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_18"
+    ver="$DOCKER_FILE_UBUNTU_20"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -581,7 +615,7 @@ case "$subcmd" in
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_18"
+    ver="$DOCKER_FILE_UBUNTU_20"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -653,7 +687,7 @@ case "$subcmd" in
     # get arg
     tag=$1
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
@@ -665,13 +699,40 @@ case "$subcmd" in
         bash -i -c "$cmd; exec zsh"
     ;;
 
+'run-role')
+    # get args
+    ver="$1"
+    role="$2"
+
+    # build up the command here
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh role-i -r '$role'"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh role-i -r '$role'"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -r '$role'"
+
+    # select docker
+    ver="$DOCKER_FILE_UBUNTU_20"
+    if [[ $# -gt 0 ]]; then
+        ver="$(select_docker_ver $1)"
+    fi
+
+    # start bash inside container
+    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    docker run --rm \
+        --network="host" \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        "$CONTAINER_TAG" \
+        bash -c "$cmd" | tee $TEST_LOG
+    # perform check
+    ansibleCheck
+    ;;
+
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_18"
+    ver="$DOCKER_FILE_UBUNTU_20"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi

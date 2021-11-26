@@ -8,6 +8,62 @@ on:
   workflow_dispatch:
 
 jobs:
+  roles:
+    strategy:
+      matrix:
+        role: [
+          'ansible_dev',
+          'asdf_install',
+          'bashrc_like_a_pro',
+          'caddy_install',
+          'cargo_and_rustup',
+          'cmake_from_source',
+          'common_settings',
+          'conda_install',
+          'ctags_from_source',
+          'desktop',
+          'doas_install',
+          'docker_install',
+          'dotfiles',
+          'doxygen_from_source',
+          'fpga_dev',
+          'general_cargo_install',
+          'insync_install',
+          'kernel_tools',
+          'kitty_install',
+          'llvm_from_source',
+          'lookatme_install',
+          'lttng_install',
+          'lua_luarocks_from_source',
+          'matlab_schemer',
+          'nerd_fonts',
+          'networking_tools',
+          'nvim_from_source',
+          'nvm_nodejs_yarn',
+          'openconnect_vpn',
+          'openjdk_install',
+          'p4',
+          'powershell_install',
+          'pwsh_lsp_deps',
+          'qtile',
+          'rust_analyzer_from_source',
+          'some_git_clones',
+          'tmux_from_source',
+          'toclip_install',
+          'tpm_tmux_setup',
+          'vim_lsp_dependencies',
+          'vim_plug_installer',
+          'vim_plugin_update',
+          'vnc',
+          'xmonad_wm',
+          'zsh_setup'
+          ]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run command
+        run: "./rr.sh run-role 20 ${{ matrix.role }}"
+
   build:
     strategy:
       matrix:

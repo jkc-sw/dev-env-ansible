@@ -9,26 +9,15 @@
     - python3-pip
     - python3-yaml
 
-- name: Check if the environment exists
-  stat:
-    path: "{{ dev_condaenv }}/bin/python"
-  register: dev_condaenv_ret
+- name: Create conda conda envs
+  include_tasks: create.yml
+  vars:
+    envpath: "{{ dev_condaenv }}"
 
-- name: Create conda env for development of this repo
-  when: not dev_condaenv_ret.stat.exists
-  shell: "{{ conda_default_bin }} create -p {{ dev_condaenv }} python=3.8"
-
-- name: Update pip
-  shell:
-    cmd: |
-      {{ dev_condaenv }}/bin/python -m pip \
-        --disable-pip-version-check \
-        --no-python-version-warning \
-        install -U \
-        pip
-  register: pipinstall
-  failed_when: "pipinstall.rc != 0"
-  changed_when: "pipinstall.rc != 0"
+- name: Create conda conda envs 2
+  include_tasks: create.yml
+  vars:
+    envpath: "{{ dev_condaenv2 }}"
 
 - name: Install ansible dev tool
   shell:

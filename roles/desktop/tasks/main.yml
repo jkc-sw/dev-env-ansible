@@ -1,0 +1,59 @@
+---
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - dmenu
+    - xscreensaver
+    - scrot
+    - alsa-utils
+    - xfce4-power-manager
+    - compton
+    - xautolock
+    - xbacklight
+    - pavucontrol
+    - pulseaudio
+    - arandr
+    - feh
+    - pcmanfm
+    - dunst
+    - lxsession
+    - network-manager
+    - volumeicon-alsa
+    - bluez
+    - gimp
+    - blueman
+    - x11vnc
+    - curl
+    - x11-utils
+    - rofi
+
+- name: Make sure some system dependencies are installed without Ubuntu 16.04
+  become: true
+  when: "ansible_lsb.release != '16.04'"
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - pulsemixer
+
+- name: Make sure the folder exist
+  become: true
+  tags:
+    - laptop
+  file:
+    path: "/etc/X11/xorg.conf.d"
+    state: directory
+
+- name: Create the xorg for trackpad
+  become: true
+  tags:
+    - laptop
+  template:
+    mode: '644'
+    src: 70-libinput.conf.j2
+    dest: /etc/X11/xorg.conf.d/70-libinput.conf
+
+# vim:et ts=2 sts=2 sw=2

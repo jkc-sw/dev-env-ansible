@@ -48,66 +48,11 @@
   set_fact:
     update_dotfile: true
 
-- name: Update dotfiles
+- name: Update gui
   tags:
     - gui
   set_fact:
     gui: true
-
-- name: Make sure some system dependencies are installed
-  become: true
-  when: gui | default(false)
-  apt:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - dmenu
-    - xscreensaver
-    - scrot
-    - alsa-utils
-    - xfce4-power-manager
-    - compton
-    - xautolock
-    - xbacklight
-    - pavucontrol
-    - pulseaudio
-    - arandr
-    - feh
-    - pcmanfm
-    - dunst
-    - lxsession
-    - network-manager
-    - volumeicon-alsa
-    - bluez
-    - gimp
-    - blueman
-    - x11vnc
-    - curl
-    - x11-utils
-
-- name: Make sure some system dependencies are installed without Ubuntu 16.04
-  become: true
-  when: "ansible_lsb.release != '16.04' and gui | default(false)"
-  apt:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - pulsemixer
-
-- name: Make sure the folder exist
-  become: true
-  file:
-    path: "/etc/X11/xorg.conf.d"
-    state: directory
-
-- name: Create the xorg for trackpad
-  become: true
-  tags:
-    - laptop
-  template:
-    mode: '644'
-    src: 70-libinput.conf.j2
-    dest: /etc/X11/xorg.conf.d/70-libinput.conf
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:

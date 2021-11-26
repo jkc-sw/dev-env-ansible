@@ -16,7 +16,7 @@
 - name: Install Pandoc
   shell:
     cmd: |
-      {{ conda_default_bin }} install -p {{ dev_condaenv }} pandoc
+      {{ conda_bin_fullpath }} install -p {{ dev_condaenv }} pandoc
   register: pandoc
   failed_when: "pandoc.rc != 0"
   changed_when: "pandoc.rc != 0"

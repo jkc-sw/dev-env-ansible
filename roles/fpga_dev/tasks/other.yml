@@ -66,6 +66,14 @@
     cmd: |
       make install
 
+- name: Install iverilog
+  shell:
+    cmd: |
+      {{ dev_condaenv_condabin }} install -y -c conda-forge iverilog
+  register: iverilog_install
+  failed_when: "iverilog_install.rc != 0"
+  changed_when: "iverilog_install.rc != 0"
+
 - name: Install cocotb
   shell:
     cmd: |

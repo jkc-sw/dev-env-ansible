@@ -1,0 +1,25 @@
+---
+- name: Verbose description
+  debug:
+    msg: "Creating {{ envpath }}"
+
+- name: Check if the environment exists
+  stat:
+    path: "{{ envpath }}/bin/python"
+  register: dev_condaenv_ret
+
+- name: Create conda conda envs
+  when: not dev_condaenv_ret.stat.exists
+  shell: "{{ conda_bin_fullpath }} create -p {{ envpath }} python=3.8"
+
+- name: Update pips
+  shell:
+    cmd: |
+      {{ envpath }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        install -U \
+        pip
+  register: pipinstall
+  failed_when: "pipinstall.rc != 0"
+  changed_when: "pipinstall.rc != 0"

@@ -15,12 +15,13 @@
     # - insync_install
     - openconnect_vpn
     - p4
-    - ghdl
+    - fpga_dev
 
 - hosts: local
   gather_facts: true
   tags:
     - gui
   roles:
+    - desktop
     - qtile
     - xmonad_wm
