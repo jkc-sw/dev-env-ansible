@@ -448,13 +448,13 @@ case "$subcmd" in
         exit 1
     fi
 
+    install_ansible
+
     # Write the role
     playpath="$(writePlaybook "$role")"
 
     # trap remove
-    trap "rm $playpath" EXIT SIGINT SIGTERM KILL
-
-    install_ansible
+    trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
@@ -495,13 +495,13 @@ case "$subcmd" in
         exit 1
     fi
 
+    install_ansible
+
     # Write the role
     playpath="$(writePlaybook "$role")"
 
     # trap remove
-    trap "rm $playpath" EXIT SIGINT SIGTERM KILL
-
-    install_ansible
+    trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
@@ -687,7 +687,7 @@ case "$subcmd" in
     # get arg
     tag=$1
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
@@ -728,9 +728,9 @@ case "$subcmd" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
+    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
     # select docker
     ver="$DOCKER_FILE_UBUNTU_20"
     if [[ $# -gt 0 ]]; then
