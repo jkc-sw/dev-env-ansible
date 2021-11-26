@@ -705,7 +705,8 @@ case "$subcmd" in
     role="$2"
 
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh role-i -r '$role'"
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
+    cmd="$cmd '$role'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh role-i -r '$role'"
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -r '$role'"
 
@@ -728,7 +729,7 @@ case "$subcmd" in
 
 'run-test')
     # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'gui,dotfiles'"
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -t "gui,dotfiles"'
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'gui,dotfiles' && ./rr.sh check"
     # select docker
