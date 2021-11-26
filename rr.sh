@@ -63,6 +63,10 @@ writePlaybook() {
     # playname
     playpath="$(playbookName "$role")"
 
+    ls -al
+    ls -al ..
+    touch "$playpath"
+
     cat <<EOF > "$playpath"
 ---
 - hosts: local
