@@ -64,7 +64,7 @@ jobs:
       - name: Make it writable
         run: "chmod -R a+w ."
       - name: Run command
-        run: "./rr.sh run-role 20 ${{ matrix.role }}"
+        run: "ANSIBLE_CONFIG=\"$(pwd)/ansible.cfg\" ./rr.sh run-role 20 ${{ matrix.role }}"
 
   build:
     strategy:
