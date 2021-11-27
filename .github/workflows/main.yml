@@ -59,6 +59,7 @@ jobs:
           'zsh_setup'
           ]
     runs-on: ubuntu-20.04
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v2
       - name: Make it writable
@@ -71,6 +72,7 @@ jobs:
       matrix:
         os: ['16', '18', '20']
     runs-on: ubuntu-20.04
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v2
       - name: Run command
