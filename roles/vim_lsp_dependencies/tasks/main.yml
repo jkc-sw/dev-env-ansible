@@ -54,8 +54,7 @@
         install \
         'python-lsp-server[all]' \
         pyyaml \
-        cmake-language-server \
-        hdl-checker
+        cmake-language-server
   register: pipinstall
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"
@@ -71,21 +70,6 @@
   register: pipuninstall
   failed_when: "pipuninstall.rc != 0"
   changed_when: "pipuninstall.rc != 0"
-
-- name: Install many lsp from pip
-  shell:
-    cmd: |
-      {{ dev_condaenv }}/bin/python -m pip \
-        --disable-pip-version-check \
-        --no-python-version-warning \
-        install \
-        'python-lsp-server[all]' \
-        pyyaml \
-        cmake-language-server \
-        hdl-checker
-  register: pipinstall
-  failed_when: "pipinstall.rc != 0"
-  changed_when: "pipinstall.rc != 0"
 
 - name: Install many lsp from pip 2
   shell:
