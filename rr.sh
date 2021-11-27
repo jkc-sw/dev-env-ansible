@@ -311,6 +311,8 @@ case "$subcmd" in
     # get a list of commands to check
     cmds=( \
         # 'fzf' \
+        # 'ghdl' \
+        # 'iverilog' \
         'ansible' \
         'ansible-playbook' \
         'asdf' \
@@ -331,11 +333,9 @@ case "$subcmd" in
         'dust' \
         'exa' \
         'fd' \
-        'ghdl' \
         'git' \
         'gtop' \
         'hdl_checker' \
-        'iverilog' \
         'java' \
         'javac' \
         'kitty' \
