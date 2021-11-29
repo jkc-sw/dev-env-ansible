@@ -88,4 +88,76 @@
   failed_when: "cocotb_install.rc != 0"
   changed_when: "cocotb_install.rc != 0"
 
+- name: Check if gtkwave is installed
+  shell: command -v gtkwave && echo good || echo bad
+  register: gtkwave_present
+  changed_when: "'bad' in gtkwave_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ gtkwave_repos }}"
+  register: gtkwave_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "gtkwave_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --depth 1 --tags -f
+    chdir: "{{ gtkwave_repos }}"
+  register: git_fetch_gtkwave
+  changed_when: "git_fetch_gtkwave.rc != 0"
+
+- name: Get latest source code for gtkwave
+  git:
+    repo: https://github.com/gtkwave/gtkwave.git
+    dest: "{{ gtkwave_repos }}"
+    clone: true
+    version: "{{ gtkwave_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_gtkwave
+
+- name: Install the dependencies
+  when: git_clone_gtkwave.changed or gtkwave_present.changed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+  loop:
+    - libgtk-3-0
+    - libgtk-3-dev
+    - tcl
+    - tcl-dev
+    - tcl8.6
+    - tcl8.6-dev
+    - tk
+    - tk-dev
+    - tk8.6
+    - tk8.6-dev
+    - gperf
+    - libjudy-dev
+    - libbz2-dev
+    - liblzma-dev
+
+- name: Configure before running build for gtkwave
+  when: git_clone_gtkwave.changed or gtkwave_present.changed
+  shell:
+    chdir: "{{ gtkwave3_repos }}"
+    cmd: |
+      ./autogen.sh && \
+      ./configure --enable-gtk3 --with-tcl=/usr/lib/tcl8.6 --with-tk=/usr/lib/tk8.6
+
+- name: Compile, update gtkwave
+  when: git_clone_gtkwave.changed or gtkwave_present.changed
+  shell:
+    chdir: "{{ gtkwave3_repos }}"
+    cmd: |
+      make -j{{ ansible_processor_vcpus }}
+
+- name: Compile, update and install gtkwave
+  when: git_clone_gtkwave.changed or gtkwave_present.changed
+  become: true
+  shell:
+    chdir: "{{ gtkwave3_repos }}"
+    cmd: |
+      make install
+
 # vim:et ts=2 sts=2 sw=2

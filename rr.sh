@@ -187,6 +187,9 @@ displayHelp() {
     echo " run-role <ver> <role>"
     echo "   Start a new docker container and run a role"  # desc
     echo ""
+    echo " use-role <ver> <role>"
+    echo "   Start a committed image and run a role"  # desc
+    echo ""
     echo " arguments:"
     echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
     echo "  ID  > This is the container name or ID to use to make a commit, full name required"
@@ -671,7 +674,7 @@ case "$subcmd" in
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./repos/dev-env-ansible; exec zsh"
+            bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh"
 
     else
         docker run --rm -it \
@@ -679,7 +682,7 @@ case "$subcmd" in
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./$(basename "$wdir"); exec zsh"
+            bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh"
     fi
     ;;
 
@@ -696,7 +699,7 @@ case "$subcmd" in
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "$cmd; exec zsh"
+        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh"
     ;;
 
 'run-role')
@@ -721,6 +724,30 @@ case "$subcmd" in
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
         bash -c "$cmd" | tee $TEST_LOG
+    ;;
+
+'use-role')
+    # get args
+    ver="$1"
+    role="$2"
+
+    # build up the command here
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
+    cmd="$cmd '$role'"
+
+    # select docker
+    ver="$DOCKER_FILE_UBUNTU_20"
+    if [[ $# -gt 0 ]]; then
+        ver="$(select_docker_ver $1)"
+    fi
+
+    # start bash inside container
+    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    docker run --rm \
+        --network="host" \
+        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        "$CONTAINER_TAG" \
+        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh"
     ;;
 
 'run-test')
