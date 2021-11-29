@@ -109,6 +109,7 @@
 - name: Get latest source code for gtkwave
   git:
     repo: https://github.com/gtkwave/gtkwave.git
+    force: true
     dest: "{{ gtkwave_repos }}"
     clone: true
     version: "{{ gtkwave_repo_version | default('HEAD') }}"
