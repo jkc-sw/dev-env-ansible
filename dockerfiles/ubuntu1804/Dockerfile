@@ -1,6 +1,6 @@
 
 # Pull the prebuilt image
-FROM ubuntu:18.04
+FROM geerlingguy/docker-ubuntu1804-ansible
 
 # make sure some depenencies are installed
 RUN apt-get update && \
