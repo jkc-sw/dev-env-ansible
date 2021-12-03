@@ -17,6 +17,7 @@ stow_targets:
   - xmonad
   - xmobar
   - qtile
+  - gtkwave
 stow_targets_with_root:
   - doas_root
   - xmobar_root
