@@ -1,4 +1,10 @@
 ---
+- name: Need man folder for java to work
+  become: true
+  file:
+    path: "/usr/share/man/man1"
+    state: directory
+
 - name: Install OpenJDK
   when: "ansible_lsb.release != '16.04'"
   become: true
