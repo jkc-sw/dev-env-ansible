@@ -10,7 +10,6 @@ on:
 jobs:
   roles:
     strategy:
-      fail-fast: false
       matrix:
         role: [
           'ansible_dev',

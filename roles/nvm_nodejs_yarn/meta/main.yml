@@ -2,3 +2,4 @@
 dependencies:
   - common_settings
   - dotfiles
+  - asdf_install
