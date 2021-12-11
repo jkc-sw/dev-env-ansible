@@ -32,7 +32,6 @@
     - software-properties-common
     - pdfgrep
     - libxml2-utils
-    - gpg-agent
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
@@ -42,6 +41,7 @@
     state: present
   loop:
     - rclone
+    - gpg-agent
 
 - name: Update dotfiles
   tags:
