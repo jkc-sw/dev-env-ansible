@@ -8,8 +8,6 @@ pushd "$SCRIPT_DIR" &>/dev/null
 
 # container tag
 CONTAINER_TAG=devenvansible:1.0
-# test log file name
-TEST_LOG=./test.log
 
 # ansible workspace path
 ANSIBLE_HOME=/home/developer
@@ -75,18 +73,28 @@ EOF
     echo -n "$playpath"
 }
 
-# define a function to perform check
-ansibleCheck() {
+# define a function to perform check on role
+roleCheck() {
+    log="$1"
     # perform test
-    if ! grep -q 'changed=0' $TEST_LOG; then
-        echo "changed should be 0 at the secound run" >&2
-        exit 1
-    fi
-    if ! grep -q 'failed=0' $TEST_LOG; then
+    if ! grep -q 'failed=0' "$log"; then
         echo "failed should be 0 at the secound run" >&2
         exit 2
     fi
-    if grep -q 'not installed properly' $TEST_LOG; then
+}
+
+# define a function to perform check
+ansibleCheck() {
+    log="$1"
+    # perform test
+    if ! grep -q 'changed=0' "$log"; then
+        echo "changed should be 0 at the secound run" >&2
+        exit 1
+    fi
+
+    roleCheck
+
+    if grep -q 'not installed properly' "$log"; then
         echo "checking exe that some are not done right" >&2
         exit 3
     fi
@@ -510,12 +518,12 @@ case "$subcmd" in
     if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$playpath" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$playpath" --tags "$tags"
 
     elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$playpath" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -577,12 +585,12 @@ case "$subcmd" in
     if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
 
     elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --tags "$tags" | tee $TEST_LOG
+        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
@@ -629,7 +637,7 @@ case "$subcmd" in
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
         "$CONTAINER_TAG" \
-        bash -i -c "$cmd ; exec zsh"
+        bash -i -c "$cmd ; command -v zsh && exec zsh || exec bash"
     ;;
 
 'commit')
@@ -674,7 +682,7 @@ case "$subcmd" in
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh"
+            bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
 
     else
         docker run --rm -it \
@@ -682,7 +690,7 @@ case "$subcmd" in
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh"
+            bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh || exec bash"
     fi
     ;;
 
@@ -699,7 +707,7 @@ case "$subcmd" in
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh"
+        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
     ;;
 
 'run-role')
@@ -717,13 +725,20 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
 
+    log="./role-$role-on-$ver.log"
+
+    # trap remove
+    trap "rm -f $log" EXIT SIGINT SIGTERM KILL
+
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
-        bash -c "$cmd" | tee $TEST_LOG
+        bash -c "$cmd" | tee "$log"
+    # perform check
+    roleCheck "$log"
     ;;
 
 'use-role')
@@ -747,7 +762,7 @@ case "$subcmd" in
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
-        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh"
+        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
     ;;
 
 'run-test')
@@ -761,15 +776,20 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
 
+    log="./test-$ver.log"
+
+    # trap remove
+    trap "rm -f $log" EXIT SIGINT SIGTERM KILL
+
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
-        bash -c "$cmd" | tee $TEST_LOG
+        bash -c "$cmd" | tee "$log"
     # perform check
-    ansibleCheck
+    ansibleCheck "$log"
     ;;
 
 *)
