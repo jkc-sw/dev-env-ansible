@@ -715,6 +715,8 @@ case "$subcmd" in
     ver="$1"
     role="$2"
 
+    log="./role-$role-on-$ver.log"
+
     # build up the command here
     cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
     cmd="$cmd '$role'"
@@ -724,8 +726,6 @@ case "$subcmd" in
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
-
-    log="./role-$role-on-$ver.log"
 
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
@@ -770,13 +770,14 @@ case "$subcmd" in
     cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -t "tagged"'
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
     cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
+
+    log="./test-$1.log"
+
     # select docker
     ver="$DOCKER_FILE_UBUNTU_20"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
-
-    log="./test-$ver.log"
 
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
