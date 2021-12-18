@@ -17,10 +17,10 @@
   changed_when: 'add_lttng_repo.rc != 0'
   failed_when: 'add_lttng_repo.rc != 0'
 
-- name: Install lttng
+- name: Install lttng stuff
   become: true
   apt:
-    name: ['lttng-tools']
+    name: ['babeltrace2', 'lttng-tools', 'liblttng-ust-dev']
     state: present
 
 - name: Add user to tracing group
@@ -29,12 +29,6 @@
     name: "{{ ansible_user_id }}"
     append: true
     groups: 'tracing'
-
-- name: Install babeltrace2
-  become: true
-  apt:
-    name: ['babeltrace2']
-    state: present
 
 - name: Make sure local bin exist
   file:
