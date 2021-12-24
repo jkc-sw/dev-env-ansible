@@ -18,6 +18,7 @@ stow_targets:
   - xmobar
   - qtile
   - gtkwave
+  - matplotlib
 stow_targets_with_root:
   - doas_root
   - xmobar_root
