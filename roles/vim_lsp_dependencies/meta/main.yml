@@ -8,3 +8,4 @@ dependencies:
   - conda_install
   - ansible_dev
   - llvm_from_source
+  - tectonic_from_source

@@ -1,0 +1,49 @@
+---
+- name: Check if tectonic is installed
+  shell: command -v tectonic && echo good || echo bad
+  register: tectonic_present
+  changed_when: "'bad' in tectonic_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ tectonic_repos }}"
+  register: tectonic_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "tectonic_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ tectonic_repos }}"
+  register: git_fetch_tectonic
+  changed_when: "git_fetch_tectonic.rc != 0"
+
+- name: Get latest source code for tectonic
+  git:
+    repo: https://github.com/tectonic-typesetting/tectonic
+    dest: "{{ tectonic_repos }}"
+    clone: true
+    version: "{{ tectonic_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_tectonic
+
+- name: Make sure some system dependencies are installed
+  when: git_clone_tectonic.changed or tectonic_present.changed
+  become: true
+  apt:
+    name: "{{ item }}"
+    state: 'present'
+  loop:
+    - libfontconfig1-dev
+    - libgraphite2-dev
+    - libharfbuzz-dev
+    - libicu-dev
+    - libssl-dev
+    - zlib1g-dev
+
+- name: Compile and update tectonic
+  when: git_clone_tectonic.changed or tectonic_present.changed
+  shell:
+    cmd: "{{ cargo_default_bin }}/cargo build --release"
+    chdir: "{{ tectonic_repos }}"
+
+# vim:et ts=2 sts=2 sw=2

@@ -289,13 +289,13 @@ case "$subcmd" in
     echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
 
     # add to playbook in case I forgot
-    awk "1;/roles:/{print \"    - $name\"}" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
+    awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
     if test "$?" -eq 0; then
         test -r "$WHOLE_PLAYBOOK_PATH.tmp" && mv "$WHOLE_PLAYBOOK_PATH.tmp" "$WHOLE_PLAYBOOK_PATH"
     fi
 
     # add to workflow in case I forgot
-    awk "1;/role:/{print \"          '$name',\"}" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
+    awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
     if test "$?" -eq 0; then
         test -r "$WORKFLOW_PATH.tmp" && mv "$WORKFLOW_PATH.tmp" "$WORKFLOW_PATH"
     fi

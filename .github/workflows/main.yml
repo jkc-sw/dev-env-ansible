@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         role: [
+          'texlab_from_source',
+          'tectonic_from_source',
           'ansible_dev',
           'asdf_install',
           'bashrc_like_a_pro',

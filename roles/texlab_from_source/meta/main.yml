@@ -1,0 +1,6 @@
+---
+dependencies:
+  - common_settings
+  - cargo_and_rustup
+
+# vim:et ts=2 sts=2 sw=2
