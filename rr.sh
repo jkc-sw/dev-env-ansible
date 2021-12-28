@@ -782,6 +782,8 @@ case "$subcmd" in
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
 
+    [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
+
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
     docker run --rm \
@@ -789,6 +791,9 @@ case "$subcmd" in
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
         bash -c "$cmd" | tee "$log"
+
+    [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
+
     # perform check
     ansibleCheck "$log"
     ;;

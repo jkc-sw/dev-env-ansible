@@ -1,4 +1,5 @@
 ---
+home_dir: "{{ ansible_env.HOME }}"
 kitty_repos: "{{ home_dir + '/repos/kitty' }}"
 local_bin: "{{ home_dir + '/.local/bin' }}"
 kitty_installer: "{{ kitty_repos + '/installer.sh' }}"
