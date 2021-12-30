@@ -6,6 +6,7 @@
     state: 'present'
   loop:
     - libssl-dev
+    - pkg-config
 
 - name: Install all those fancy variables
   shell:
