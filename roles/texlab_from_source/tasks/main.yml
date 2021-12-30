@@ -26,10 +26,10 @@
     update: true
   register: git_clone_texlab
 
-- name: Compile and update texlab
+- name: Compile/Install the texlab
   when: git_clone_texlab.changed or texlab_present.changed
   shell:
-    cmd: "{{ cargo_default_bin }}/cargo build --release"
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
     chdir: "{{ texlab_repos }}"
 
 # vim:et ts=2 sts=2 sw=2
