@@ -137,6 +137,8 @@
     - libjudy-dev
     - libbz2-dev
     - liblzma-dev
+    - autotools-dev
+    - automake
 
 - name: Configure before running build for gtkwave
   when: git_clone_gtkwave.changed or gtkwave_present.changed
