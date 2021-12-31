@@ -92,7 +92,7 @@ ansibleCheck() {
         exit 1
     fi
 
-    roleCheck
+    roleCheck "$log"
 
     if grep -q 'not installed properly' "$log"; then
         echo "checking exe that some are not done right" >&2
@@ -793,7 +793,6 @@ case "$subcmd" in
         bash -c "$cmd" | tee "$log"
 
     [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
-
     # perform check
     ansibleCheck "$log"
     ;;
