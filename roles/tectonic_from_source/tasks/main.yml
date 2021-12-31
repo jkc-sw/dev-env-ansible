@@ -40,10 +40,10 @@
     - libssl-dev
     - zlib1g-dev
 
-- name: Compile and update tectonic
+- name: compile/install tectonic
   when: git_clone_tectonic.changed or tectonic_present.changed
   shell:
-    cmd: "{{ cargo_default_bin }}/cargo build --release"
+    cmd: "{{ cargo_default_bin }}/cargo install --locked --path ."
     chdir: "{{ tectonic_repos }}"
 
 # vim:et ts=2 sts=2 sw=2
