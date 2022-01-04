@@ -36,3 +36,18 @@
   register: many_install
   failed_when: "many_install.rc != 0"
   changed_when: "many_install.rc != 0"
+
+- name: Some tools
+  shell:
+    cmd: |
+      {{ dev_condaenv }}/bin/python -m pip \
+        --disable-pip-version-check \
+        --no-python-version-warning \
+        install \
+        numpy \
+        scipy \
+        matplotlib \
+        pandas
+  register: many_install
+  failed_when: "many_install.rc != 0"
+  changed_when: "many_install.rc != 0"
