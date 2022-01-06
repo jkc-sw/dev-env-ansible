@@ -32,6 +32,7 @@
     - software-properties-common
     - pdfgrep
     - libxml2-utils
+    - gnupg
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
