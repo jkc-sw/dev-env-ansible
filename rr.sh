@@ -284,9 +284,10 @@ case "$subcmd" in
     echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
 
     # write defaults
-    echo '---'                      >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo ''                         >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo '---'                                 >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo 'home_dir: "{{ ansible_env.HOME }}" ' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo ''                                    >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2'            >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
 
     # add to playbook in case I forgot
     awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
