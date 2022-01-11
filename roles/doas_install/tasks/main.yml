@@ -46,13 +46,17 @@
     target: install
   become: true
 
+- name: Make sure the folder exist
+  become: true
+  file:
+    path: "/usr/local/etc"
+    state: directory
+
 - name: Create config file for doas
   become: true
-  lineinfile:
-    create: true
-    path: /usr/local/etc/doas.conf
-    state: present
-    line: "permit {{ ansible_user_id }} as root"
-    regexp: "permit {{ ansible_user_id }} as root"
+  template:
+    mode: '0440'
+    src: doas.conf.j2
+    dest: /usr/local/etc/doas.conf
 
 # vim:et ts=2 sts=2 sw=2
