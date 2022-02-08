@@ -63,6 +63,12 @@
   set_fact:
     gui: true
 
+- name: Install llvm without building
+  tags:
+    - fast
+  set_fact:
+    fast: true
+
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:
 #     cmd: |

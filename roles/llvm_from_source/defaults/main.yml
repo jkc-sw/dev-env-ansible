@@ -5,5 +5,7 @@ clangd_exe_path: "/usr/bin/{{ clangd_name }}"
 clangd_ln_path: '/usr/bin/clangd'
 clang_exe_path: "/usr/bin/{{ clang_name }}"
 clang_ln_path: '/usr/bin/clang'
+clangpp_exe_path: "/usr/bin/{{ clangpp_name }}"
+clangpp_ln_path: '/usr/bin/clang++'
 
 # vim:et ts=2 sts=2 sw=2

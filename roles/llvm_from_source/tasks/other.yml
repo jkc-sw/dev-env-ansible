@@ -1,4 +1,14 @@
 ---
+- name: Remove clang from system repo
+  become: true
+  when: "ansible_lsb.release != '16.04'"
+  apt:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - clangd-10
+    - clang-10
+
 - name: Check if clang is installed
   shell: command -v clang && echo good || echo bad
   register: llvm_present

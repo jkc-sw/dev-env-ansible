@@ -719,7 +719,7 @@ case "$subcmd" in
     log="./role-$role-on-$ver.log"
 
     # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r -t "tagged,fast"'
     cmd="$cmd '$role'"
 
     # select docker
@@ -768,9 +768,9 @@ case "$subcmd" in
 
 'run-test')
     # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -t "tagged"'
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'tagged' && ./rr.sh check"
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -t "tagged,fast"'
+    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -t 'tagged,fast' && ./rr.sh check"
+    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -t 'tagged,fast' && ./rr.sh check"
 
     log="./test-$1.log"
 
