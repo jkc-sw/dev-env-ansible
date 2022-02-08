@@ -719,7 +719,7 @@ case "$subcmd" in
     log="./role-$role-on-$ver.log"
 
     # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r -t "tagged,fast"'
+    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -t "tagged,fast" -r'
     cmd="$cmd '$role'"
 
     # select docker
