@@ -63,6 +63,10 @@
   set_fact:
     gui: true
 
+- name: Install llvm without building - Default build
+  set_fact:
+    fast: false
+
 - name: Install llvm without building
   tags:
     - fast
