@@ -1,6 +1,7 @@
 ---
 dependencies:
   - common_settings
+  - vnc
   - ansible_dev
   - dotfiles
   - desktop
