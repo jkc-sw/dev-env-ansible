@@ -1,4 +1,5 @@
 ---
 dependencies:
   - common_settings
+  - openjdk_install
   - dotfiles
