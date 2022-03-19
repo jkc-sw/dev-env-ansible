@@ -4,6 +4,7 @@ FROM ubuntu:20.04
 
 # make sure some depenencies are installed
 RUN apt-get update && \
+    apt-get dist-upgrade -y && \
     apt-get install -y --no-install-recommends \
     sudo
 
