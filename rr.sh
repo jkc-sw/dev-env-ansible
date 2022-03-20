@@ -296,7 +296,7 @@ case "$subcmd" in
     fi
 
     # add to workflow in case I forgot
-    awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
+    awk "1; /role:/ { if (found == 0) { print \"          '$name',\" }; found++ }" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
     if test "$?" -eq 0; then
         test -r "$WORKFLOW_PATH.tmp" && mv "$WORKFLOW_PATH.tmp" "$WORKFLOW_PATH"
     fi

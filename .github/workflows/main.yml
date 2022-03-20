@@ -9,10 +9,10 @@ on:
 
 jobs:
   roles:
-    - qt_install
     strategy:
       matrix:
         role: [
+          'qt_install',
           'texlab_from_source',
           'tectonic_from_source',
           'ansible_dev',
