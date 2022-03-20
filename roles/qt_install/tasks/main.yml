@@ -1,0 +1,16 @@
+---
+- name: Add ppa for qt4 on Ubuntu 20
+  when: "ansible_lsb.release == '20.04'"
+  become: true
+  apt_repository:
+    repo: ppa:rock-core/qt4
+    state: present
+    update_cache: true
+
+- name: Install qt4
+  become: true
+  apt:
+    name: ['libqtcore4', 'libqtgui4']
+    state: present
+
+# vim:et ts=2 sts=2 sw=2

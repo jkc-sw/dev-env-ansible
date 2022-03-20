@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - qt_install
     - common_settings
     - doas_install
     - lttng_install

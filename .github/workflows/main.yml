@@ -9,6 +9,7 @@ on:
 
 jobs:
   roles:
+    - qt_install
     strategy:
       matrix:
         role: [
