@@ -47,6 +47,7 @@
         numpy \
         scipy \
         matplotlib \
+        slack_bolt \
         pandas
   register: many_install
   failed_when: "many_install.rc != 0"
