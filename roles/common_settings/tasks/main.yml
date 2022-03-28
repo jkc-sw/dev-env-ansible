@@ -42,6 +42,7 @@
     - tikzit # Can be from source in the future
     - libtinfo5
     - libncurses5
+    - ncdu
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
