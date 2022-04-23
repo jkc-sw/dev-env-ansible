@@ -35,3 +35,32 @@
     name: "{{ ansible_user_id }}"
     append: true
     groups: 'docker'
+
+# - name: Need to make sure docker folder exist
+#   file:
+#     path: "/etc/docker"
+#     state: directory
+#
+# - name: Add default dns to the docker daemon file
+#   become: true
+#   shell:
+#     cmd: |
+#       set -x  # fail when any fail
+#       dj='/etc/docker/daemon.json'
+#       if [[ ! -w "$dj" ]]; then
+#         echo '{}' > "$dj"
+#       fi
+#       inp="$(cat "$dj")"
+#       dnss=('"8.8.8.8"')
+#       while read -r li; do
+#         if [[ "$li" =~ nameserver ]]; then
+#           dnss+=("\"${li#nameserver *}\"")
+#         fi
+#       done < /etc/resolv.conf
+#       IFS=','
+#       jq ".dns |=[${dnss[*]}]" <<<"$inp" | tee "$dj"
+#     executable: /bin/bash
+#   register: update_docker_daemonjson
+#   changed_when: "update_docker_daemonjson.rc != 0"
+#   failed_when: "update_docker_daemonjson.rc != 0"
+

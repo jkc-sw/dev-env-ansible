@@ -22,6 +22,7 @@ DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR/../focus-side.vim:$ANSI
 DOCKER_FILE_DIR=./dockerfiles
 
 # docker file name
+DOCKER_FILE_UBUNTU_22="$DOCKER_FILE_DIR/ubuntu2204"
 DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004"
 DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804"
 DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604"
@@ -210,6 +211,10 @@ select_docker_ver() {
     ver=$1
     # select the version
     case "$ver" in
+    22)
+        echo -n "$DOCKER_FILE_UBUNTU_22"
+        ;;
+
     20)
         echo -n "$DOCKER_FILE_UBUNTU_20"
         ;;
@@ -245,6 +250,29 @@ if test "$#" -eq 0; then
     displayHelp
     exit 0
 fi
+
+# Define function to get password
+set_pass() {
+    # default password
+    if [[ -z "$MY_PASS_ID" || -z "$MY_GPG_DIR" || -z "$PASSWORD_STORE_DIR" ]]; then
+        return
+    fi
+
+    # try to get the password
+    # need "system"
+    pw="$(pass show system 2>/dev/null)"
+    if [[ -z "$pw" ]]; then
+        return
+    fi
+
+    # store the password to the file
+    sed -i "s/\(localhost.*\)/\1 ansible_become_pass='$pw'/" ./hosts
+}
+
+# define a function to delete the password
+reset_pass() {
+    sed -i "s/ *ansible_become_pass.*//" ./hosts
+}
 
 # if there are arg for test, run test
 subcmd="$1"
@@ -512,6 +540,13 @@ case "$subcmd" in
     # Write the role
     playpath="$(writePlaybook "$role")"
 
+    # set the password
+    set_pass
+    (
+        sleep 5
+        reset_pass
+    ) &!
+
     # trap remove
     trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
 
@@ -519,12 +554,12 @@ case "$subcmd" in
     if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$playpath" --tags "$tags"
+        ansible-playbook -vvv "$playpath" --tags "$tags"
 
     elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$playpath" --tags "$tags"
+        ansible-playbook "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -582,16 +617,23 @@ case "$subcmd" in
 
     install_ansible
 
+    # set the password
+    set_pass
+    (
+        sleep 5
+        reset_pass
+    ) &!
+
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
 
     elif [[ "$verbose" == 'false' ]]; then
         PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -K "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
@@ -607,7 +649,7 @@ case "$subcmd" in
 
 'run')
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_20"
+    ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -627,7 +669,7 @@ case "$subcmd" in
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_20"
+    ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -723,7 +765,7 @@ case "$subcmd" in
     cmd="$cmd '$role'"
 
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_20"
+    ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -752,7 +794,7 @@ case "$subcmd" in
     cmd="$cmd '$role'"
 
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_20"
+    ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
@@ -775,7 +817,7 @@ case "$subcmd" in
     log="./test-$1.log"
 
     # select docker
-    ver="$DOCKER_FILE_UBUNTU_20"
+    ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
