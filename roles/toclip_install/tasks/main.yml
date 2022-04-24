@@ -34,6 +34,16 @@
     update: true
   register: git_clone_toclip
 
+- name: Get the system info
+  shell:
+    cmd: |
+      printenv
+      git --version
+      /usr/bin/git ls-remote https://github.com/jkc-sw/toclip.git -h refs/heads/HEAD || true
+    executable: /bin/bash
+  register: get_system_info
+  changed_when: "get_system_info.rc != 0"
+
 - name: Install toclip
   when: git_clone_toclip.changed
   community.general.make:
