@@ -25,15 +25,6 @@
   register: git_fetch_toclip
   changed_when: "git_fetch_toclip.rc != 0"
 
-- name: Get latest source code for toclip
-  git:
-    repo: https://github.com/jkc-sw/toclip.git
-    dest: "{{ toclip_repos }}"
-    clone: true
-    version: "{{ toclip_repo_version | default('HEAD') }}"
-    update: true
-  register: git_clone_toclip
-
 - name: Get the system info
   shell:
     cmd: |
@@ -43,6 +34,15 @@
     executable: /bin/bash
   register: get_system_info
   changed_when: "get_system_info.rc != 0"
+
+- name: Get latest source code for toclip
+  git:
+    repo: https://github.com/jkc-sw/toclip.git
+    dest: "{{ toclip_repos }}"
+    clone: true
+    version: "{{ toclip_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_toclip
 
 - name: Install toclip
   when: git_clone_toclip.changed
