@@ -255,6 +255,7 @@ fi
 set_pass() {
     # default password
     if [[ -z "$MY_PASS_ID" || -z "$MY_GPG_DIR" || -z "$PASSWORD_STORE_DIR" ]]; then
+        echo -n "-K"
         return
     fi
 
@@ -262,11 +263,13 @@ set_pass() {
     # need "system"
     pw="$(pass show system 2>/dev/null)"
     if [[ -z "$pw" ]]; then
+        echo -n "-K"
         return
     fi
 
     # store the password to the file
     sed -i "s/\(localhost.*\)/\1 ansible_become_pass='$pw'/" ./hosts
+    echo -n ''
 }
 
 # define a function to delete the password
@@ -541,7 +544,7 @@ case "$subcmd" in
     playpath="$(writePlaybook "$role")"
 
     # set the password
-    set_pass
+    kflag="$(set_pass)"
     (
         sleep 5
         reset_pass
@@ -550,17 +553,23 @@ case "$subcmd" in
     # trap remove
     trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
 
+    # buil args
+    aargs=()
+
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -vvv "$playpath" --tags "$tags"
-
-    elif [[ "$verbose" == 'false' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook "$playpath" --tags "$tags"
+        aargs+=("-vvv")
     fi
+    if [[ -n "$kflag" ]]; then
+        aargs+=("$kflag")
+    fi
+    aargs+=("$playpath")
+    aargs+=("--tags")
+    aargs+=("$tags")
+
+    PY_COLORS=1 \
+    ANSIBLE_FORCE_COLOR=1 \
+    ansible-playbook "${aargs[@]}"
     ;;
 
 'install-i')
@@ -618,23 +627,29 @@ case "$subcmd" in
     install_ansible
 
     # set the password
-    set_pass
+    kflag="$(set_pass)"
     (
         sleep 5
         reset_pass
     ) &!
 
+    # buil args
+    aargs=()
+
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
-
-    elif [[ "$verbose" == 'false' ]]; then
-        PY_COLORS=1 \
-        ANSIBLE_FORCE_COLOR=1 \
-        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        aargs+=("-vvv")
     fi
+    if [[ -n "$kflag" ]]; then
+        aargs+=("$kflag")
+    fi
+    aargs+=("$WHOLE_PLAYBOOK_PATH")
+    aargs+=("--tags")
+    aargs+=("$tags")
+
+    PY_COLORS=1 \
+    ANSIBLE_FORCE_COLOR=1 \
+    ansible-playbook "${aargs[@]}"
     ;;
 
 'tmux')
