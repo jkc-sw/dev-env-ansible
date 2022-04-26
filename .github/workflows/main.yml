@@ -61,7 +61,7 @@ jobs:
           'xmonad_wm',
           'zsh_setup'
           ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Make it writable
@@ -73,8 +73,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['18', '20']
-    runs-on: ubuntu-20.04
+        os: ['20', '18', '22']
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Run command
