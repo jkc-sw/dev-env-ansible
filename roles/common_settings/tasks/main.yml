@@ -44,6 +44,8 @@
     - libncurses5
     - ncdu
     - jq
+    - texinfo
+    - gcc-multilib
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
