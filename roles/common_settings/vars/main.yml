@@ -23,3 +23,4 @@ cocotb_test_repo_version: '19b1cd087407926005ac8c865934455e913b8b76'
 gtkwave_repo_version: '13fc69b24caa203d3b1946eb228d462c1e9d98c5'
 tectonic_repo_version: 'bcdde755c59cedb02126aab7b27f5f33be7a0800'
 texlab_repo_version: '697227895a26f8e2a5979af97e56b40bf3f36e1e'
+node_version_via_nvm: '16.13.2'  # --lts
