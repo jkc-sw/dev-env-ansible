@@ -31,7 +31,6 @@
         pyqtgraph \
         docker-compose \
         more_itertools \
-        python-lsp-server[all] \
         requests
   register: many_install
   failed_when: "many_install.rc != 0"
@@ -44,6 +43,8 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
+        python-lsp-server[all] \
+        atlassian-python-api \
         numpy \
         scipy \
         matplotlib \
