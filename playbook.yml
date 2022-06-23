@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - zeotier_install
     - qt_install
     - common_settings
     - doas_install

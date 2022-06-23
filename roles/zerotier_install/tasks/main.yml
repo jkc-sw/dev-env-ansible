@@ -1,0 +1,28 @@
+---
+- name: Download and Add Key to Apt-Get Keyring
+  become: true
+  apt_key:
+    url: "https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg"
+    state: present
+
+- name: Add Repository into /etc/apt/sources.list
+  become: true
+  apt_repository:
+    repo: "deb http://download.zerotier.com/debian/{{ ansible_lsb.codename }} {{ ansible_lsb.codename }} main"
+    state: present
+    update_cache: true
+
+- name: Install zeotier
+  become: true
+  apt:
+    name: zerotier-one
+    state: present
+
+# # Since this only works for the real machine, comment out here
+# - name: Make sure the service is running
+#   systemd:
+#     name: zerotier-one
+#     state: started
+#     enabled: yes
+
+# vim:et ts=2 sts=2 sw=2
