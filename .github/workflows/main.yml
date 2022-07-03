@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'netmakers_netclient',
           'zeotier_install',
           'qt_install',
           'texlab_from_source',
