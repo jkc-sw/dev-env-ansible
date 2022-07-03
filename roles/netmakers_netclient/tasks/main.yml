@@ -8,7 +8,7 @@
 - name: Add Repository into /etc/apt/sources.list
   become: true
   apt_repository:
-    repo: "deb https:apt.netmaker.org stable main"
+    repo: "deb [arch=amd64] https:apt.netmaker.org stable main"
     state: present
     update_cache: true
 

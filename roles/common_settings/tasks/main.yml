@@ -1,63 +1,4 @@
 ---
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    name: "{{ item }}"
-    state: 'present'
-    update_cache: true
-  loop:
-    - git
-    - wget
-    - tree
-    - curl
-    - figlet
-    - lolcat
-    - smbclient
-    - samba-common
-    - cifs-utils
-    - gdb
-    - apt-transport-https
-    - pv
-    - nmap
-    - gawk
-    - xvfb
-    - htop
-    - openssh-server
-    - net-tools
-    - cppcheck
-    - moreutils
-    - util-linux
-    - parallel
-    - coreutils
-    - software-properties-common
-    - pdfgrep
-    - libxml2-utils
-    - gnupg
-    - faketime
-    - pass
-    - qtpass
-    - expect
-    - gv
-    - mupdf
-    - tikzit # Can be from source in the future
-    - libtinfo5
-    - libncurses5
-    - ncdu
-    - jq
-    - texinfo
-    - gcc-multilib
-    - wiggle
-
-- name: Make sure some system dependencies are installed without Ubuntu 16.04
-  become: true
-  when: "ansible_lsb.release != '16.04'"
-  apt:
-    name: "{{ item }}"
-    state: present
-  loop:
-    - rclone
-    - gpg-agent
-
 - name: Update dotfiles
   tags:
     - dotfiles
@@ -70,6 +11,16 @@
   set_fact:
     gui: true
 
+- name: Skip the common settings for development - default is not skipping
+  set_fact:
+    skip_common_settings: false
+
+- name: Skip the common settings for development
+  tags:
+    - skipcs
+  set_fact:
+    skip_common_settings: true
+
 - name: Install llvm without building - Default build
   set_fact:
     fast: false
@@ -80,18 +31,82 @@
   set_fact:
     fast: true
 
-# - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
-#   shell:
-#     cmd: |
-#       export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 # any nonzero value for noninteractive installation
-#       export BOOTSTRAP_HASKELL_NO_UPGRADE=0 # any nonzero value to not trigger the upgrade
-#       export GHCUP_USE_XDG_DIRS=1 # any nonzero value to respect The XDG Base Directory Specification
-#       export BOOTSTRAP_HASKELL_VERBOSE=1 # any nonzero value for more verbose installation
-#       export BOOTSTRAP_HASKELL_INSTALL_STACK=1 # whether to install latest stack
-#       export BOOTSTRAP_HASKELL_INSTALL_HLS=1 # whether to install latest hls
-#       export BOOTSTRAP_HASKELL_ADJUST_BASHRC=  # whether to adjust PATH in bashrc (prepend)
-#       curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-#   register: ghcup_install
-#   failed_when: "ghcup_install.rc != 0"
-#   changed_when: "ghcup_install.rc != 0"
+- name: Common settings
+  when: not skip_common_settings | default(true)
+  block:
+
+  - name: Make sure some system dependencies are installed
+    become: true
+    apt:
+      name: "{{ item }}"
+      state: 'present'
+      update_cache: true
+    loop:
+      - git
+      - wget
+      - tree
+      - curl
+      - figlet
+      - lolcat
+      - smbclient
+      - samba-common
+      - cifs-utils
+      - gdb
+      - apt-transport-https
+      - pv
+      - nmap
+      - gawk
+      - xvfb
+      - htop
+      - openssh-server
+      - net-tools
+      - cppcheck
+      - moreutils
+      - util-linux
+      - parallel
+      - coreutils
+      - software-properties-common
+      - pdfgrep
+      - libxml2-utils
+      - gnupg
+      - faketime
+      - pass
+      - qtpass
+      - expect
+      - gv
+      - mupdf
+      - tikzit # Can be from source in the future
+      - libtinfo5
+      - libncurses5
+      - ncdu
+      - jq
+      - texinfo
+      - gcc-multilib
+      - wiggle
+
+  - name: Make sure some system dependencies are installed without Ubuntu 16.04
+    become: true
+    when: "ansible_lsb.release != '16.04'"
+    apt:
+      name: "{{ item }}"
+      state: present
+    loop:
+      - rclone
+      - gpg-agent
+
+  # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
+  #   shell:
+  #     cmd: |
+  #       export BOOTSTRAP_HASKELL_NONINTERACTIVE=1 # any nonzero value for noninteractive installation
+  #       export BOOTSTRAP_HASKELL_NO_UPGRADE=0 # any nonzero value to not trigger the upgrade
+  #       export GHCUP_USE_XDG_DIRS=1 # any nonzero value to respect The XDG Base Directory Specification
+  #       export BOOTSTRAP_HASKELL_VERBOSE=1 # any nonzero value for more verbose installation
+  #       export BOOTSTRAP_HASKELL_INSTALL_STACK=1 # whether to install latest stack
+  #       export BOOTSTRAP_HASKELL_INSTALL_HLS=1 # whether to install latest hls
+  #       export BOOTSTRAP_HASKELL_ADJUST_BASHRC=  # whether to adjust PATH in bashrc (prepend)
+  #       curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+  #   register: ghcup_install
+  #   failed_when: "ghcup_install.rc != 0"
+  #   changed_when: "ghcup_install.rc != 0"
+
 # vim:et ts=2 sts=2 sw=2
