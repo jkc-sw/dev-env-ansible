@@ -49,6 +49,7 @@
         scipy \
         matplotlib \
         slack_bolt \
+        jira \
         pandas
   register: many_install
   failed_when: "many_install.rc != 0"
