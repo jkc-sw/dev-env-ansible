@@ -3,7 +3,7 @@
   gather_facts: true
   roles:
     - netmakers_netclient
-    - zeotier_install
+    - zerotier_install
     - qt_install
     - common_settings
     - doas_install
