@@ -62,6 +62,7 @@
       - net-tools
       - cppcheck
       - autocutsel
+      - iftop
       - moreutils
       - util-linux
       - parallel
