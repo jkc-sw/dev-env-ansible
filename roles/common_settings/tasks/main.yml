@@ -61,6 +61,7 @@
       - openssh-server
       - net-tools
       - cppcheck
+      - autocutsel
       - moreutils
       - util-linux
       - parallel
