@@ -3,21 +3,20 @@
   become: true
   when: gui | default(false)
   apt:
-    name: "{{ item }}"
     state: present
-  loop:
-    - xmonad
-    - libghc-xmonad-contrib-dev
-    - xmobar
-    - build-essential
-    - libffi-dev
-    - libgmp-dev
-    - libgmp10
-    - libncurses-dev
-    - libncurses5
-    - libtinfo5
-    - libxft-dev
-    - stalonetray
+    name:
+      - xmonad
+      - libghc-xmonad-contrib-dev
+      - xmobar
+      - build-essential
+      - libffi-dev
+      - libgmp-dev
+      - libgmp10
+      - libncurses-dev
+      - libncurses5
+      - libtinfo5
+      - libxft-dev
+      - stalonetray
 
 # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
 #   shell:

@@ -2,11 +2,26 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - libssl-dev
-    - pkg-config
+    name:
+      - libssl-dev
+      - pkg-config
+
+- name: Install many rust tool with brew
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
+    name:
+      - fd
+      - rg
+      - bat
+      - starship
+      - dust
+      - exa
+      - tokei
+      - procs
+      - sd
+      - zoxide
 
 - name: Install all those fancy variables
   shell:

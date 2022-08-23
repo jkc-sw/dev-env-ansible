@@ -35,16 +35,30 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - python
-    - flex
-    - bison
-    - build-essential
-    - git
-    - graphviz
-    - ninja-build
+    name:
+      - flex
+      - bison
+      - build-essential
+      - git
+      - graphviz
+      - ninja-build
+
+- name: Python 2 on older os
+  when: "ansible_lsb.release != '20.04' and ansible_lsb.release != '22.04'"
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - python
+
+- name: Python 2 on newer os
+  when: "ansible_lsb.release != '16.04' and ansible_lsb.release != '18.04'"
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - python2
 
 - name: Create the build folder
   file:

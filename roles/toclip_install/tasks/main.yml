@@ -2,10 +2,9 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - make
+    name:
+      - make
 
 - name: Check if toclip is installed
   shell: command -v toclip && echo good || echo bad

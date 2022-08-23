@@ -6,7 +6,11 @@ FROM ubuntu:22.04
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
     apt-get install -y --no-install-recommends \
-    sudo
+    sudo \
+    git \
+    curl \
+    xz-utils \
+    ca-certificates
 
 # set local
 ENV LC_ALL C.UTF-8
@@ -17,6 +21,7 @@ ARG SHELL_USER=developer
 ARG SHELL_UID=1000
 ARG SHELL_GID=1000
 ENV HOME /home/${SHELL_USER}
+ENV USER ${SHELL_USER}
 RUN export uid=${SHELL_UID} gid=${SHELL_GID} && \
     mkdir -p /home/${SHELL_USER} && \
     echo "${SHELL_USER}:x:${uid}:${gid}:${SHELL_USER},,,:${HOME}:/bin/bash" >> /etc/passwd && \
@@ -24,7 +29,7 @@ RUN export uid=${SHELL_UID} gid=${SHELL_GID} && \
     echo "${SHELL_USER} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${SHELL_USER} && \
     chmod 0440 /etc/sudoers.d/${SHELL_USER} && \
     chown ${uid}:${gid} -R ${HOME}
-RUN echo ${SHELL_USER}:APASSWORD | chpasswd
+RUN echo ${SHELL_USER}:aoeu | chpasswd
 
 # Switch to the new user
 USER ${SHELL_USER}

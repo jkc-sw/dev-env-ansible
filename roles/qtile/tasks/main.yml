@@ -2,10 +2,9 @@
 - name: Install dependencies
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - libpangocairo-1.0-0
+    name:
+      - libpangocairo-1.0-0
 
 - name: Install first
   shell:

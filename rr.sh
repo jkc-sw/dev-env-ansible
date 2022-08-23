@@ -235,13 +235,25 @@ select_docker_ver() {
     esac
 }
 
+# Setup env
+setup_brew() {
+    if [[ -x /home/linuxbrew/.linuxbrew/bin/brew && -z "$HOMEBREW_PREFIX" ]]; then
+        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    fi
+}
+
 # function to install ansible
 install_ansible() {
+    setup_brew
     # check if the ansible is installed, if not, install it
     if ! command -v ansible &>/dev/null; then
+        # sudo apt install -y python3 python3-pip
+        # sudo -H python3 -m pip install ansible
         sudo apt update
-        sudo apt install -y python3 python3-pip
-        sudo -H python3 -m pip install ansible
+        sudo apt install -y curl git ca-certificates xz-utils
+        /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        setup_brew
+        brew install ansible
     fi
 }
 
@@ -501,9 +513,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        ansible-playbook -vvv "$playpath" --tags "$tags"
+        time ansible-playbook -vvv "$playpath" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        ansible-playbook "$playpath" --tags "$tags"
+        time ansible-playbook "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -567,7 +579,7 @@ case "$subcmd" in
     aargs+=("--tags")
     aargs+=("$tags")
 
-    PY_COLORS=1 \
+    time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
     ansible-playbook "${aargs[@]}"
     ;;
@@ -597,9 +609,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        time ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        time ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
@@ -647,7 +659,7 @@ case "$subcmd" in
     aargs+=("--tags")
     aargs+=("$tags")
 
-    PY_COLORS=1 \
+    time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
     ansible-playbook "${aargs[@]}"
     ;;
@@ -657,7 +669,7 @@ case "$subcmd" in
         tmux new-session -d -s blah -n dev-env-ansible -c "$SCRIPT_DIR"
         tmux new-window -d -t blah: -n dockers -c "$SCRIPT_DIR"
         tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
-        tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
+        # tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
     fi
     tmux attach-session -t blah
     ;;
@@ -671,7 +683,7 @@ case "$subcmd" in
 
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
-    docker run --rm -it \
+    docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
@@ -690,7 +702,7 @@ case "$subcmd" in
     fi
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
-    docker run --rm -it \
+    docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
@@ -735,7 +747,7 @@ case "$subcmd" in
 
     # start bash inside container
     if [[ -z $wdir ]]; then
-        docker run --rm -it \
+        docker run --cpu-shares=1024 --rm -it \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
@@ -743,7 +755,7 @@ case "$subcmd" in
             bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
 
     else
-        docker run --rm -it \
+        docker run --cpu-shares=1024 --rm -it \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
@@ -760,7 +772,7 @@ case "$subcmd" in
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     # start bash inside container
-    docker run --rm -it \
+    docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
@@ -790,7 +802,7 @@ case "$subcmd" in
 
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
-    docker run --rm \
+    docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
@@ -816,7 +828,7 @@ case "$subcmd" in
 
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
-    docker run --rm \
+    docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
@@ -844,7 +856,7 @@ case "$subcmd" in
 
     # start bash inside container
     docker build --tag "$CONTAINER_TAG" "$ver" && \
-    docker run --rm \
+    docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \

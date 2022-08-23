@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         role: [
+          'nix_install',
+          'brew_install',
           'netmakers_netclient',
           'zeotier_install',
           'qt_install',

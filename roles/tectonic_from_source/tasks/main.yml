@@ -30,15 +30,14 @@
   when: git_clone_tectonic.changed or tectonic_present.changed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - libfontconfig1-dev
-    - libgraphite2-dev
-    - libharfbuzz-dev
-    - libicu-dev
-    - libssl-dev
-    - zlib1g-dev
+    name:
+      - libfontconfig1-dev
+      - libgraphite2-dev
+      - libharfbuzz-dev
+      - libicu-dev
+      - libssl-dev
+      - zlib1g-dev
 
 - name: compile/install tectonic
   when: git_clone_tectonic.changed or tectonic_present.changed

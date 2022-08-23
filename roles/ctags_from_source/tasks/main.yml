@@ -5,69 +5,78 @@
     name: ctags
     state: absent
 
-- name: Check if ctags is installed
-  shell: command -v ctags && echo good || echo bad
-  register: ctags_present
-  changed_when: "'bad' in ctags_present.stdout"
+- name: Install with brew
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
+    name:
+      - universal-ctags
 
-- name: Check if the folder exists
-  stat:
-    path: "{{ ctags_repos }}"
-  register: ctags_repos_exists
+# - name: Check if ctags is installed
+#   shell: command -v ctags && echo good || echo bad
+#   register: ctags_present
+#   changed_when: "'bad' in ctags_present.stdout"
+#
+# - name: Check if the folder exists
+#   stat:
+#     path: "{{ ctags_repos }}"
+#   register: ctags_repos_exists
+#
+# - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+#   when: "ctags_repos_exists.stat.exists"
+#   shell:
+#     cmd: git fetch --tags -f
+#     chdir: "{{ ctags_repos }}"
+#   register: git_fetch_ctags
+#   changed_when: "git_fetch_ctags.rc != 0"
+#
+# - name: Get latest source code for ctags
+#   git:
+#     repo: https://github.com/universal-ctags/ctags.git
+#     dest: "{{ ctags_repos }}"
+#     clone: true
+#     version: "{{ ctags_repo_version | default('HEAD') }}"
+#     update: true
+#   register: git_clone_ctags
+#
+# - name: Make sure some system dependencies are installed
+#   become: true
+#   apt:
+#     state: 'present'
+#     name:
+#       - git
+#       - gcc
+#       - make
+#       - autoconf
+#       - automake
+#       - pkg-config
+#       - python3-docutils
+#       - libseccomp-dev
+#       - libjansson-dev
+#       - libyaml-dev
+#       - libxml2-dev
+#
+# - name: Configure before running build for ctags
+#   when: git_clone_ctags.changed or ctags_present.changed
+#   shell:
+#     chdir: "{{ ctags_repos }}"
+#     cmd: |
+#       ./autogen.sh
+#       ./configure
+#
+# - name: Compile ctags
+#   when: git_clone_ctags.changed or ctags_present.changed
+#   community.general.make:
+#     jobs: "{{ ansible_processor_vcpus }}"
+#     chdir: "{{ ctags_repos }}"
+#   register: ctags_built
+#
+# - name: update ctags
+#   when: git_clone_ctags.changed or ctags_present.changed
+#   community.general.make:
+#     chdir: "{{ ctags_repos }}"
+#     target: install
+#   register: ctags_built
+#   become: true
 
-- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "ctags_repos_exists.stat.exists"
-  shell:
-    cmd: git fetch --tags -f
-    chdir: "{{ ctags_repos }}"
-  register: git_fetch_ctags
-  changed_when: "git_fetch_ctags.rc != 0"
-
-- name: Get latest source code for ctags
-  git:
-    repo: https://github.com/universal-ctags/ctags.git
-    dest: "{{ ctags_repos }}"
-    clone: true
-    version: "{{ ctags_repo_version | default('HEAD') }}"
-    update: true
-  register: git_clone_ctags
-
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    name: "{{ item }}"
-    state: 'present'
-  loop:
-    - git
-    - gcc
-    - make
-    - autoconf
-    - automake
-    - pkg-config
-    - python3-docutils
-    - libseccomp-dev
-    - libjansson-dev
-    - libyaml-dev
-    - libxml2-dev
-
-- name: Configure before running build for ctags
-  when: git_clone_ctags.changed or ctags_present.changed
-  shell:
-    chdir: "{{ ctags_repos }}"
-    cmd: |
-      ./autogen.sh
-      ./configure
-
-- name: Compile ctags
-  when: git_clone_ctags.changed or ctags_present.changed
-  community.general.make:
-    chdir: "{{ ctags_repos }}"
-  register: ctags_built
-
-- name: update ctags
-  when: git_clone_ctags.changed or ctags_present.changed
-  community.general.make:
-    chdir: "{{ ctags_repos }}"
-    target: install
-  register: ctags_built
-  become: true
+# vim:et ts=2 sts=2 sw=2

@@ -2,15 +2,14 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - git
-    - curl
-    - zsh
-    - libcap-ng-dev
-    - netcat
-    - minicom
+    name:
+      - git
+      - curl
+      - zsh
+      - libcap-ng-dev
+      - netcat
+      - minicom
 
 - name: Remove the old installer
   file:

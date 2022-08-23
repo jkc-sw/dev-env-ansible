@@ -38,9 +38,9 @@
   - name: Make sure some system dependencies are installed
     become: true
     apt:
-      name: "{{ item }}"
       state: 'present'
       update_cache: true
+<<<<<<< HEAD
     loop:
       - git
       - wget
@@ -86,16 +86,62 @@
       - gcc-multilib
       - wiggle
       - netdiscover
+=======
+      name:
+        - git
+        - wget
+        - tree
+        - curl
+        - figlet
+        - lolcat
+        - smbclient
+        - samba-common
+        - cifs-utils
+        - gdb
+        - apt-transport-https
+        - pv
+        - nmap
+        - gawk
+        - xvfb
+        - htop
+        - openssh-server
+        - net-tools
+        - cppcheck
+        - autocutsel
+        - iftop
+        - moreutils
+        - util-linux
+        - parallel
+        - coreutils
+        - software-properties-common
+        - pdfgrep
+        - libxml2-utils
+        - gnupg
+        - faketime
+        - pass
+        - qtpass
+        - expect
+        - gv
+        - mupdf
+        - tikzit # Can be from source in the future
+        - libtinfo5
+        - libncurses5
+        - ncdu
+        - jq
+        - texinfo
+        - gcc-multilib
+        - wiggle
+        - iperf3
+>>>>>>> 5a50c9776bbe12021e162d97a49e469b567d78f0
 
   - name: Make sure some system dependencies are installed without Ubuntu 16.04
     become: true
     when: "ansible_lsb.release != '16.04'"
     apt:
-      name: "{{ item }}"
       state: present
-    loop:
-      - rclone
-      - gpg-agent
+      name:
+        - rclone
+        - gpg-agent
 
   # - name: Install the xmonad (Don't use this, unless I want to setup the xmonad project from source)
   #   shell:

@@ -35,15 +35,14 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - libevent-dev
-    - ncurses-dev
-    - build-essential
-    - bison
-    - pkg-config
-    - automake
+    name:
+      - libevent-dev
+      - ncurses-dev
+      - build-essential
+      - bison
+      - pkg-config
+      - automake
 
 - name: Configure before running build for tmux
   when: git_clone_tmux.changed or tmux_present.changed
@@ -56,6 +55,7 @@
 - name: Compile tmux
   when: git_clone_tmux.changed or tmux_present.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ tmux_repos }}"
   register: tmux_built
 

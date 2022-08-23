@@ -7,6 +7,14 @@
     state: present
     update_cache: true
 
+- name: Add ppa for qt4 on Ubuntu 22
+  when: "ansible_lsb.release == '22.04'"
+  become: true
+  apt_repository:
+    repo: ppa:ubuntuhandbook1/ppa
+    state: present
+    update_cache: true
+
 - name: Install qt4
   become: true
   apt:

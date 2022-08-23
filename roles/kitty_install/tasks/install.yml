@@ -24,13 +24,12 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - python3
-    - python3-dev
-    - tar
-    - xz-utils
+    name:
+      - python3
+      - python3-dev
+      - tar
+      - xz-utils
 
 - name: Install kitty
   shell:

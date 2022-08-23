@@ -2,10 +2,9 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: absent
-  loop:
-    - tmuxinator
+    name:
+      - tmuxinator
 
 - name: Check if the folder exists
   stat:

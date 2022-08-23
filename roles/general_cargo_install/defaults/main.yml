@@ -4,26 +4,6 @@ bashrc_path: "{{ home_dir + '/.bashrc' }}"
 pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
 crates:
-  - exe: fd
-    crate: fd-find
-  - exe: rg
-    crate: ripgrep
-  - exe: bat
-    crate: bat
-  - exe: starship
-    crate: starship
-  - exe: dust
-    crate: du-dust
-  - exe: exa
-    crate: exa
-  - exe: tokei
-    crate: tokei
-  - exe: procs
-    crate: procs
-  - exe: sd
-    crate: sd
-  - exe: zoxide
-    crate: zoxide
   - exe: svls
     crate: svls
   - exe: svlint

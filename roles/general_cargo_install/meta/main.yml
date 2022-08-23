@@ -3,3 +3,4 @@ dependencies:
   - common_settings
   - cargo_and_rustup
   - powershell_install
+  - brew_install

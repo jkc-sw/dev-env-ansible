@@ -2,10 +2,9 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - fontconfig
+    name:
+      - fontconfig
 
 - name: Make sure autoload folder for fonts
   file:

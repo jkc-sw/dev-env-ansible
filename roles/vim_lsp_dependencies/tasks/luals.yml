@@ -2,10 +2,9 @@
 - name: Make sure the dependency is installed for luals
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - ninja-build
+    name:
+      - ninja-build
 
 - name: Check if the folder exists
   stat:

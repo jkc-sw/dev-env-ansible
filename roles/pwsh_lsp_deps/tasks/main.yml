@@ -1,4 +1,11 @@
 ---
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - libssl-dev
+
 - name: Make sure invokebuild is installed
   shell:
     cmd: |
@@ -21,32 +28,35 @@
   register: ps_install_invokebuild
   changed_when: "ps_install_invokebuild.rc != 0"
 
-- name: Check if the folder exists
-  stat:
-    path: "{{ pwsh_lsp_repos }}"
-  register: pwsh_lsp_repos_exists
+- name: Install pwsh lsp if not ubuntu 22.04
+  when: "ansible_lsb.release != '22.04'"
+  block:
+    - name: Check if the folder exists
+      stat:
+        path: "{{ pwsh_lsp_repos }}"
+      register: pwsh_lsp_repos_exists
 
-- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "pwsh_lsp_repos_exists.stat.exists"
-  shell:
-    cmd: git fetch --tags -f
-    chdir: "{{ pwsh_lsp_repos }}"
-  register: git_fetch_pwsh_lsp
-  changed_when: "git_fetch_pwsh_lsp.rc != 0"
+    - name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+      when: "pwsh_lsp_repos_exists.stat.exists"
+      shell:
+        cmd: git fetch --tags -f
+        chdir: "{{ pwsh_lsp_repos }}"
+      register: git_fetch_pwsh_lsp
+      changed_when: "git_fetch_pwsh_lsp.rc != 0"
 
-- name: Get latest source code for pwsh_lsp
-  git:
-    repo: https://github.com/PowerShell/PowerShellEditorServices.git
-    dest: "{{ pwsh_lsp_repos }}"
-    clone: true
-    version: "{{ pwshlsp_repo_version | default('HEAD') }}"
-    update: true
-  register: git_clone_pwsh_lsp
+    - name: Get latest source code for pwsh_lsp
+      git:
+        repo: https://github.com/PowerShell/PowerShellEditorServices.git
+        dest: "{{ pwsh_lsp_repos }}"
+        clone: true
+        version: "{{ pwshlsp_repo_version | default('HEAD') }}"
+        update: true
+      register: git_clone_pwsh_lsp
 
-- name: Compile and update pwsh_lsp
-  when: git_clone_pwsh_lsp.changed
-  shell:
-    cmd: Invoke-Build Build
-    executable: /usr/bin/pwsh
-    chdir: "{{ pwsh_lsp_repos }}"
-  register: compile_pwsh_lsp
+    - name: Compile and update pwsh_lsp
+      when: git_clone_pwsh_lsp.changed
+      shell:
+        cmd: Invoke-Build Build
+        executable: /usr/bin/pwsh
+        chdir: "{{ pwsh_lsp_repos }}"
+      register: compile_pwsh_lsp

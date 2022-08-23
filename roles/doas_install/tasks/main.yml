@@ -2,14 +2,13 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - build-essential
-    - make
-    - bison
-    - flex
-    - libpam0g-dev
+    name:
+      - build-essential
+      - make
+      - bison
+      - flex
+      - libpam0g-dev
 
 - name: Check if the folder exists
   stat:
@@ -36,6 +35,7 @@
 - name: Compile doas
   when: git_clone_doas.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ doas_repos }}"
   register: doas_built
 

@@ -14,7 +14,7 @@
 
 - name: Install clangd from system
   include_tasks: apt.yml
-  when: "ansible_lsb.release != '16.04'"
+  when: "( ansible_lsb.release == '18.04' ) or ( ansible_lsb.release == '20.04' )"
   vars:
     clangd_name: 'clangd-10'
     clang_name: 'clang-10'
@@ -22,6 +22,18 @@
     pkgs:
       - clangd-10
       - clang-10
+      - llvm
+
+- name: Install clangd from system
+  include_tasks: apt.yml
+  when: "( ansible_lsb.release == '22.04' )"
+  vars:
+    clangd_name: 'clangd-14'
+    clang_name: 'clang-14'
+    clangpp_name: 'clang++-14'
+    pkgs:
+      - clangd-14
+      - clang-14
       - llvm
 
 # vim:et ts=2 sts=2 sw=2
