@@ -25,7 +25,6 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
-        ansible-lint \
         lxml \
         pyqtgraph \
         docker-compose \
