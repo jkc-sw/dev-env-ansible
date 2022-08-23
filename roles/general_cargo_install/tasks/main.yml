@@ -23,11 +23,11 @@
       - sd
       - zoxide
 
-- name: Install all those fancy variables
-  shell:
-    cmd: "{{ cargo_default_bin }}/cargo install {{ item.crate }}"
-  with_items: "{{ crates }}"
-  register: cargo_install
-  failed_when: "cargo_install.rc != 0"
-  changed_when: "cargo_install.rc != 0"
+# - name: Install all those fancy variables
+#   shell:
+#     cmd: "{{ cargo_default_bin }}/cargo install {{ item.crate }}"
+#   with_items: "{{ crates }}"
+#   register: cargo_install
+#   failed_when: "cargo_install.rc != 0"
+#   changed_when: "cargo_install.rc != 0"
 
