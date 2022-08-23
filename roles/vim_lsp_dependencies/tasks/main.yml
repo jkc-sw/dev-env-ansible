@@ -3,10 +3,9 @@
   become: true
   when: "ansible_lsb.release != '16.04'"
   apt:
-    name: "{{ item }}"
     state: present
-  loop:
-    - shellcheck
+    name:
+      - shellcheck
 
 - name: Check if luacheck is installed
   shell: command -v luacheck && echo good || echo bad

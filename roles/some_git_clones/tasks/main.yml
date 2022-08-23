@@ -2,10 +2,9 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - git
+    name:
+      - git
 
 - name: Check out many repos
   include_tasks: do.yml

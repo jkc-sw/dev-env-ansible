@@ -29,22 +29,21 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - gcc
-    - gettext
-    - autotools-dev
-    - automake
-    - libtool
-    - checkinstall
-    - build-essential
-    - libssl-dev
-    - pkg-config
-    - libxml2-dev
-    - zlib1g-dev
-    - libghc-gnutls-dev
-    - libpcsclite-dev
+    name:
+      - gcc
+      - gettext
+      - autotools-dev
+      - automake
+      - libtool
+      - checkinstall
+      - build-essential
+      - libssl-dev
+      - pkg-config
+      - libxml2-dev
+      - zlib1g-dev
+      - libgnutls28-dev
+      - libpcsclite-dev
 
 - name: Make sure vpnc folder exist for the vpn script
   become: true
@@ -70,6 +69,7 @@
 - name: Compile openconnect
   when: git_clone_openconnect.changed or openconnect_present.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ openconnect_repos }}"
   register: openconnect_built
 

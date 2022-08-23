@@ -2,11 +2,10 @@
 - name: Install system dependencies
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - git
-    - curl
+    name:
+      - git
+      - curl
 
 - name: Check if the folder exists
   stat:

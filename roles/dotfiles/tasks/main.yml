@@ -2,12 +2,11 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - stow
-    - xclip
-    - git
+    name:
+      - stow
+      - xclip
+      - git
 
 - name: Get if dotfile repos is there
   stat:

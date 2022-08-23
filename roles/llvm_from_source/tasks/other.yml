@@ -3,11 +3,10 @@
   become: true
   when: "ansible_lsb.release != '16.04'"
   apt:
-    name: "{{ item }}"
     state: absent
-  loop:
-    - clangd-10
-    - clang-10
+    name:
+      - clang*
+      - llvm
 
 - name: Check if clang is installed
   shell: command -v clang && echo good || echo bad
@@ -40,15 +39,14 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - ninja-build
-    - build-essential
-    - make
-    - python3
-    - zlib1g-dev
-    - g++
+    name:
+      - ninja-build
+      - build-essential
+      - make
+      - python3
+      - zlib1g-dev
+      - g++
 
 - name: Create the build folder
   file:

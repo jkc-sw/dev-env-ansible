@@ -35,18 +35,17 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - ninja-build
-    - gettext
-    - libtool
-    - libtool-bin
-    - autoconf
-    - automake
-    - g++
-    - pkg-config
-    - unzip
+    name:
+      - ninja-build
+      - gettext
+      - libtool
+      - libtool-bin
+      - autoconf
+      - automake
+      - g++
+      - pkg-config
+      - unzip
 
 - name: Cleanout the .dep and build folder
   when: git_clone_neovim.changed or nvim_present.changed
@@ -60,6 +59,7 @@
 - name: Compile, update neovim
   when: git_clone_neovim.changed or nvim_present.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ nvim_repos }}"
     params:
       CMAKE_BUILD_TYPE: RelWithDebInfo

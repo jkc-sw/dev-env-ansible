@@ -2,42 +2,40 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: present
-  loop:
-    - dmenu
-    - xscreensaver
-    - scrot
-    - alsa-utils
-    - xfce4-power-manager
-    - compton
-    - xautolock
-    - xbacklight
-    - pavucontrol
-    - pulseaudio
-    - arandr
-    - feh
-    - pcmanfm
-    - dunst
-    - lxsession
-    - network-manager
-    - volumeicon-alsa
-    - bluez
-    - gimp
-    - blueman
-    - x11vnc
-    - curl
-    - x11-utils
-    - rofi
+    name:
+      - dmenu
+      - xscreensaver
+      - scrot
+      - alsa-utils
+      - xfce4-power-manager
+      - compton
+      - xautolock
+      - xbacklight
+      - pavucontrol
+      - pulseaudio
+      - arandr
+      - feh
+      - pcmanfm
+      - dunst
+      - lxsession
+      - network-manager
+      - volumeicon-alsa
+      - bluez
+      - gimp
+      - blueman
+      - x11vnc
+      - curl
+      - x11-utils
+      - rofi
 
 - name: Make sure some system dependencies are installed without Ubuntu 16.04
   become: true
   when: "ansible_lsb.release != '16.04'"
   apt:
-    name: "{{ item }}"
     state: present
-  loop:
-    - pulsemixer
+    name:
+      - pulsemixer
 
 - name: Make sure the folder exist
   become: true
@@ -55,5 +53,13 @@
     mode: '644'
     src: 70-libinput.conf.j2
     dest: /etc/X11/xorg.conf.d/70-libinput.conf
+
+- name: Make sure the time is synchronized with NTP server
+  shell:
+    cmd: timedatectl set-ntp true
+    executable: /bin/bash
+  register: ntp_setup
+  changed_when: "( ntp_setup.rc == 0 ) and ( 'System has not been booted with systemd as init system' not in ntp_setup.stderr )"
+  failed_when: "( ntp_setup.rc != 0 ) and ( 'System has not been booted with systemd as init system' not in ntp_setup.stderr )"
 
 # vim:et ts=2 sts=2 sw=2

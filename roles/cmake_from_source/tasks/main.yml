@@ -35,25 +35,25 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - build-essential
-    - libssl-dev
-    - make
-    - g++
+    name:
+      - build-essential
+      - libssl-dev
+      - make
+      - g++
 
 - name: Configure before running build for cmake
   when: git_clone_cmake.changed or cmake_present.changed
   shell:
     chdir: "{{ cmake_repos }}"
     cmd: |
-      ./bootstrap
+      ./bootstrap --parallel={{ ansible_processor_vcpus }} -- -DCMAKE_BUILD_TYPE:STRING=Release
 
 - name: Compile cmake
   when: git_clone_cmake.changed or cmake_present.changed
   community.general.make:
     chdir: "{{ cmake_repos }}"
+    jobs: "{{ ansible_processor_vcpus }}"
   register: cmake_built
 
 - name: update cmake

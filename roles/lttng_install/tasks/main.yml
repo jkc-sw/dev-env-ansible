@@ -1,65 +1,68 @@
 ---
-- name: Add lttng repo
-  when: "ansible_lsb.release != '18.04'"
-  become: true
-  apt_repository:
-    repo: ppa:lttng/stable-2.12
-    state: present
-    update_cache: true
+- name: Not available in Ubuntu 22 yet
+  when: "ansible_lsb.release != '22.04'"
+  block:
+    - name: Add lttng repo
+      when: "ansible_lsb.release != '18.04'"
+      become: true
+      apt_repository:
+        repo: ppa:lttng/stable-2.12
+        state: present
+        update_cache: true
 
-- name: Add lttng repo
-  when: "ansible_lsb.release == '18.04'"
-  become: true
-  shell:
-    cmd: 'add-apt-repository -y ppa:lttng/stable-2.12'
-    executable: /bin/bash
-  register: add_lttng_repo
-  changed_when: 'add_lttng_repo.rc != 0'
-  failed_when: 'add_lttng_repo.rc != 0'
+    - name: Add lttng repo
+      when: "ansible_lsb.release == '18.04'"
+      become: true
+      shell:
+        cmd: 'add-apt-repository -y ppa:lttng/stable-2.12'
+        executable: /bin/bash
+      register: add_lttng_repo
+      changed_when: 'add_lttng_repo.rc != 0'
+      failed_when: 'add_lttng_repo.rc != 0'
 
-- name: Install lttng stuff
-  become: true
-  apt:
-    name: ['babeltrace2', 'lttng-tools', 'liblttng-ust-dev']
-    state: present
+    - name: Install lttng stuff
+      become: true
+      apt:
+        name: ['babeltrace2', 'lttng-tools', 'liblttng-ust-dev']
+        state: present
 
-- name: Add user to tracing group
-  become: true
-  user:
-    name: "{{ ansible_user_id }}"
-    append: true
-    groups: 'tracing'
+    - name: Add user to tracing group
+      become: true
+      user:
+        name: "{{ ansible_user_id }}"
+        append: true
+        groups: 'tracing'
 
-- name: Make sure local bin exist
-  file:
-    path: "{{ local_bin }}"
-    state: directory
+    - name: Make sure local bin exist
+      file:
+        path: "{{ local_bin }}"
+        state: directory
 
-- name: See if tracecompass is there already
-  stat:
-    path: "{{ tracecompass_bin }}"
-  register: tracecompass_present
+    - name: See if tracecompass is there already
+      stat:
+        path: "{{ tracecompass_bin }}"
+      register: tracecompass_present
 
-- name: Make sure tracecompass dir is there
-  file:
-    path: "{{ tracecompass_dir }}"
-    state: directory
+    - name: Make sure tracecompass dir is there
+      file:
+        path: "{{ tracecompass_dir }}"
+        state: directory
 
-- name: Install tracecompass
-  when: "not tracecompass_present.stat.exists"
-  unarchive:
-    remote_src: yes
-    src: "https://mirrors.jevincanders.net/eclipse/tracecompass/releases/7.1.0/rcp/trace-compass-7.1.0-20210908-1318-linux.gtk.x86_64.tar.gz"
-    keep_newer: yes
-    dest: "{{ local_dir }}"
-  register: download_fonts
-  changed_when: "download_fonts.failed"
-  failed_when: "download_fonts.failed"
+    - name: Install tracecompass
+      when: "not tracecompass_present.stat.exists"
+      unarchive:
+        remote_src: yes
+        src: "https://mirrors.jevincanders.net/eclipse/tracecompass/releases/7.1.0/rcp/trace-compass-7.1.0-20210908-1318-linux.gtk.x86_64.tar.gz"
+        keep_newer: yes
+        dest: "{{ local_dir }}"
+      register: download_fonts
+      changed_when: "download_fonts.failed"
+      failed_when: "download_fonts.failed"
 
-- name: Make sure tracecompass is properly symlinked
-  file:
-    path: "{{ tracecompass_link }}"
-    src: "{{ tracecompass_bin }}"
-    state: link
+    - name: Make sure tracecompass is properly symlinked
+      file:
+        path: "{{ tracecompass_link }}"
+        src: "{{ tracecompass_bin }}"
+        state: link
 
 # vim:et ts=2 sts=2 sw=2

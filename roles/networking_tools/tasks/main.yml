@@ -19,11 +19,10 @@
 - name: Install wiresharkcli, gui and tshark
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - wireshark
-    - tshark
+    name:
+      - wireshark
+      - tshark
 
 - name: add current user to wireshark group
   user:
@@ -35,10 +34,9 @@
 - name: Install nethogs
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - nethogs
+    name:
+      - nethogs
 
 - name: Get the command path
   shell:

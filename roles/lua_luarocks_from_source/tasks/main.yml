@@ -36,15 +36,15 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - build-essential
-    - libreadline-dev
+    name:
+      - build-essential
+      - libreadline-dev
 
 - name: Compile and update lua
   when: lua_present.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ lua_repos }}"
     target: all
   register: compile_lua
@@ -93,11 +93,10 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
-  loop:
-    - build-essential
-    - libreadline-dev
+    name:
+      - build-essential
+      - libreadline-dev
 
 - name: Configure before running build for luarocks
   when: luarocks_present.changed
@@ -108,6 +107,7 @@
 - name: Compile and update luarocks
   when: luarocks_present.changed
   community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
     chdir: "{{ luarocks_repos }}"
     target: all
   register: compile_luarocks

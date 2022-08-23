@@ -8,20 +8,27 @@
 - name: Make sure some system dependencies are installed
   become: true
   apt:
-    name: "{{ item }}"
     state: 'present'
     update_cache: true
-  loop:
-    - xz-utils
+    name:
+      - xz-utils
+      - powershell
 
-- name: Install Powershell and .Net 6 SDK
+- name: Install .Net 6 SDK older ubuntu
+  when: "ansible_lsb.release != '22.04'"
   become: true
   apt:
-    name: "{{ item }}"
     state: present
-  loop:
-    - powershell
-    - dotnet-sdk-6.0
+    name:
+      - dotnet-sdk-6.0
+
+- name: Install .Net 6 SDK newer ubuntu
+  when: "ansible_lsb.release == '22.04'"
+  become: true
+  apt:
+    state: present
+    name:
+      - dotnet6
 
 - name: Make sure we can install from PSGallery
   shell:
