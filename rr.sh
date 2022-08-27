@@ -235,6 +235,15 @@ select_docker_ver() {
     esac
 }
 
+# Setup nix
+setup_nix() {
+    # Getting nix-env
+    if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
+        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+        alias ni=nix-env
+    fi
+}
+
 # Setup env
 setup_brew() {
     if [[ -x /home/linuxbrew/.linuxbrew/bin/brew && -z "$HOMEBREW_PREFIX" ]]; then
@@ -249,11 +258,17 @@ install_ansible() {
     if ! command -v ansible &>/dev/null; then
         # sudo apt install -y python3 python3-pip
         # sudo -H python3 -m pip install ansible
+
         sudo apt update
         sudo apt install -y curl git ca-certificates xz-utils
-        /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        setup_brew
-        brew install ansible
+
+        # /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # setup_brew
+        # brew install ansible
+
+        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
+        setup_nix
+        nix-env -iA nixpkgs.ansible_2_13
     fi
 }
 
@@ -750,7 +765,7 @@ case "$subcmd" in
         docker run --cpu-shares=1024 --rm -it \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
-            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
+            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
 
@@ -758,7 +773,7 @@ case "$subcmd" in
         docker run --cpu-shares=1024 --rm -it \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
-            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
+            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh || exec bash"
     fi
@@ -775,7 +790,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$tag")" \
+        --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
         bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
     ;;
