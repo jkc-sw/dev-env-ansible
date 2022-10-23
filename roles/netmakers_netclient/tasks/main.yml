@@ -12,6 +12,13 @@
     state: present
     update_cache: true
 
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    state: present
+    name:
+      - apt-utils
+
 - name: Install netclient
   become: true
   apt:
