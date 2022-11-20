@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'kinesisAdv360Pro',
           'nix_install',
           'brew_install',
           'netmakers_netclient',

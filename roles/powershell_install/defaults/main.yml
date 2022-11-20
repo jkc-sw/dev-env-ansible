@@ -10,3 +10,4 @@ ps_modules:
   - name: 'InvokeBuild'
   - name: 'Profiler'
   - name: 'JiraPS'
+  - name: 'ConfluencePS'

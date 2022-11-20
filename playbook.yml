@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - kinesisAdv360Pro
     - nix_install
     - brew_install
     # - netmakers_netclient
