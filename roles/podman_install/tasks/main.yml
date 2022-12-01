@@ -1,0 +1,60 @@
+---
+# - name: Print all available facts
+#   ansible.builtin.debug:
+#     var: ansible_facts
+
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+
+# Package is from https://github.com/alvistack/ansible-role-podman/tree/master/vars
+
+- name: Download and Add Key to Apt-Get Keyring
+  become: true
+  apt_key:
+    url: "http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/Release.key"
+    state: present
+
+- name: Add Repository into /etc/apt/sources.list
+  become: true
+  apt_repository:
+    repo: "deb http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/ /"
+    state: present
+
+- name: Install podman
+  become: true
+  apt:
+    name:
+      - "containernetworking-dnsname"
+      - "containernetworking-plugins"
+      - "containernetworking-podman-machine"
+      - "podman"
+      - "podman-aardvark-dns"
+      - "podman-docker"
+      - "podman-gvproxy"
+      - "podman-netavark"
+      - "python3-podman-compose"
+      - "slirp4netns"
+      - "uidmap"
+    state: present
+
+# - name: Ad repo and key
+#   block:
+#     - name: apt key
+#       ansible.builtin.get_url:
+#         url: https://download.example.com/linux/ubuntu/gpg
+#         dest: /etc/apt/trusted.gpg.d/somerepo.asc
+#
+#     - name: deb source
+#       ansible.builtin.apt_repository:
+#         repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/myrepo.asc] https://download.example.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+#         state: present
+
+# vim:et ts=2 sts=2 sw=2

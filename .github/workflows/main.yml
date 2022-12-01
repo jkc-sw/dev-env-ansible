@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'podman_install',
           'kinesisAdv360Pro',
           'nix_install',
           'brew_install',

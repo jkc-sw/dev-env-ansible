@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - podman_install
     - kinesisAdv360Pro
     - nix_install
     - brew_install
