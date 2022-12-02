@@ -1,6 +1,6 @@
 
 # Pull the prebuilt image
-FROM geerlingguy/docker-ubuntu1604-ansible
+FROM docker.io/geerlingguy/docker-ubuntu1604-ansible
 
 # make sure some depenencies are installed
 RUN apt-get update && \
