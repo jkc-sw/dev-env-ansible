@@ -43,7 +43,16 @@
       - "python3-podman-compose"
       - "slirp4netns"
       - "uidmap"
-    state: present
+    state: absent
+
+- name: Default back to docker
+  become: true
+  copy:
+    content: ""
+    dest: /etc/containers/nodocker
+    force: no
+    owner: root
+    mode: 0666
 
 # - name: Ad repo and key
 #   block:
