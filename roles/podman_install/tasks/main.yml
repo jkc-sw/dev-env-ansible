@@ -3,67 +3,87 @@
 #   ansible.builtin.debug:
 #     var: ansible_facts
 
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    state: 'present'
-    name:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - gnupg-agent
-      - software-properties-common
+- name: default is not building podman
+  set_fact:
+    install_podman: false
 
-# Package is from https://github.com/alvistack/ansible-role-podman/tree/master/vars
+- name: turn it on if user wants to
+  tags:
+    - podman
+  set_fact:
+    install_podman: true
 
-- name: Download and Add Key to Apt-Get Keyring
-  become: true
-  apt_key:
-    url: "http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/Release.key"
-    state: present
+- name: Podman collection
+  when: install_podman | default(false)
+  block:
 
-- name: Add Repository into /etc/apt/sources.list
-  become: true
-  apt_repository:
-    repo: "deb http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/ /"
-    state: present
+    - name: Make sure some system dependencies are installed
+      become: true
+      apt:
+        state: 'present'
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg-agent
+          - software-properties-common
 
-- name: Install podman
-  become: true
-  apt:
-    name:
-      - "containernetworking-dnsname"
-      - "containernetworking-plugins"
-      - "containernetworking-podman-machine"
-      - "podman"
-      - "podman-aardvark-dns"
-      - "podman-docker"
-      - "podman-gvproxy"
-      - "podman-netavark"
-      - "python3-podman-compose"
-      - "slirp4netns"
-      - "uidmap"
-    state: absent
+    # Package is from https://github.com/alvistack/ansible-role-podman/tree/master/vars
 
-- name: Default back to docker
-  become: true
-  copy:
-    content: ""
-    dest: /etc/containers/nodocker
-    force: no
-    owner: root
-    mode: 0666
+    - name: Download and Add Key to Apt-Get Keyring
+      become: true
+      apt_key:
+        url: "http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/Release.key"
+        state: present
 
-# - name: Ad repo and key
-#   block:
-#     - name: apt key
-#       ansible.builtin.get_url:
-#         url: https://download.example.com/linux/ubuntu/gpg
-#         dest: /etc/apt/trusted.gpg.d/somerepo.asc
-#
-#     - name: deb source
-#       ansible.builtin.apt_repository:
-#         repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/myrepo.asc] https://download.example.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-#         state: present
+    - name: Add Repository into /etc/apt/sources.list
+      become: true
+      apt_repository:
+        repo: "deb http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/ /"
+        state: present
+
+    - name: Install podman
+      become: true
+      apt:
+        name:
+          - "containernetworking-dnsname"
+          - "containernetworking-plugins"
+          - "containernetworking-podman-machine"
+          - "podman"
+          - "podman-aardvark-dns"
+          - "podman-docker"
+          - "podman-gvproxy"
+          - "podman-netavark"
+          - "python3-podman-compose"
+          - "slirp4netns"
+          - "uidmap"
+        state: present
+
+    - name: Make empty folder
+      become: true
+      file:
+        path: /etc/containers
+        state: directory
+
+    - name: Default back to docker
+      become: true
+      copy:
+        content: ""
+        dest: /etc/containers/nodocker
+        force: no
+        owner: root
+        mode: 0666
+
+    # - name: Ad repo and key
+    #   block:
+    #     - name: apt key
+    #       ansible.builtin.get_url:
+    #         url: https://download.example.com/linux/ubuntu/gpg
+    #         dest: /etc/apt/trusted.gpg.d/somerepo.asc
+    #
+    #     - name: deb source
+    #       ansible.builtin.apt_repository:
+    #         repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/myrepo.asc] https://download.example.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    #         state: present
 
 # vim:et ts=2 sts=2 sw=2
