@@ -55,6 +55,7 @@
     dest: /etc/X11/xorg.conf.d/70-libinput.conf
 
 - name: Make sure the time is synchronized with NTP server
+  become: true
   shell:
     cmd: timedatectl set-ntp true
     executable: /bin/bash
