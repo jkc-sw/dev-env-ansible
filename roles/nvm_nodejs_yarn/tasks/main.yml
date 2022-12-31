@@ -81,21 +81,41 @@
     - gtop
     - tree-sitter-cli
 
+- name: Enable corepack
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ which_npm.stdout | dirname }}/corepack enable
+  register: corepack_enable
+  failed_when: "corepack_enable.rc != 0"
+  changed_when: "corepack_enable.rc != 0"
+
+- name: Install yarn
+  shell:
+    executable: /bin/bash
+    cmd: |
+      {{ which_npm.stdout | dirname }}/corepack prepare yarn@{{ yarn_version }} --activate
+  register: corepack_activate_yarn
+  failed_when: "corepack_activate_yarn.rc != 0"
+  changed_when: "corepack_activate_yarn.rc != 0"
+
 - name: Download and Add yarn Key to Apt-Get Keyring
   become: true
   apt_key:
     url: "https://dl.yarnpkg.com/debian/pubkey.gpg"
-    state: present
+    state: absent
 
 - name: Add yarn Repository into /etc/apt/sources.list
   become: true
   apt_repository:
     repo: 'deb [arch=amd64] https://dl.yarnpkg.com/debian/ stable main'
-    state: present
+    state: absent
 
 - name: Install yarn
   become: true
   apt:
     name: 'yarn'
-    state: present
+    state: absent
     install_recommends: false
+
+# vim:et ts=4 sts=4 sw=4
