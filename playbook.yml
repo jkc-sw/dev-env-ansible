@@ -7,7 +7,7 @@
     - nix_install
     - brew_install
     # - netmakers_netclient
-    - zerotier_install
+    # - zerotier_install
     - qt_install
     - common_settings
     - doas_install
