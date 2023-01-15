@@ -28,8 +28,9 @@
   register: ps_install_invokebuild
   changed_when: "ps_install_invokebuild.rc != 0"
 
-- name: Install pwsh lsp if not ubuntu 22.04
-  when: "ansible_lsb.release != '22.04'"
+# - name: Install pwsh lsp if not ubuntu 22.04
+#   when: "ansible_lsb.release != '22.04'"
+- name: Install Powershell
   block:
     - name: Check if the folder exists
       stat:

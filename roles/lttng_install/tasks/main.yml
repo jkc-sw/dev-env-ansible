@@ -1,9 +1,10 @@
 ---
-- name: Not available in Ubuntu 22 yet
-  when: "ansible_lsb.release != '22.04'"
+# - name: Not available in Ubuntu 22 yet
+#   when: "ansible_lsb.release != '22.04'"
+- name: Install lttng
   block:
     - name: Add lttng repo
-      when: "ansible_lsb.release != '18.04'"
+      when: "ansible_lsb.release == '20.04'"
       become: true
       apt_repository:
         repo: ppa:lttng/stable-2.12

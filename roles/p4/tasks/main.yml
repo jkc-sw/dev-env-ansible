@@ -1,6 +1,7 @@
 ---
-- name: Not available in Ubuntu 22 yet
-  when: "ansible_lsb.release != '22.04'"
+# - name: Not available in Ubuntu 22 yet
+#   when: "ansible_lsb.release != '22.04'"
+- name: Install p4
   block:
     - name: Download and Add p4 Key to Apt-Get Keyring
       become: true
