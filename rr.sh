@@ -10,7 +10,7 @@ pushd "$SCRIPT_DIR" &>/dev/null
 CONTAINER_TAG=devenvansible:1.0
 
 # ansible workspace path
-ANSIBLE_HOME=/home/developer
+ANSIBLE_HOME="/home/$USER"
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 
 # docker volumn mount
@@ -22,10 +22,10 @@ DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR/../focus-side.vim:$ANSI
 DOCKER_FILE_DIR=./dockerfiles
 
 # docker file name
-DOCKER_FILE_UBUNTU_22="$DOCKER_FILE_DIR/ubuntu2204"
-DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004"
-DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804"
-DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604"
+DOCKER_FILE_UBUNTU_22="$DOCKER_FILE_DIR/ubuntu2204/Dockerfile"
+DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004/Dockerfile"
+DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804/Dockerfile"
+DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604/Dockerfile"
 
 # docker repo name to be managed by rr.sh
 DEV_ENV_REPOSITORY_NAME=devenvansible
@@ -233,6 +233,20 @@ select_docker_ver() {
         exit 1
         ;;
     esac
+}
+
+# Build container
+build_image() {
+    # Get args
+    tag="$1"
+    dfile="$2"
+    # Infer arg
+    args=(build --tag "$tag" -f "$dfile")
+    args+=(--build-arg SHELL_USER="$USER")
+    args+=(--build-arg SHELL_UID="$(id -u "$USER")")
+    args+=(--build-arg SHELL_GID="$(id -g "$USER")")
+    args+=(.)
+    docker "${args[@]}"
 }
 
 # Setup nix
@@ -697,7 +711,7 @@ case "$subcmd" in
     fi
 
     # start bash inside container
-    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
@@ -716,7 +730,7 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
     # start bash inside container
-    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
@@ -816,7 +830,7 @@ case "$subcmd" in
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
 
     # start bash inside container
-    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
@@ -842,7 +856,7 @@ case "$subcmd" in
     fi
 
     # start bash inside container
-    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
@@ -870,7 +884,7 @@ case "$subcmd" in
     [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
 
     # start bash inside container
-    docker build --tag "$CONTAINER_TAG" "$ver" && \
+    build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \

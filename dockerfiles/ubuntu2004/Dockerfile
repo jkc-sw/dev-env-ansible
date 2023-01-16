@@ -2,6 +2,9 @@
 # Pull the prebuilt image
 FROM docker.io/ubuntu:20.04
 
+# Ensure that dpkg doesn't run any "nice" interactive installation front-ends
+ENV DEBIAN_FRONTEND=noninteractive
+
 # make sure some depenencies are installed
 RUN apt-get update && \
     apt-get dist-upgrade -y && \
@@ -9,12 +12,18 @@ RUN apt-get update && \
     sudo \
     git \
     curl \
+    locales \
     xz-utils \
     ca-certificates
 
-# set local
-ENV LC_ALL C.UTF-8
-ENV LANG C.UTF-8
+# Explicitly configure the locale as English (US), and use of UTF-8 character encoding
+RUN dpkg-reconfigure locales \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
 # Define the default username and home directory as overrideable arguments
 ARG SHELL_USER=developer
