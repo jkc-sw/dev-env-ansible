@@ -11,3 +11,4 @@ ps_modules:
   - name: 'Profiler'
   - name: 'JiraPS'
   - name: 'ConfluencePS'
+  - name: 'platyPS'

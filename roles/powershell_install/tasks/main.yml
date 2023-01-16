@@ -1,9 +1,35 @@
 ---
 - name: Download and Add Powershell Key to Apt-Get Keyring
+  when: "ansible_lsb.release == '20.04' or ansible_lsb.release == '18.04'"
   become: true
   apt:
     deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
     state: present
+
+- name: Add Powershell Key to Apt-Get Keyring for Ubuntu 22
+  when: "ansible_lsb.release == '22.04'"
+  become: true
+  apt:
+    deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
+    state: present
+
+- name: Ubuntu 22 has package conflict between powershell and dotnet6. Need to add pinning to favor the microsoft ppa
+  when: "ansible_lsb.release == '22.04'"
+  block:
+    - name: Creating a new directory for the preference file
+      become: true
+      file:
+        path: "/etc/apt/preferences.d/"
+        state: directory
+
+    - name: Need to add pinning. Otherwise, dotnet6 will be installed from system package
+      become: true
+      copy:
+        dest: "/etc/apt/preferences.d/20-microsoft-package.pref"
+        content: |
+          Package: *
+          Pin: origin "packages.microsoft.com"
+          Pin-Priority: 1001
 
 - name: Make sure some system dependencies are installed
   become: true
@@ -14,21 +40,13 @@
       - xz-utils
       - powershell
 
-- name: Install .Net 6 SDK older ubuntu
-  when: "ansible_lsb.release != '22.04'"
+- name: Install .Net SDK
   become: true
   apt:
     state: present
     name:
       - dotnet-sdk-6.0
-
-- name: Install .Net 6 SDK newer ubuntu
-  when: "ansible_lsb.release == '22.04'"
-  become: true
-  apt:
-    state: present
-    name:
-      - dotnet6
+      - dotnet-sdk-7.0
 
 - name: Make sure we can install from PSGallery
   shell:
