@@ -21,10 +21,21 @@
   when: nix_present.changed
   register: nix_install
 
-- name: Install yq
+# # Disable this. Not really useful
+# - name: Install yq
+#   shell:
+#     cmd: |
+#       {{ nix_env_bin }} -iA nixpkgs.yq
+#     executable: /bin/bash
+#   register: nix_install
+#   changed_when: 'nix_install.rc != 0'
+#   failed_when: 'nix_install.rc != 0'
+
+# Uninstall, not really useful
+- name: Uninstall yq
   shell:
     cmd: |
-      {{ nix_env_bin }} -iA nixpkgs.yq
+      {{ nix_env_bin }} --uninstall yq
     executable: /bin/bash
   register: nix_install
   changed_when: 'nix_install.rc != 0'
