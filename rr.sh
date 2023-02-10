@@ -697,7 +697,8 @@ case "$subcmd" in
     if ! (tmux ls | grep -q blah); then
         tmux new-session -d -s blah -n dev-env-ansible -c "$SCRIPT_DIR"
         tmux new-window -d -t blah: -n dockers -c "$SCRIPT_DIR"
-        tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
+        [[ -d "$SCRIPT_DIR/../dotfiles" ]] && tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
+        [[ -d "$SCRIPT_DIR/../kinesisadv360pro" ]] && tmux new-window -d -t blah: -n adv360pro -c "$SCRIPT_DIR/../kinesisadv360pro"
         # tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
     fi
     tmux attach-session -t blah
