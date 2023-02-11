@@ -26,4 +26,5 @@ texlab_repo_version: '697227895a26f8e2a5979af97e56b40bf3f36e1e'
 node_version_via_nvm: '16.13.2'  # --lts
 yarn_version: '3.3.1'  # stable
 toclip_repo_version: 'HEAD'
+turbovnc_deb_version: '3.0.2'
 kinesisadv360pro_repo_version: 'HEAD'
