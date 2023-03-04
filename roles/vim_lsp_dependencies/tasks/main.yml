@@ -84,4 +84,4 @@
 
 - name: Install luals for the correct distro
   include_tasks: luals.yml
-  when: "ansible_lsb.release == '18.04' or ansible_lsb.release == '20.04'"
+  when: "ansible_lsb.release != '16.04'"
