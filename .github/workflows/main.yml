@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'git-p4',
           'vagrant_install',
           'podman_install',
           'kinesisAdv360Pro',

@@ -28,3 +28,4 @@ yarn_version: '3.3.1'  # stable
 toclip_repo_version: 'HEAD'
 turbovnc_deb_version: '3.0.2'
 kinesisadv360pro_repo_version: 'HEAD'
+git_repo_version: 'HEAD'
