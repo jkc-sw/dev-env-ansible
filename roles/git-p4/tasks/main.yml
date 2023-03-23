@@ -15,12 +15,14 @@
     state: directory
 
 - name: Copy to ~/.local/bin and Make git-p4 executable
+  when: git_clone_git.changed
   copy:
     src: "{{ git_repos + '/git-p4.py' }}"
     dest: "{{ local_bin + '/git-p4.py' }}"
     mode: 0755
 
 - name: Edit the shabang to look for python3
+  when: git_clone_git.changed
   lineinfile:
     dest: "{{ local_bin + '/git-p4.py' }}"
     regexp: '#!/usr/bin/env python'
