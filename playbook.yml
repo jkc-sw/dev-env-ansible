@@ -2,6 +2,7 @@
 - hosts: local
   gather_facts: true
   roles:
+    - bitwarden
     - git-p4
     # - vagrant_install
     - podman_install

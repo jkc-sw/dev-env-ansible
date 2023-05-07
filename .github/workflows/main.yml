@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'bitwarden',
           'git-p4',
           'vagrant_install',
           'podman_install',
