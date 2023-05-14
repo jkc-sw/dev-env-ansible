@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'ytdlp_install',
           'bitwarden',
           'git-p4',
           'vagrant_install',
