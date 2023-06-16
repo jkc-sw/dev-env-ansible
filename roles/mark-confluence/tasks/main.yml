@@ -1,0 +1,9 @@
+---
+- name: Install mark for confluence upload
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
+    name:
+      - kovetskiy/mark/mark
+
+# vim:et ts=2 sts=2 sw=2

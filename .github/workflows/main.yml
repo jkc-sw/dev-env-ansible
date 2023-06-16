@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'mark-confluence',
           'ytdlp_install',
           'bitwarden',
           'git-p4',

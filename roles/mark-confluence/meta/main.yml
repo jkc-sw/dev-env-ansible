@@ -1,0 +1,6 @@
+---
+dependencies:
+  - common_settings
+  - brew_install
+
+# vim:et ts=2 sts=2 sw=2
