@@ -59,6 +59,15 @@
   changed_when: 'nix_install.rc != 0'
   failed_when: 'nix_install.rc != 0'
 
+- name: Install mark, to upload content to confluence page from local vcs
+  shell:
+    cmd: |
+      {{ nix_env_bin }} -iA nixpkgs.mark
+    executable: /bin/bash
+  register: nix_install
+  changed_when: 'nix_install.rc != 0'
+  failed_when: 'nix_install.rc != 0'
+
 # # template to use for the nix install
 # - name: Install something with nix for testing
 #   shell:
