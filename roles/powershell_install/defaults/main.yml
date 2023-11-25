@@ -1,6 +1,6 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
-pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
+pwshrc_path: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 ps_modules:
   - name: 'Pester'
   - name: 'PSSlack'

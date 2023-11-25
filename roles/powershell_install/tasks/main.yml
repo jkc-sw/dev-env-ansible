@@ -61,18 +61,30 @@
 
 - name: Create profile.ps1 directory
   file:
-    path: "{{ pwshrc_dir | dirname }}"
+    path: "{{ pwshrc_path | dirname }}"
     state: directory
 
 - name: Configure powershell
   blockinfile:
     marker: '# {mark} source append files'
     state: present
-    path: "{{ pwshrc_dir }}"
+    path: "{{ pwshrc_path }}"
     create: true
     backup: true
     block: |
       . '~/.config/powershell/profile_append.ps1'
+
+- name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block before
+  ansible.builtin.lineinfile:
+    path: "{{ pwshrc_path }}"
+    insertbefore: '#region conda initialize'
+    line: "<# BEGIN no pwsh conda"
+
+- name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block after
+  ansible.builtin.lineinfile:
+    path: "{{ pwshrc_path }}"
+    insertafter: '#endregion'
+    line: "END no pwsh conda #>"
 
 - name: Make sure ps modules are installed
   shell:

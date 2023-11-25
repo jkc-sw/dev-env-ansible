@@ -28,6 +28,36 @@
   changed_when: "conda_init_shells.rc != 0"
   failed_when: "conda_init_shells.rc != 0"
 
+# - name: Comment out the conda init block from [bash/zsh]rc files to speed up terminal startup time, block before
+#   ansible.builtin.lineinfile:
+#     path: "{{ item }}"
+#     insertbefore: '>>> conda initialize >>>'
+#     line: ": <<'EOF'"
+#   with_items:
+#     - "{{ bashrc_path }}"
+#     - "{{ zshrc_path }}"
+#
+# - name: Comment out the conda init block from [bash/zsh]rc files to speed up terminal startup time, block after
+#   ansible.builtin.lineinfile:
+#     path: "{{ item }}"
+#     insertafter: '<<< conda initialize <<<'
+#     line: "EOF"
+#   with_items:
+#     - "{{ bashrc_path }}"
+#     - "{{ zshrc_path }}"
+
+# - name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block before
+#   ansible.builtin.lineinfile:
+#     path: "{{ pwshrc_path }}"
+#     insertbefore: '#region conda initialize'
+#     line: "<# BEGIN no pwsh conda"
+#
+# - name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block after
+#   ansible.builtin.lineinfile:
+#     path: "{{ pwshrc_path }}"
+#     insertafter: '#endregion'
+#     line: "END no pwsh conda #>"
+
 - name: Do not auto activate base
   shell: "{{ conda_bin_fullpath }} config --set auto_activate_base false"
   register: conda_setter

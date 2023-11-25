@@ -1,7 +1,7 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
 bashrc_path: "{{ home_dir + '/.bashrc' }}"
-pwshrc_dir: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
+pwshrc_path: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
 cargo_default_bin: "{{ home_dir + '/.cargo/bin' }}"
 # crates:
 #   - exe: svls

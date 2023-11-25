@@ -82,6 +82,18 @@
           fi
       }
 
+- name: Comment out the conda init block from [bash/zsh]rc files to speed up terminal startup time, block before
+  ansible.builtin.lineinfile:
+    path: "{{ bashrc_path }}"
+    insertbefore: '>>> conda initialize >>>'
+    line: ": <<'EOF'"
+
+- name: Comment out the conda init block from [bash/zsh]rc files to speed up terminal startup time, block after
+  ansible.builtin.lineinfile:
+    path: "{{ bashrc_path }}"
+    insertafter: '<<< conda initialize <<<'
+    line: "EOF"
+
 - name: Do not bashrc append
   lineinfile:
     path: "{{ bashrc_path }}"
