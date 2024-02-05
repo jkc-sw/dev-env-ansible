@@ -1,1 +1,3 @@
+permit nopass {{ ansible_user_id }} as root cmd openconnect
+permit nopass {{ ansible_user_id }} as root cmd p4p
 permit {{ ansible_user_id }} as root
