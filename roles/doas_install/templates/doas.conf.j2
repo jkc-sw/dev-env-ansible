@@ -1,5 +1,5 @@
 permit {{ ansible_user_id }} as root
 permit nopass {{ ansible_user_id }} as root cmd openconnect
 permit nopass {{ ansible_user_id }} as root cmd p4p
-permit nopass {{ ansible_user_id }} as root cmd ip args route add
+permit nopass {{ ansible_user_id }} as root cmd ip
 permit nopass {{ ansible_user_id }} as root cmd mount
