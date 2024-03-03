@@ -252,9 +252,8 @@ build_image() {
 # Setup nix
 setup_nix() {
     # Getting nix-env
-    if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
-        . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-        alias ni=nix-env
+    if [[ -r "/nix/var/nix/profiles/default/bin" ]]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
     fi
 }
 
@@ -280,9 +279,17 @@ install_ansible() {
         # setup_brew
         # brew install ansible
 
-        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
+        # nix args between docker container and my host system
+        installerArgs=( install linux --no-confirm )
+        if ! command -v systemctl &>/dev/null; then
+            installerArgs+=( --init none )
+        fi
+
+        # ./rr.sh role-i -r nix_install
+
+        curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
         setup_nix
-        nix-env -iA nixpkgs.ansible_2_13
+        sudo "$(which nix)" profile install nixpkgs#ansible_2_13
     fi
 }
 
