@@ -26,11 +26,11 @@
     cmd: |
       # export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
       # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- install linux
-      local installerArgs=( install linux --no-confirm )
-      local initNone=false
+      installerArgs=( install linux --no-confirm )
+      initNone=false
       if ! command -v systemctl &>/dev/null; then
         initNone=true
-      elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd)" -eq 0 ]]; then
+      elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd | wc -l)" -eq 0 ]]; then
         initNone=true
       fi
       if [[ "$initNone" == 'true' ]]; then
@@ -50,6 +50,15 @@
     create: true
     regexp: 'experimental-features'
     line: "experimental-features = nix-command flakes"
+
+- name: workaround to fix nix permission issue in the profile
+  become: true
+  file:
+    path: /nix/var/nix/profiles/per-user/chenkua
+    group: "{{ ansible_user_id }}"
+    owner: "{{ ansible_user_id }}"
+    recurse: true
+    state: directory
 
 # # Uninstall, not really useful
 # - name: Uninstall yq
@@ -82,7 +91,7 @@
 # - name: Install nixpkgs.valgrind nixpkgs.kcachegrind
 #   shell:
 #     cmd: |
-#       {{ nix_env_bin }} -iA nixpkgs.valgrind nixpkgs.kcachegrind
+#       {{ nix_env_bin }} -f '<nixpkgs>' -iA valgrind kcachegrind
 #     executable: /bin/bash
 #   register: nix_install
 #   changed_when: 'nix_install.rc != 0'
@@ -91,7 +100,7 @@
 # - name: Install dvc, manipulating large file text pointer like git-lfs does
 #   shell:
 #     cmd: |
-#       {{ nix_env_bin }} -iA nixpkgs.dvc
+#       {{ nix_env_bin }} -f '<nixpkgs>' -iA dvc
 #     executable: /bin/bash
 #   register: nix_install
 #   changed_when: 'nix_install.rc != 0'
