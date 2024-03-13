@@ -275,21 +275,23 @@ install_ansible() {
         sudo apt update
         sudo apt install -y curl git ca-certificates xz-utils
 
-        # /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # setup_brew
-        # brew install ansible
-
-        # nix args between docker container and my host system
-        installerArgs=( install linux --no-confirm )
-        if ! command -v systemctl &>/dev/null; then
-            installerArgs+=( --init none )
-        fi
+        /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        setup_brew
+        brew install ansible
 
         # ./rr.sh role-i -r nix_install
 
-        curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
-        setup_nix
-        sudo "$(which nix)" profile install nixpkgs#ansible_2_13
+        # # nix args between docker container and my host system
+        # installerArgs=( install linux --no-confirm )
+        # if ! command -v systemctl &>/dev/null; then
+        #     installerArgs+=( --init none )
+        # fi
+        #
+        # if ! command -v nix &>/dev/null; then
+        #     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
+        # fi
+        # setup_nix
+        # sudo "$(which nix)" profile install nixpkgs#ansible
     fi
 }
 
