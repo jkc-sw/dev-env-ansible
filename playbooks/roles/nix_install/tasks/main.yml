@@ -9,9 +9,10 @@
       - xz-utils
 
 - name: Check nix is installed
-  shell: |
-    [[ -d /nix/var/nix/profiles/default/bin ]] && echo good || echo bad
+  shell:
     executable: /bin/bash
+    cmd: |
+      [[ -d /nix/var/nix/profiles/default/bin ]] && echo good || echo bad
   register: nix_present
   changed_when: "'bad' in nix_present.stdout"
 
@@ -24,10 +25,31 @@
   shell:
     cmd: |
       # export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
-      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- install linux
+      # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- install linux
+      local installerArgs=( install linux --no-confirm )
+      local initNone=false
+      if ! command -v systemctl &>/dev/null; then
+        initNone=true
+      elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd)" -eq 0 ]]; then
+        initNone=true
+      fi
+      if [[ "$initNone" == 'true' ]]; then
+        installerArgs+=( --init none )
+      fi
+      echo "installerArgs = ${installerArgs[*]}"
+      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
     executable: /bin/bash
   when: not nix_installer_exist.stat.exists
   register: nix_install
+
+- name: Enable nix experimental feature
+  become: true
+  lineinfile:
+    dest: /etc/nix/nix.conf
+    state: present
+    create: true
+    regexp: 'experimental-features'
+    line: "experimental-features = nix-command flakes"
 
 # # Uninstall, not really useful
 # - name: Uninstall yq

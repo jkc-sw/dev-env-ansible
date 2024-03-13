@@ -350,7 +350,7 @@ install_ansible() {
         #
         # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
         # setup_nix
-        # sudo "$(which nix)" profile install nixpkgs#ansible_2_13
+        # sudo "$(which nix)" profile install nixpkgs#ansible
     fi
     setup_nix
 }
