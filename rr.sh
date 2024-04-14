@@ -22,6 +22,7 @@ DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR/../focus-side.vim:$ANSI
 DOCKER_FILE_DIR=./dockerfiles
 
 # docker file name
+DOCKER_FILE_UBUNTU_24="$DOCKER_FILE_DIR/ubuntu2404/Dockerfile"
 DOCKER_FILE_UBUNTU_22="$DOCKER_FILE_DIR/ubuntu2204/Dockerfile"
 DOCKER_FILE_UBUNTU_20="$DOCKER_FILE_DIR/ubuntu2004/Dockerfile"
 DOCKER_FILE_UBUNTU_18="$DOCKER_FILE_DIR/ubuntu1804/Dockerfile"
@@ -211,6 +212,10 @@ select_docker_ver() {
     ver=$1
     # select the version
     case "$ver" in
+    24)
+        echo -n "$DOCKER_FILE_UBUNTU_24"
+        ;;
+
     22)
         echo -n "$DOCKER_FILE_UBUNTU_22"
         ;;
