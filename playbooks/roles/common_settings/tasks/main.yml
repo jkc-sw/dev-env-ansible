@@ -11,6 +11,12 @@
   set_fact:
     gui: true
 
+- name: Run nix in docker
+  tags:
+    - nixdocker
+  set_fact:
+    nixdocker: true
+
 - name: Skip the common settings for development - default is not skipping
   set_fact:
     skip_common_settings: false

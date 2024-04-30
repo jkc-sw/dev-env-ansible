@@ -21,21 +21,29 @@
     path: /nix/var/nix/profiles/default/bin
   register: nix_installer_exist
 
-- name: Install nix with nix-installer from determinate system when not found
+- name: Default flags to pass to the nix installer. In normal linux, none
+  set_fact:
+    nix_installer_install_flags: ''
+
+- name: When running nix in docker, we need to pass in additional flags
+  tags:
+    - nixdocker
+  set_fact:
+    nix_installer_install_flags: '--extra-conf "sandbox = false" --no-start-daemon'
+
+- name: Install nix with nix-installer from determinate system when not found.
   shell:
     cmd: |
-      # export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
-      # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- install linux
-      installerArgs=( install linux --no-confirm )
-      initNone=false
-      if ! command -v systemctl &>/dev/null; then
-        initNone=true
-      elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd | wc -l)" -eq 0 ]]; then
-        initNone=true
-      fi
-      if [[ "$initNone" == 'true' ]]; then
-        installerArgs+=( --init none )
-      fi
+      installerArgs=( install linux --no-confirm {{ nix_installer_install_flags }} )
+      # initNone=false
+      # if ! command -v systemctl &>/dev/null; then
+      #   initNone=true
+      # elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd | wc -l)" -eq 0 ]]; then
+      #   initNone=true
+      # fi
+      # if [[ "$initNone" == 'true' ]]; then
+      #   installerArgs+=( --init none )
+      # fi
       echo "installerArgs = ${installerArgs[*]}"
       curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
     executable: /bin/bash
@@ -51,12 +59,20 @@
     regexp: 'experimental-features'
     line: "experimental-features = nix-command flakes"
 
-- name: workaround to fix nix permission issue in the profile
+- name: workaround to fix nix permission issue in the profile per my user
   become: true
   file:
     path: /nix/var/nix/profiles/per-user/chenkua
     group: "{{ ansible_user_id }}"
     owner: "{{ ansible_user_id }}"
+    recurse: true
+    state: directory
+
+- name: workaround to fix nix permission issue in the profile
+  become: true
+  file:
+    path: /nix/var/nix/profiles/per-user
+    mode: 'o+rw'
     recurse: true
     state: directory
 
