@@ -13,6 +13,7 @@ RUN apt-get update && \
     git \
     curl \
     locales \
+    adduser \
     xz-utils \
     ca-certificates
 
@@ -24,6 +25,9 @@ RUN locale-gen en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+
+# Remove default ubuntu user
+RUN deluser ubuntu
 
 # Define the default username and home directory as overrideable arguments
 ARG SHELL_USER=developer

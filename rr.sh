@@ -256,10 +256,15 @@ build_image() {
 
 # Setup nix
 setup_nix() {
+    # Install nix
+    if [[ ! -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
+        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
+    fi
     # Getting nix-env
     if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
         alias ni=nix-env
+        export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
     fi
 }
 
@@ -285,10 +290,10 @@ install_ansible() {
         # setup_brew
         # brew install ansible
 
-        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
         setup_nix
-        nix-env -iA nixpkgs.ansible_2_13
+        nix-env -iA nixpkgs.ansible
     fi
+    setup_nix
 }
 
 # if args, print help
@@ -547,9 +552,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        time ansible-playbook -vvv "$playpath" --tags "$tags"
+        nix-shell -p ansible --command "time ansible-playbook -vvv '$playpath' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        time ansible-playbook "$playpath" --tags "$tags"
+        nix-shell -p ansible --command "time ansible-playbook '$playpath' --tags '$tags'"
     fi
     ;;
 
@@ -643,9 +648,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        time ansible-playbook -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        nix-shell -p ansible --command "time ansible-playbook -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        time ansible-playbook "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        nix-shell -p ansible --command "time ansible-playbook '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     fi
     ;;
 
@@ -719,6 +724,7 @@ case "$subcmd" in
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
+        --user "$USER:$USER" \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
@@ -738,6 +744,7 @@ case "$subcmd" in
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
+        --user "$USER:$USER" \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
@@ -783,6 +790,7 @@ case "$subcmd" in
     # start bash inside container
     if [[ -z $wdir ]]; then
         docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
@@ -791,6 +799,7 @@ case "$subcmd" in
 
     else
         docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
             --network="host" \
             $DOCKER_VOLUME_MOUNT \
             --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
@@ -808,6 +817,7 @@ case "$subcmd" in
 
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
+        --user "$USER:$USER" \
         --network="host" \
         $DOCKER_VOLUME_MOUNT \
         --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
@@ -838,6 +848,7 @@ case "$subcmd" in
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
+        --user "$USER:$USER" \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
@@ -864,6 +875,7 @@ case "$subcmd" in
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
+        --user "$USER:$USER" \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
@@ -892,6 +904,7 @@ case "$subcmd" in
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
+        --user "$USER:$USER" \
         --network="host" \
         -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
         "$CONTAINER_TAG" \
