@@ -77,7 +77,6 @@
         - gv
         - mupdf
         - tikzit # Can be from source in the future
-        - libtinfo5
         - libncurses5
         - ncdu
         - jq
@@ -92,6 +91,22 @@
         - sshpass
         - nvme-cli
         - iputils-ping
+
+  - name: Other not Ubuntu 24 specific
+    become: true
+    when: "ansible_lsb.release != '24.04'"
+    apt:
+      state: present
+      name:
+        - libtinfo5
+
+  - name: Ubuntu 24 specific
+    become: true
+    when: "ansible_lsb.release == '24.04'"
+    apt:
+      state: present
+      name:
+        - libtinfo6
 
   - name: Make sure some system dependencies are installed without Ubuntu 16.04
     become: true
