@@ -5,11 +5,10 @@
   changed_when: "'bad' in cargo_present.stdout"
 
 - name: Install cargo and rustup
-  shell: curl https://sh.rustup.rs -sSf | bash -s - -y
   when: cargo_present.changed
+  shell:
+    cmd: curl https://sh.rustup.rs -sSf | bash -s - -y
   register: rustup_install
-  args:
-    warn: false
 
 - name: Make sure cargo export is not present in .profile
   when: rustup_install.changed
