@@ -1,74 +1,16 @@
 ---
-- name: Remove system installed package, as I am building from source
-  become: true
-  apt:
-    name: nvim
-    state: absent
+- name: Build neovim for Ubuntu 18 and up
+  when: "(not fast | default(false)) and ansible_lsb.release != '24.04'"
+  include_tasks: other.yml
 
-- name: Check if nvim is installed
-  shell: command -v nvim && echo good || echo bad
-  register: nvim_present
-  changed_when: "'bad' in nvim_present.stdout"
-
-- name: Check if the folder exists
-  stat:
-    path: "{{ nvim_repos }}"
-  register: nvim_repos_exists
-
-- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "nvim_repos_exists.stat.exists"
-  shell:
-    cmd: git fetch --tags -f
-    chdir: "{{ nvim_repos }}"
-  register: git_fetch_nvim
-  changed_when: "git_fetch_nvim.rc != 0"
-
-- name: Get latest source code for neovim
-  git:
-    repo: https://github.com/neovim/neovim.git
-    dest: "{{ nvim_repos }}"
-    clone: true
-    version: "{{ neovim_repo_version | default('HEAD') }}"
-    update: true
-  register: git_clone_neovim
-
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    state: 'present'
+- name: Install neovim for Ubuntu 18 and up
+  when: fast | default(true)
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
     name:
-      - ninja-build
-      - gettext
-      - libtool
-      - libtool-bin
-      - autoconf
-      - automake
-      - g++
-      - pkg-config
-      - unzip
+      - neovim
+    install_options:
+      - HEAD
 
-- name: Cleanout the .dep and build folder
-  when: git_clone_neovim.changed or nvim_present.changed
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ nvim_repos }}/.dep"
-    - "{{ nvim_repos }}/build"
-
-- name: Compile, update neovim
-  when: git_clone_neovim.changed or nvim_present.changed
-  community.general.make:
-    jobs: "{{ ansible_processor_vcpus }}"
-    chdir: "{{ nvim_repos }}"
-    params:
-      CMAKE_BUILD_TYPE: RelWithDebInfo
-
-- name: Compile, update and install neovim
-  when: git_clone_neovim.changed or nvim_present.changed
-  become: true
-  community.general.make:
-    chdir: "{{ nvim_repos }}"
-    target: install
-    params:
-      CMAKE_BUILD_TYPE: RelWithDebInfo
+# vim:et ts=2 sts=2 sw=2
