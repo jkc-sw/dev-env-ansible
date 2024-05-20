@@ -1,6 +1,7 @@
 ---
 - name: Install the tap for the mark
   community.general.homebrew_tap:
+    path: /home/linuxbrew/.linuxbrew/bin
     name: kovetskiy/mark
 
 - name: Install mark for confluence upload
