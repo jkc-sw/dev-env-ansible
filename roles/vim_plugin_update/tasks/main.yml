@@ -3,8 +3,6 @@
   shell:
     cmd: |
       ANSIBLE_UPDATE=1 nvim --headless
-  args:
-    warn: false
   register: update_nvim_plugin
   changed_when: update_nvim_plugin.rc != 0
 

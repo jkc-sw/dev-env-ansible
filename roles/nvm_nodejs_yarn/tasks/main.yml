@@ -17,8 +17,6 @@
     cmd: "/bin/bash {{ nvm_install_script }}"
   when: nvm_present.changed
   register: nvm_install
-  args:
-    warn: false
 
 - name: Remove installer
   file:
