@@ -1,67 +1,22 @@
 ---
-- name: Remove system installed package, as I am building from source
-  become: true
-  apt:
-    name: cmake
-    state: absent
-
-- name: Check if cmake is installed
-  shell: command -v cmake && echo good || echo bad
-  register: cmake_present
-  changed_when: "'bad' in cmake_present.stdout"
-
-- name: Check if the folder exists
-  stat:
-    path: "{{ cmake_repos }}"
-  register: cmake_repos_exists
-
-- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
-  when: "cmake_repos_exists.stat.exists"
-  shell:
-    cmd: git fetch --tags -f
-    chdir: "{{ cmake_repos }}"
-  register: git_fetch_cmake
-  changed_when: "git_fetch_cmake.rc != 0"
-
-- name: Get latest source code for cmake
-  git:
-    repo: https://github.com/Kitware/CMake.git
-    dest: "{{ cmake_repos }}"
-    clone: true
-    version: "{{ cmake_repo_version | default('HEAD') }}"
-    update: true
-  register: git_clone_cmake
-
-- name: Make sure some system dependencies are installed
-  become: true
-  apt:
-    state: 'present'
+- name: Install mark for confluence upload
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
     name:
-      - build-essential
-      - libssl-dev
-      - make
-      - g++
+      - kovetskiy/mark/mark
 
-- name: Configure before running build for cmake
-  when: git_clone_cmake.changed or cmake_present.changed
-  shell:
-    chdir: "{{ cmake_repos }}"
-    cmd: |
-      ./bootstrap --parallel={{ ansible_processor_vcpus }} -- -DCMAKE_BUILD_TYPE:STRING=Release
+- name: Build cmake for Ubuntu 18 and up
+  when: "(not fast | default(false)) and ansible_lsb.release != '24.04'"
+  include_tasks: other.yml
 
-- name: Compile cmake
-  when: git_clone_cmake.changed or cmake_present.changed
-  community.general.make:
-    chdir: "{{ cmake_repos }}"
-    jobs: "{{ ansible_processor_vcpus }}"
-  register: cmake_built
-
-- name: update cmake
-  when: git_clone_cmake.changed or cmake_present.changed
-  community.general.make:
-    chdir: "{{ cmake_repos }}"
-    target: install
-  register: cmake_built
-  become: true
+- name: Install cmake for Ubuntu 18 and up
+  when: fast | default(true)
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
+    name:
+      - cmake
+      - cmake-docs
 
 # vim:et ts=2 sts=2 sw=2
