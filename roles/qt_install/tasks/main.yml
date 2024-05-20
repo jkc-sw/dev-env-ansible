@@ -16,6 +16,7 @@
     update_cache: true
 
 - name: Install qt4
+  when: "ansible_lsb.release != '24.04'"
   become: true
   apt:
     name: ['libqtcore4', 'libqtgui4']
