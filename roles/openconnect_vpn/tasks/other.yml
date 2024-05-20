@@ -1,0 +1,92 @@
+---
+- name: check openconnect installed
+  shell: command -v openconnect && echo good || echo bad
+  register: openconnect_present
+  changed_when: "'bad' in openconnect_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ openconnect_repos }}"
+  register: openconnect_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "openconnect_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ openconnect_repos }}"
+  register: git_fetch_openconnect
+  changed_when: "git_fetch_openconnect.rc != 0"
+
+- name: Get latest source code for openconnect
+  git:
+    repo: git://git.infradead.org/users/dwmw2/openconnect.git
+    dest: "{{ openconnect_repos }}"
+    clone: true
+    version: "{{ openconnect_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_openconnect
+
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - gcc
+      - gettext
+      - autotools-dev
+      - automake
+      - libtool
+      - checkinstall
+      - build-essential
+      - libssl-dev
+      - pkg-config
+      - libxml2-dev
+      - zlib1g-dev
+      - libgnutls28-dev
+      - libpcsclite-dev
+
+- name: Make sure vpnc folder exist for the vpn script
+  become: true
+  file:
+    path: "/etc/vpnc"
+    state: directory
+
+- name: Get the vpnc script
+  become: true
+  get_url:
+    url: 'http://git.infradead.org/users/dwmw2/vpnc-scripts.git/blob_plain/HEAD:/vpnc-script'
+    dest: '/etc/vpnc/vpnc-script'
+    mode: 0755
+
+- name: Configure before running build for openconnect
+  when: git_clone_openconnect.changed or openconnect_present.changed
+  shell:
+    chdir: "{{ openconnect_repos }}"
+    cmd: |
+      ./autogen.sh
+      ./configure
+
+- name: Compile openconnect
+  when: git_clone_openconnect.changed or openconnect_present.changed
+  community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
+    chdir: "{{ openconnect_repos }}"
+  register: openconnect_built
+
+- name: update openconnect
+  when: git_clone_openconnect.changed or openconnect_present.changed
+  community.general.make:
+    chdir: "{{ openconnect_repos }}"
+    target: install
+  register: openconnect_built
+  become: true
+
+- name: Allow openconnect to run with sudo
+  become: true
+  lineinfile:
+    dest: /etc/sudoers.d/openconnect
+    state: present
+    create: true
+    regexp: 'openconnect'
+    line: "{{ ansible_user_id }} ALL = (root) NOPASSWD: /usr/local/sbin/openconnect"
+    validate: visudo -cf %s
