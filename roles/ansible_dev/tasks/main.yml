@@ -27,7 +27,6 @@
         install \
         lxml \
         pyqtgraph \
-        docker-compose \
         more_itertools \
         requests
   register: many_install
