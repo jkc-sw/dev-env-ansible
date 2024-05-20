@@ -58,29 +58,29 @@
   failed_when: "pipinstall.rc != 0"
   changed_when: "pipinstall.rc != 0"
 
-- name: Cleanup some pkgs
-  shell:
-    cmd: |
-      {{ dev_condaenv }}/bin/python -m pip \
-        --disable-pip-version-check \
-        --no-python-version-warning \
-        uninstall -y \
-        hdl-checker
-  register: pipuninstall
-  failed_when: "pipuninstall.rc != 0"
-  changed_when: "pipuninstall.rc != 0"
+# - name: Cleanup some pkgs
+#   shell:
+#     cmd: |
+#       {{ dev_condaenv }}/bin/python -m pip \
+#         --disable-pip-version-check \
+#         --no-python-version-warning \
+#         uninstall -y \
+#         hdl-checker
+#   register: pipuninstall
+#   failed_when: "pipuninstall.rc != 0"
+#   changed_when: "pipuninstall.rc != 0"
 
-- name: Install many lsp from pip 2
-  shell:
-    cmd: |
-      {{ dev_condaenv2 }}/bin/python -m pip \
-        --disable-pip-version-check \
-        --no-python-version-warning \
-        install \
-        hdl-checker
-  register: pipinstall
-  failed_when: "pipinstall.rc != 0"
-  changed_when: "pipinstall.rc != 0"
+# - name: Install many lsp from pip 2
+#   shell:
+#     cmd: |
+#       {{ dev_condaenv2 }}/bin/python -m pip \
+#         --disable-pip-version-check \
+#         --no-python-version-warning \
+#         install \
+#         hdl-checker
+#   register: pipinstall
+#   failed_when: "pipinstall.rc != 0"
+#   changed_when: "pipinstall.rc != 0"
 
 - name: Install luals for the correct distro
   include_tasks: luals.yml
