@@ -1,4 +1,4 @@
 ---
 dependencies:
   - common_settings
-  - asdf_install
+  - brew_install

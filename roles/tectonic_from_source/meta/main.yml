@@ -3,5 +3,6 @@ dependencies:
   - common_settings
   - cargo_and_rustup
   - texlab_from_source
+  - brew_install
 
 # vim:et ts=2 sts=2 sw=2

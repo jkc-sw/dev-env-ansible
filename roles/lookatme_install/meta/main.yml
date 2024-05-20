@@ -2,3 +2,4 @@
 dependencies:
   - common_settings
   - ansible_dev
+  - brew_install

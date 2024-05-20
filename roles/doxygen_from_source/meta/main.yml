@@ -3,3 +3,4 @@ dependencies:
   - common_settings
   - cmake_from_source
   - llvm_from_source
+  - brew_install

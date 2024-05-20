@@ -5,3 +5,4 @@ dependencies:
   - doxygen_from_source
   - general_cargo_install
   - cmake_from_source
+  - brew_install
