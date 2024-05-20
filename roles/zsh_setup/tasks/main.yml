@@ -8,7 +8,7 @@
       - curl
       - zsh
       - libcap-ng-dev
-      - netcat
+      - nmap
       - minicom
 
 - name: Remove the old installer
