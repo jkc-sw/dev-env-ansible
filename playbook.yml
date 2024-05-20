@@ -26,7 +26,7 @@
     # - insync_install
     - openconnect_vpn
     - p4
-    - fpga_dev
+    # - fpga_dev
 
 - hosts: local
   gather_facts: true

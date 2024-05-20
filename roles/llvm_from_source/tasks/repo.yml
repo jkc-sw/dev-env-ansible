@@ -36,4 +36,17 @@
       - clang-14
       - llvm
 
+- name: Install clangd from system
+  include_tasks: apt.yml
+  when: "( ansible_lsb.release == '24.04' )"
+  vars:
+    clangd_name: 'clangd-18'
+    clang_name: 'clang-18'
+    clangpp_name: 'clang++-18'
+    pkgs:
+      - clangd-18
+      - clang-18
+      - clang-tools-18
+      - llvm
+
 # vim:et ts=2 sts=2 sw=2

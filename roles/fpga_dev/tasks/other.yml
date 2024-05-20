@@ -10,6 +10,7 @@
       - python3-dev
       - python3-pip
       - make
+      - zlib1g-dev
 
 - name: Check if ghdl is installed
   shell: command -v ghdl && echo good || echo bad
