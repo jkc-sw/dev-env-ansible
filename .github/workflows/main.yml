@@ -27,7 +27,6 @@ jobs:
           'texlab_from_source',
           'tectonic_from_source',
           'ansible_dev',
-          'asdf_install',
           'bashrc_like_a_pro',
           'caddy_install',
           'cargo_and_rustup',
@@ -66,8 +65,6 @@ jobs:
           'toclip_install',
           'tpm_tmux_setup',
           'vim_lsp_dependencies',
-          'vim_plug_installer',
-          'vim_plugin_update',
           'vnc',
           'xmonad_wm',
           'zsh_setup'

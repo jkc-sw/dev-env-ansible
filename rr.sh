@@ -409,7 +409,6 @@ case "$subcmd" in
         # 'iverilog' \
         'ansible' \
         'ansible-playbook' \
-        'asdf' \
         'bash-language-server' \
         'bat' \
         'caddy' \
