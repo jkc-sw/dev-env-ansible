@@ -1,0 +1,68 @@
+---
+- name: Remove system installed package, as I am building from source
+  become: true
+  apt:
+    name: tmux
+    state: absent
+
+- name: Check if tmux is installed
+  shell: command -v tmux && echo good || echo bad
+  register: tmux_present
+  changed_when: "'bad' in tmux_present.stdout"
+
+- name: Check if the folder exists
+  stat:
+    path: "{{ tmux_repos }}"
+  register: tmux_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "tmux_repos_exists.stat.exists"
+  shell:
+    cmd: git fetch --tags -f
+    chdir: "{{ tmux_repos }}"
+  register: git_fetch_tmux
+  changed_when: "git_fetch_tmux.rc != 0"
+
+- name: Get latest source code for tmux
+  git:
+    repo: https://github.com/tmux/tmux.git
+    dest: "{{ tmux_repos }}"
+    clone: true
+    version: "{{ tmux_repo_version | default('HEAD') }}"
+    update: true
+  register: git_clone_tmux
+
+- name: Make sure some system dependencies are installed
+  become: true
+  apt:
+    state: 'present'
+    name:
+      - libevent-dev
+      - ncurses-dev
+      - build-essential
+      - bison
+      - pkg-config
+      - automake
+
+- name: Configure before running build for tmux
+  when: git_clone_tmux.changed or tmux_present.changed
+  shell:
+    chdir: "{{ tmux_repos }}"
+    cmd: |
+      ./autogen.sh
+      ./configure --enable-static
+
+- name: Compile tmux
+  when: git_clone_tmux.changed or tmux_present.changed
+  community.general.make:
+    jobs: "{{ ansible_processor_vcpus }}"
+    chdir: "{{ tmux_repos }}"
+  register: tmux_built
+
+- name: update tmux
+  when: git_clone_tmux.changed or tmux_present.changed
+  community.general.make:
+    chdir: "{{ tmux_repos }}"
+    target: install
+  register: tmux_built
+  become: true
