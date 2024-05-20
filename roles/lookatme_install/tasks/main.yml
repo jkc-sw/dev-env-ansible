@@ -6,6 +6,7 @@
         --disable-pip-version-check \
         --no-python-version-warning \
         install \
+        --user \
         Pygments \
         termdown \
         lookatme
@@ -13,10 +14,11 @@
   failed_when: "lookatmeinstall.rc != 0"
   changed_when: "lookatmeinstall.rc != 0"
 
-- name: Install Pandoc
-  shell:
-    cmd: |
-      {{ conda_bin_fullpath }} install -p {{ dev_condaenv }} pandoc
-  register: pandoc
-  failed_when: "pandoc.rc != 0"
-  changed_when: "pandoc.rc != 0"
+- name: Install pandoc for Ubuntu 18 and up
+  when: fast | default(true)
+  community.general.homebrew:
+    path: /home/linuxbrew/.linuxbrew/bin
+    state: present
+    name:
+      - pandoc
+
