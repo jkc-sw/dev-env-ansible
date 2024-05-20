@@ -19,7 +19,6 @@
     - lttng_install
     - kernel_tools
     - zsh_setup
-    - vim_plugin_update
     - caddy_install
     - lookatme_install
     - networking_tools

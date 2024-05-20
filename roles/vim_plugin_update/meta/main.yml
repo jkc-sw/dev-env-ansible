@@ -1,8 +1,0 @@
----
-dependencies:
-  - common_settings
-  - dotfiles
-  - vim_plug_installer
-  - vim_lsp_dependencies
-  - nvim_from_source
-  - some_git_clones

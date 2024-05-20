@@ -1,6 +1,6 @@
 ---
 ctags_repo_version: '35b9c9ac6defd93c72cd2e2f5ae6b610cdb13c40'
-dotfiles_repo_version: 'HEAD'
+dotfiles_repo_version: 'use-lazy-nvim'
 doxygen_repo_version: 'bfe598c49fb7c99c93c84b7fcd7ea8ae8bb00739'
 neovim_repo_version: 'HEAD'  # 'v0.8.3'
 pwshlsp_repo_version: 'v3.9.0'

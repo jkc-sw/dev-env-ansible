@@ -32,7 +32,7 @@
     repo: https://github.com/jkc-sw/dotfiles.git
     dest: "{{ dotfiles_repos }}"
     clone: true
-    version: HEAD
+    version: "{{ dotfiles_repo_version }}"
     update: true
 
 - name: Stow the destination

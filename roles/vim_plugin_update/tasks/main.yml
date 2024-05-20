@@ -1,8 +1,0 @@
----
-- name: Update neovim plugin
-  shell:
-    cmd: |
-      ANSIBLE_UPDATE=1 nvim --headless
-  register: update_nvim_plugin
-  changed_when: update_nvim_plugin.rc != 0
-
