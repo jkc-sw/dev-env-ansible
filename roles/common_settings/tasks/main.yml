@@ -86,12 +86,11 @@
         - netdiscover
         - osslsigncode
         - tldr
-        - lsb
         - sshpass
         - nvme-cli
         - iputils-ping
 
-  - name: Other not Ubuntu 24 specific
+  - name: Other not on Ubuntu 24 or had a different name before Ubuntu 24
     become: true
     when: "ansible_lsb.release != '24.04'"
     apt:
@@ -99,6 +98,7 @@
       name:
         - libtinfo5
         - libncurses5
+        - lsb
 
   - name: Ubuntu 24 specific
     become: true
