@@ -1,0 +1,71 @@
+---
+- name: Install p4
+  block:
+    - name: Download and Add p4 Key to Apt-Get Keyring
+      become: true
+      apt_key:
+        url: "https://package.perforce.com/perforce.pubkey"
+        state: present
+
+    - name: Add p4 Repository into /etc/apt/sources.list
+      become: true
+      apt_repository:
+        repo: "deb http://package.perforce.com/apt/ubuntu {{ ansible_lsb.codename }} release"
+        state: present
+        update_cache: true
+
+    - name: Install p4
+      become: true
+      apt:
+        name: ['helix-p4d', 'helix-proxy']
+        state: present
+
+    - name: Allow p4p to run with sudo
+      become: true
+      lineinfile:
+        dest: /etc/sudoers.d/p4p
+        state: present
+        create: true
+        regexp: 'p4p'
+        line: "{{ ansible_user_id }} ALL = (root) NOPASSWD: /usr/sbin/p4p"
+        validate: visudo -cf %s
+
+    - name: Check if p4v is installed
+      shell: command -v p4v && echo good || echo bad
+      register: p4v_present
+      changed_when: "'bad' in p4v_present.stdout"
+
+    - name: Make sure local dir is there
+      file:
+        path: "{{ local_dir }}"
+        state: directory
+
+    - name: Download p4v
+      when: "p4v_present.changed"
+      get_url:
+        url: "{{ p4v_url }}"
+        dest: "{{ local_dir }}"
+        checksum: "{{ p4v_checksum }}"
+        validate_certs: false
+
+    - name: unpack p4v
+      when: "p4v_present.changed"
+      unarchive:
+        remote_src: yes
+        src: "{{ p4v_src_tgz }}"
+        keep_newer: yes
+        dest: "{{ local_dir }}"
+      register: unpack_p4v
+      changed_when: "unpack_p4v.failed"
+      failed_when: "unpack_p4v.failed"
+
+    - name: Remove downloaded p4v.tgz files
+      file:
+        path: "{{ p4v_src_tgz }}"
+        state: 'absent'
+
+    - name: Make sure p4v is properly symlinked
+      file:
+        path: "{{ p4v_dir }}"
+        src: "{{ p4v_src_dir }}"
+        state: link
