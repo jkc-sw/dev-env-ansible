@@ -292,8 +292,18 @@ setup_nix() {
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
         alias ni=nix-env
     fi
-    # if [[ -r "/nix/var/nix/profiles/default/bin" ]]; then
-    #     . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    if [[ -r "/nix/var/nix/profiles/default/bin" ]]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    fi
+
+    # # Install nix
+    # if [[ ! -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
+    #     export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
+    # fi
+    # # Getting nix-env
+    # if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
+    #     . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+    #     alias ni=nix-env
     # fi
 }
 
@@ -325,6 +335,11 @@ decrypt_inventory_for_docker() {
 
 # function to install ansible
 install_ansible() {
+    if [[ $# -ne 1 ]]; then
+        echo 'ERR install_ansible: needs 1 argument' >&2
+        exit 1
+    fi
+    local tags="$1"
     setup_brew
     # check if the ansible is installed, if not, install it
     if ! command -v ansible &>/dev/null; then
@@ -338,21 +353,12 @@ install_ansible() {
         # setup_brew
         # brew install ansible
 
-        setup_nix
+        setup_nix "$tags"
         nix-env -iA nixpkgs.ansible
-        # # nix args between docker container and my host system
-        # installerArgs=( install linux --no-confirm )
-        # if ! command -v systemctl &>/dev/null; then
-        #     installerArgs+=( --init none )
-        # fi
-        #
-        # # ./rr.sh role-i -r nix_install
-        #
-        # curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
         # setup_nix
         # sudo "$(which nix)" profile install nixpkgs#ansible
     fi
-    setup_nix
+    setup_nix "$tags"
 }
 
 # if args, print help
@@ -583,7 +589,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_ansible "$tags"
 
     # Write the role
     playpath="$(writePlaybook "$role")"
@@ -651,7 +657,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_ansible "$tags"
 
     # Write the role
     playpath="$(writePlaybook "$role")"

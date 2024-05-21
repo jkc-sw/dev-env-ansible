@@ -29,23 +29,13 @@
   tags:
     - nixdocker
   set_fact:
-    nix_installer_install_flags: '--extra-conf "sandbox = false" --no-start-daemon'
+    nix_installer_install_flags: "--extra-conf \"sandbox = false\" --no-start-daemon"
 
 - name: Install nix with nix-installer from determinate system when not found.
+  become: true
   shell:
     cmd: |
-      installerArgs=( install linux --no-confirm {{ nix_installer_install_flags }} )
-      # initNone=false
-      # if ! command -v systemctl &>/dev/null; then
-      #   initNone=true
-      # elif command -v systemctl &>/dev/null && [[ "$(ps -aux | grep -v grep | grep systemd | wc -l)" -eq 0 ]]; then
-      #   initNone=true
-      # fi
-      # if [[ "$initNone" == 'true' ]]; then
-      #   installerArgs+=( --init none )
-      # fi
-      echo "installerArgs = ${installerArgs[*]}"
-      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- "${installerArgs[@]}"
+      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | /bin/bash -s -- install linux --no-confirm {{ nix_installer_install_flags }}
     executable: /bin/bash
   when: not nix_installer_exist.stat.exists
   register: nix_install
