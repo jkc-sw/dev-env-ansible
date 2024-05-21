@@ -424,7 +424,7 @@ case "$subcmd" in
         'docker-langserver' \
         'doxygen' \
         'dust' \
-        'exa' \
+        'eza' \
         'fd' \
         'git' \
         'gtop' \
