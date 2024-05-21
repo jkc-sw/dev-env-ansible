@@ -50,14 +50,13 @@
   when: not nix_installer_exist.stat.exists
   register: nix_install
 
-- name: Enable nix experimental feature
-  become: true
+- name: Update the nix config to allow unfree
   lineinfile:
-    dest: /etc/nix/nix.conf
+    path: "{{ home_dir + '/.config/nixpkgs/config.nix' }}"
+    line: "{ allowUnfree = true; }"
     state: present
+    backup: true
     create: true
-    regexp: 'experimental-features'
-    line: "experimental-features = nix-command flakes"
 
 - name: workaround to fix nix permission issue in the profile per my user
   become: true
