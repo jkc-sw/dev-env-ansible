@@ -2,7 +2,8 @@
 
 : <<AEOF
 SOURCE_THESE_VIMS_START
-nnoremap <leader>ue <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit' Enter"<cr>
+nnoremap <leader>ueo <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/local.yaml' Enter"<cr>
+nnoremap <leader>ued <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/docker-enc.yaml' Enter"<cr>
 nnoremap <leader>us <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role -r scratch -g asus' Enter"<cr>
 
 let @h="yoecho \"\<c-r>\" = \$\<c-r>\"\"\<esc>j"
@@ -26,9 +27,10 @@ ANSIBLE_HOME="/home/$USER"
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 
 # docker volumn mount
-DOCKER_VOLUME_MOUNT=" -v $SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles "
-DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH "
-DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim "
+DOCKER_VOLUME_MOUNT=(-v "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles")
+DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH")
+DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim")
+DOCKER_VOLUME_MOUNT+=(-v "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519")
 
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
@@ -584,7 +586,16 @@ case "$subcmd" in
     ;;
 
 'edit')
-    "$PROJECT_DIR/scripts/edit_inventory.sh"
+    # Get arguments
+    args=("$@")
+
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 1 ]]; then
+        echo "ERR: edit command need an encrypted inventory file, but you have ${#args[@]}."
+        exit 0
+    fi
+
+    "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
     ;;
 
 'role')
@@ -769,7 +780,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm -it \
         --user "$USER:$USER" \
         --network="host" \
-        $DOCKER_VOLUME_MOUNT \
+        "${DOCKER_VOLUME_MOUNT[@]}" \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
         "$CONTAINER_TAG" \
         bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
@@ -792,7 +803,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm -it \
         --user "$USER:$USER" \
         --network="host" \
-        $DOCKER_VOLUME_MOUNT \
+        "${DOCKER_VOLUME_MOUNT[@]}" \
         --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
         "$CONTAINER_TAG" \
         bash -i -c "$cmd ; command -v zsh && exec zsh || exec bash"
@@ -828,7 +839,7 @@ case "$subcmd" in
                 echo "$wdir is not found" >&2
                 exit 1
             fi
-            DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $wdir:$ANSIBLE_HOME/$(basename $wdir) "
+            DOCKER_VOLUME_MOUNT+=(-v "$wdir:$ANSIBLE_HOME/$(basename "$wdir")")
             ;;
         *)
             echo "WARN: cannot handle argument '$OPTARG'" >&2
@@ -843,7 +854,7 @@ case "$subcmd" in
         docker run --cpu-shares=1024 --rm -it \
             --user "$USER:$USER" \
             --network="host" \
-            $DOCKER_VOLUME_MOUNT \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
             --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
@@ -852,7 +863,7 @@ case "$subcmd" in
         docker run --cpu-shares=1024 --rm -it \
             --user "$USER:$USER" \
             --network="host" \
-            $DOCKER_VOLUME_MOUNT \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
             --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
             "$DEV_ENV_REPOSITORY_NAME:$tag" \
             bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh || exec bash"
@@ -872,7 +883,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm -it \
         --user "$USER:$USER" \
         --network="host" \
-        $DOCKER_VOLUME_MOUNT \
+        "${DOCKER_VOLUME_MOUNT[@]}" \
         --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
         "$DEV_ENV_REPOSITORY_NAME:$tag" \
         bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"

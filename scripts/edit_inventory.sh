@@ -11,6 +11,15 @@ EOF
 # get location of this folder
 PROJECT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )/.."
 
+# Get arguments
+args=("$@")
+
+# validate all files exist or print help
+if [[ "${#args[@]}" -ne 1 ]]; then
+    echo "ERR: $0 needs 1 arguments, encrypted path"
+    exit 0
+fi
+
 # Check dependencies
 toexit=false
 for c in ansible-vault; do
@@ -37,5 +46,5 @@ fi
 # Edit it
 pushd "$PROJECT_DIR"
 # ansible-vault encrypt --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$PROJECT_DIR/inventory/local.yaml"
-ansible-vault edit --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$PROJECT_DIR/inventory/local.yaml"
+ansible-vault edit --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "${args[0]}"
 popd
