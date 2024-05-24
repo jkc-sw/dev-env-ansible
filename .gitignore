@@ -6,3 +6,4 @@ session.json
 anyrole.yml
 testbook*.yml
 Session.vim
+/inventory/docker.yaml

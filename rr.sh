@@ -1,7 +1,19 @@
 #!/bin/bash
 
+: <<AEOF
+SOURCE_THESE_VIMS_START
+nnoremap <leader>ue <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit' Enter"<cr>
+nnoremap <leader>us <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role -r scratch -g asus' Enter"<cr>
+
+let @h="yoecho \"\<c-r>\" = \$\<c-r>\"\"\<esc>j"
+echom 'Sourced'
+SOURCE_THESE_VIMS_END
+AEOF
+
+
 # get location of this folder
 SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
+PROJECT_DIR="$SCRIPT_DIR"
 
 # make sure we are in the correct folder
 pushd "$SCRIPT_DIR" &>/dev/null
@@ -33,8 +45,12 @@ DEV_ENV_REPOSITORY_NAME=devenvansible
 RUN_PREFIX_FOR_NAME=run
 USE_PREFIX_FOR_NAME=use
 
+# Docker only password file path
+DOCKER_INVENTORY_FILE_ENCRYPETED="$PROJECT_DIR/inventory/docker-enc.yaml"
+DOCKER_INVENTORY_FILE="$PROJECT_DIR/inventory/docker.yaml"
+
 # Temp playbook
-WHOLE_PLAYBOOK_PATH="$SCRIPT_DIR/playbook.yml"
+WHOLE_PLAYBOOK_PATH="$SCRIPT_DIR/playbooks/everything.yml"
 WORKFLOW_PATH="$SCRIPT_DIR/.github/workflows/main.yml"
 
 # Write playbook
@@ -45,12 +61,12 @@ playbookName() {
     role="$1"
 
     # Find all the roles
-    if ! ls "$SCRIPT_DIR/roles" | grep -q "$role"; then
-        echo "role $role cannot be found in the ./roles folder" >&2
+    if ! ls "$SCRIPT_DIR/playbooks/roles" | grep -q "$role"; then
+        echo "role $role cannot be found in the ./playbooks/roles folder" >&2
         exit 1
     fi
 
-    echo -n "$SCRIPT_DIR/testbook_$role.yml"
+    echo -n "$SCRIPT_DIR/playbooks/testbook_$role.yml"
 }
 
 # Write playbook
@@ -65,7 +81,7 @@ writePlaybook() {
 
     cat <<EOF > "$playpath"
 ---
-- hosts: local
+- hosts: "{{ playbook_target }}"
   gather_facts: true
   roles:
     - $role
@@ -130,10 +146,10 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Running the ansible commands or related check"
-    echo " install [-v] [-t 'tag1[,tag2 ...]']"
+    echo " install -g HOSTS [-v] [-t 'tag1[,tag2 ...]']"
     echo "   Install on the host system (when do it on your production machine) prompting for password"  # desc
     echo ""
-    echo " install-i [-v] [-t 'tag1[,tag2 ...]']"
+    echo " install-i [-g HOSTS] [-v] [-t 'tag1[,tag2 ...]']"
     echo "   Install on the host system (mostly container) w/o asking for password"  # desc
     echo ""
     echo " tags"
@@ -142,10 +158,10 @@ displayHelp() {
     echo " roles"
     echo "   List all the roles"  # desc
     echo ""
-    echo " role [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]"
+    echo " role -g HOSTS [-v] [-t 'tag1[,tag2 ...]'] -r <role>"
     echo "   Run a role on the host system (mostly container) prompting for password"  # desc
     echo ""
-    echo " role-i [-v] [-t 'tag1[,tag2 ...]'] [-r <role>]"
+    echo " role-i [-g HOSTS] [-v] [-t 'tag1[,tag2 ...]'] -r <role>"
     echo "   Run a role on the host system (mostly container) w/o asking for password"  # desc
     echo ""
     echo " check"
@@ -155,10 +171,15 @@ displayHelp() {
     echo "   Do the necessary stuff to get the system upgraded"  # desc
     echo ""
     echo "  where"
+    echo "   -g > An inventory host name or a group of hosts in the inventory file"
     echo "   -v > Provide the -vvv option to the ansigle command to have debug output"
     echo "   -u > Will update the dotfile repo"
     echo "   -a > Install all, like xmonad, etc"
     echo "   -t > Tags to use, comma separated, no space"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Manage and handle the ansible vault for inventory file"
+    echo " edit: Edit the inventory file"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Create a new row template"
@@ -256,6 +277,10 @@ build_image() {
 
 # Setup nix
 setup_nix() {
+    export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
+    if command -v nix &>/dev/null; then
+        return
+    fi
     # Install nix
     if [[ ! -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
@@ -264,7 +289,6 @@ setup_nix() {
     if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
         alias ni=nix-env
-        export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
     fi
 }
 
@@ -273,6 +297,25 @@ setup_brew() {
     if [[ -x /home/linuxbrew/.linuxbrew/bin/brew && -z "$HOMEBREW_PREFIX" ]]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
     fi
+}
+
+# NOTE: This should only be used for the ephemeral docker image
+decrypt_inventory_for_docker() {
+    if [[ -n "$PASSWORD_STORE_DIR" ]]; then
+        # Check dependencies
+        toexit=false
+        for c in pass; do
+            if ! command -v "$c" &>/dev/null; then
+                echo "ERR: $c is not found in your PATH" >&2
+                toexit=true
+            fi
+        done
+        if [[ "$toexit" == true ]]; then
+            echo "ERR: Please make sure you install all the necessary tool first" >&2
+            exit 1
+        fi
+    fi
+    "$PROJECT_DIR/scripts/decrypt_file.sh" "$DOCKER_INVENTORY_FILE_ENCRYPETED" "$DOCKER_INVENTORY_FILE"
 }
 
 # function to install ansible
@@ -302,32 +345,6 @@ if test "$#" -eq 0; then
     exit 0
 fi
 
-# Define function to get password
-set_pass() {
-    # default password
-    if [[ -z "$MY_PASS_ID" || -z "$MY_GPG_DIR" || -z "$PASSWORD_STORE_DIR" ]]; then
-        echo -n "-K"
-        return
-    fi
-
-    # try to get the password
-    # need "system"
-    pw="$(pass show system 2>/dev/null)"
-    if [[ -z "$pw" ]]; then
-        echo -n "-K"
-        return
-    fi
-
-    # store the password to the file
-    sed -i "s/\(localhost.*\)/\1 ansible_become_pass='$pw'/" ./hosts
-    echo -n ''
-}
-
-# define a function to delete the password
-reset_pass() {
-    sed -i "s/ *ansible_become_pass.*//" ./hosts
-}
-
 # if there are arg for test, run test
 subcmd="$1"
 shift
@@ -346,30 +363,30 @@ case "$subcmd" in
     name="$1"
 
     # create the folders
-    mkdir -p "$SCRIPT_DIR/roles/$name/meta"
-    mkdir -p "$SCRIPT_DIR/roles/$name/tasks"
-    mkdir -p "$SCRIPT_DIR/roles/$name/defaults"
+    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/meta"
+    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/tasks"
+    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/defaults"
 
     # write meta
-    echo '---'                      >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
-    echo 'dependencies:'            >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
-    echo '  - common_settings'      >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
-    echo ''                         >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/roles/$name/meta/main.yml"
+    echo '---'                      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+    echo 'dependencies:'            >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+    echo '  - common_settings'      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+    echo ''                         >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
 
     # write tasks
-    echo '---'                                      >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo '- name: PLACEHOLDER'                      >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo '  fail:'                                  >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo ''                                         >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/roles/$name/tasks/main.yml"
+    echo '---'                                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+    echo '- name: PLACEHOLDER'                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+    echo '  fail:'                                  >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+    echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+    echo ''                                         >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
 
     # write defaults
-    echo '---'                                 >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo 'home_dir: "{{ ansible_env.HOME }}" ' >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo ''                                    >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2'            >> "$SCRIPT_DIR/roles/$name/defaults/main.yml"
+    echo '---'                                 >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+    echo 'home_dir: "{{ ansible_env.HOME }}" ' >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+    echo ''                                    >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+    echo '# vim:et ts=2 sts=2 sw=2'            >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
 
     # add to playbook in case I forgot
     awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
@@ -499,7 +516,7 @@ case "$subcmd" in
 
 'roles')
     # List all the roles
-    ls "$SCRIPT_DIR/roles" \
+    ls "$SCRIPT_DIR/playbooks/roles" \
     | sort \
     | xargs printf 'role: %s\n'
     ;;
@@ -507,7 +524,7 @@ case "$subcmd" in
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    ansible-playbook "$WHOLE_PLAYBOOK_PATH" --list-tags
+    ansible-playbook --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -515,10 +532,14 @@ case "$subcmd" in
     verbose=false
     tags='untagged'
     role=''
+    hosts='docker'
 
     # parse the argumetns
-    while getopts ':vt:r:' opt; do
+    while getopts ':vg:t:r:' opt; do
         case "$opt" in
+        g)
+            hosts="$OPTARG"
+            ;;
         v)
             verbose=true
             ;;
@@ -537,7 +558,12 @@ case "$subcmd" in
 
     # need a role
     if test -z "$role"; then
-        echo "No role specified, use -r <role> to run a role" >&2
+        echo "ERR: No role specified, use -r <role> to run a role" >&2
+        exit 1
+    fi
+
+    if [[ -z "$hosts" ]]; then
+        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
         exit 1
     fi
 
@@ -551,10 +577,14 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -vvv '$playpath' --tags '$tags'"
+        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$playpath' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook '$playpath' --tags '$tags'"
+        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$playpath' --tags '$tags'"
     fi
+    ;;
+
+'edit')
+    "$PROJECT_DIR/scripts/edit_inventory.sh"
     ;;
 
 'role')
@@ -562,10 +592,14 @@ case "$subcmd" in
     verbose=false
     tags='untagged'
     role=''
+    hosts=''
 
     # parse the argumetns
-    while getopts ':vt:r:' opt; do
+    while getopts ':vg:t:r:' opt; do
         case "$opt" in
+        g)
+            hosts="$OPTARG"
+            ;;
         v)
             verbose=true
             ;;
@@ -584,7 +618,11 @@ case "$subcmd" in
 
     # need a role
     if test -z "$role"; then
-        echo "No role specified, use -r <role> to run a role" >&2
+        echo "ERR: No role specified, use -r <role> to run a role" >&2
+        exit 1
+    fi
+    if [[ -z "$hosts" ]]; then
+        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
         exit 1
     fi
 
@@ -593,26 +631,19 @@ case "$subcmd" in
     # Write the role
     playpath="$(writePlaybook "$role")"
 
-    # set the password
-    kflag="$(set_pass)"
-    (
-        sleep 5
-        reset_pass
-    ) &!
-
     # trap remove
     trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
 
     # buil args
     aargs=()
+    aargs+=(--vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh")
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
         aargs+=("-vvv")
     fi
-    if [[ -n "$kflag" ]]; then
-        aargs+=("$kflag")
-    fi
+    aargs+=(-e "playbook_target=$hosts")
+    aargs+=(-i "./inventory/local.yaml")
     aargs+=("$playpath")
     aargs+=("--tags")
     aargs+=("$tags")
@@ -626,10 +657,14 @@ case "$subcmd" in
     # var
     verbose=false
     tags='untagged'
+    hosts=''
 
     # parse the argumetns
-    while getopts ':vt:r:' opt; do
+    while getopts ':vg:t:r:' opt; do
         case "$opt" in
+        g)
+            hosts="$OPTARG"
+            ;;
         v)
             verbose=true
             ;;
@@ -643,13 +678,18 @@ case "$subcmd" in
         esac
     done
 
+    if [[ -z "$hosts" ]]; then
+        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
+        exit 1
+    fi
+
     install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     fi
     ;;
 
@@ -657,10 +697,14 @@ case "$subcmd" in
     # var
     verbose=false
     tags='untagged'
+    hosts=''
 
     # parse the argumetns
-    while getopts ':vt:r:' opt; do
+    while getopts ':vg:t:r:' opt; do
         case "$opt" in
+        g)
+            hosts="$OPTARG"
+            ;;
         v)
             verbose=true
             ;;
@@ -674,25 +718,23 @@ case "$subcmd" in
         esac
     done
 
-    install_ansible
+    if [[ -z "$hosts" ]]; then
+        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
+        exit 1
+    fi
 
-    # set the password
-    kflag="$(set_pass)"
-    (
-        sleep 5
-        reset_pass
-    ) &!
+    install_ansible
 
     # buil args
     aargs=()
+    aargs+=(--vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh")
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
         aargs+=("-vvv")
     fi
-    if [[ -n "$kflag" ]]; then
-        aargs+=("$kflag")
-    fi
+    aargs+=(-i "./inventory/local.yaml")
+    aargs+=(-e "playbook_target=$hosts")
     aargs+=("$WHOLE_PLAYBOOK_PATH")
     aargs+=("--tags")
     aargs+=("$tags")
@@ -720,6 +762,8 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
 
+    decrypt_inventory_for_docker
+
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
@@ -740,6 +784,9 @@ case "$subcmd" in
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
+
+    decrypt_inventory_for_docker
+
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
@@ -783,8 +830,13 @@ case "$subcmd" in
             fi
             DOCKER_VOLUME_MOUNT="$DOCKER_VOLUME_MOUNT -v $wdir:$ANSIBLE_HOME/$(basename $wdir) "
             ;;
+        *)
+            echo "WARN: cannot handle argument '$OPTARG'" >&2
+            ;;
         esac
     done
+
+    decrypt_inventory_for_docker
 
     # start bash inside container
     if [[ -z $wdir ]]; then
@@ -814,6 +866,8 @@ case "$subcmd" in
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
+    decrypt_inventory_for_docker
+
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
         --user "$USER:$USER" \
@@ -841,6 +895,8 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
 
+    decrypt_inventory_for_docker
+
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
 
@@ -864,6 +920,8 @@ case "$subcmd" in
     # build up the command here
     cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
     cmd="$cmd '$role'"
+
+    decrypt_inventory_for_docker
 
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
@@ -894,6 +952,8 @@ case "$subcmd" in
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
+
+    decrypt_inventory_for_docker
 
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL

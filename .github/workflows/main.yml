@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'scratch',
           'mark-confluence',
           'ytdlp_install',
           'bitwarden',
