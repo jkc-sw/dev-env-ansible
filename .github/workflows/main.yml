@@ -12,6 +12,7 @@ jobs:
     strategy:
       matrix:
         role: [
+          'home-manager',
           'scratch',
           'mark-confluence',
           'ytdlp_install',

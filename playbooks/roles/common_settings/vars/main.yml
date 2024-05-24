@@ -28,3 +28,4 @@ toclip_repo_version: 'HEAD'
 turbovnc_deb_version: '3.0.2'
 kinesisadv360pro_repo_version: 'HEAD'
 git_repo_version: 'HEAD'
+jerry_nixos_repo_version: "HEAD"

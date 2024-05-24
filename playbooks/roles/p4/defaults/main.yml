@@ -6,5 +6,6 @@ p4v_checksum: sha256:47850fa271c7c1ec28698de9d97840bfce543541211fa2feeb99d80a7cb
 p4v_src_tgz: "{{ local_dir + '/p4v.tgz' }}"
 p4v_src_dir: "{{ local_dir + '/p4v-2023.1.2431464' }}"
 p4v_dir: "{{ local_dir + '/p4v' }}"
+nix_env_bin: "{{ home_dir + '/.nix-profile/bin/nix-env' }}"
 
 # vim:et ts=2 sts=2 sw=2

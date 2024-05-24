@@ -2,6 +2,7 @@
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   roles:
+    - home-manager
     - scratch
     - mark-confluence
     - ytdlp_install

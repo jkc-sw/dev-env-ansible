@@ -1,4 +1,5 @@
 ---
-home_dir: "{{ ansible_env.HOME }}" 
+home_dir: "{{ ansible_env.HOME }}"
+nix_env_bin: "{{ home_dir + '/.nix-profile/bin/nix-env' }}"
 
 # vim:et ts=2 sts=2 sw=2

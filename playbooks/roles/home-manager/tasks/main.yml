@@ -1,0 +1,34 @@
+---
+- name: Check if the folder exists
+  stat:
+    path: "{{ jerry_nixos_repos }}"
+  register: jerry_nixos_repos_exists
+
+- name: Temp Patch to get around the https://github.com/ansible/ansible/issues/67972
+  when: "jerry_nixos_repos_exists.stat.exists"
+  shell:
+    cmd: GIT_SSH_COMMAND='ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null' git fetch --tags -f
+    chdir: "{{ jerry_nixos_repos }}"
+  register: git_fetch_jerry_nixos
+  changed_when: "git_fetch_jerry_nixos.rc != 0"
+
+- name: Get latest source code for jerry_nixos
+  git:
+    repo: ssh://{{ home_git_server_ip }}{{ home_git_server_dir_path }}/jerry-nixos.git
+    dest: "{{ jerry_nixos_repos }}"
+    clone: true
+    version: "{{ jerry_nixos_repo_version | default('HEAD') }}"
+    update: true
+    ssh_opts: "-oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null"
+  register: git_clone_jerry_nixos
+
+- name: Apply the home-manager configuration
+  shell:
+    cmd: nix run home-manager -- switch --flake .
+    chdir: "{{ jerry_nixos_repos }}"
+    executable: /bin/bash
+  register: apply_home_manager
+  changed_when: "apply_home_manager.rc != 0"
+
+
+# vim:et ts=2 sts=2 sw=2
