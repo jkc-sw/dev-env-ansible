@@ -24,7 +24,7 @@
 
 - name: Apply the home-manager configuration
   shell:
-    cmd: nix run home-manager -- switch --flake .
+    cmd: nix run home-manager -- switch -b backup --flake .
     chdir: "{{ jerry_nixos_repos }}"
     executable: /bin/bash
   register: apply_home_manager
