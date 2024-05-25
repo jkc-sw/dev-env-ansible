@@ -1,94 +1,29 @@
 ---
-- name: Install powershell and dotnet when not on Ubuntu 24
-  when: "ansible_lsb.release != '24.04'"
-  block:
-  - name: Download and Add Powershell Key to Apt-Get Keyring
-    become: true
-    apt:
-      deb: "https://packages.microsoft.com/config/ubuntu/{{ ansible_lsb.release }}/packages-microsoft-prod.deb"
-      state: present
+- name: Get the command path
+  shell:
+    cmd: 'command -v pwsh'
+  register: where_is_pwsh
+  changed_when: 'where_is_pwsh.rc != 0'
 
-  - name: Ubuntu 22 has package conflict between powershell and dotnet6. Need to add pinning to favor the microsoft ppa
-    when: "ansible_lsb.release == '22.04' or ansible_lsb.release == '24.04'"
-    block:
-      - name: Creating a new directory for the preference file
-        become: true
-        file:
-          path: "/etc/apt/preferences.d/"
-          state: directory
+- name: Make sure we can install from PSGallery
+  shell:
+    cmd: |
+      if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
+      {
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+      }
+    executable: "{{ where_is_pwsh.stdout }}"
+  register: ps_allow_psgallery
+  changed_when: "ps_allow_psgallery.rc != 0"
 
-      - name: Need to add pinning. Otherwise, dotnet6 will be installed from system package
-        become: true
-        copy:
-          dest: "/etc/apt/preferences.d/20-microsoft-package.pref"
-          content: |
-            Package: *
-            Pin: origin "packages.microsoft.com"
-            Pin-Priority: 1001
-
-  - name: Make sure some system dependencies are installed
-    become: true
-    apt:
-      state: 'present'
-      update_cache: true
-      name:
-        - xz-utils
-        - powershell
-
-  - name: Install .Net SDK
-    become: true
-    apt:
-      state: present
-      name:
-        - dotnet-sdk-6.0
-        - dotnet-sdk-7.0
-
-  - name: Make sure we can install from PSGallery
-    shell:
-      cmd: |
-        if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted')
-        {
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        }
-      executable: /usr/bin/pwsh
-    register: ps_allow_psgallery
-    changed_when: "ps_allow_psgallery.rc != 0"
-
-  - name: Create profile.ps1 directory
-    file:
-      path: "{{ pwshrc_path | dirname }}"
-      state: directory
-
-  - name: Configure powershell
-    blockinfile:
-      marker: '# {mark} source append files'
-      state: present
-      path: "{{ pwshrc_path }}"
-      create: true
-      backup: true
-      block: |
-        . '~/.config/powershell/profile_append.ps1'
-
-  - name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block before
-    ansible.builtin.lineinfile:
-      path: "{{ pwshrc_path }}"
-      insertbefore: '#region conda initialize'
-      line: "<# BEGIN no pwsh conda"
-
-  - name: Comment out the conda init block from pwsh rc files to speed up terminal startup time, block after
-    ansible.builtin.lineinfile:
-      path: "{{ pwshrc_path }}"
-      insertafter: '#endregion'
-      line: "END no pwsh conda #>"
-
-  - name: Make sure ps modules are installed
-    shell:
-      cmd: |
-        if ('{{ item.name }}' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
-        {
-            Install-Module '{{ item.name }}' -Scope CurrentUser -AcceptLicense
-        }
-      executable: /usr/bin/pwsh
-    register: ps_module_installed
-    changed_when: "ps_module_installed.rc != 0"
-    loop: "{{ ps_modules }}"
+- name: Make sure ps modules are installed
+  shell:
+    cmd: |
+      if ('{{ item.name }}' -notin (Get-Module -ListAvailable | Select-Object -ExpandProperty Name))
+      {
+          Install-Module '{{ item.name }}' -Scope CurrentUser -AcceptLicense
+      }
+    executable: "{{ where_is_pwsh.stdout }}"
+  register: ps_module_installed
+  changed_when: "ps_module_installed.rc != 0"
+  loop: "{{ ps_modules }}"

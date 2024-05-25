@@ -1,6 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-git_repos: "{{ home_dir + '/repos/git' }}"
-local_bin: "{{ home_dir + '/.local/bin' }}"
-
-# vim:et ts=2 sts=2 sw=2

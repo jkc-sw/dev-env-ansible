@@ -1,9 +1,0 @@
----
-- name: Install caddy for Ubuntu 18 and up
-  when: fast | default(true)
-  community.general.homebrew:
-    path: /home/linuxbrew/.linuxbrew/bin
-    state: present
-    name:
-      - caddy
-

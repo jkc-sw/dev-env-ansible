@@ -23,11 +23,4 @@
   when: brew_present.changed
   register: brew_install
 
-- name: Install some tools
-  community.general.homebrew:
-    path: /home/linuxbrew/.linuxbrew/bin
-    state: present
-    name:
-      - fzf
-
 # vim:et ts=2 sts=2 sw=2

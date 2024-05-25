@@ -5,7 +5,8 @@ SOURCE_THESE_VIMS_START
 nnoremap <leader>ueo <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/local.yaml' Enter"<cr>
 nnoremap <leader>ued <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/docker-enc.yaml' Enter"<cr>
 nnoremap <leader>us <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role -r scratch -g asus' Enter"<cr>
-nnoremap <leader>ur <cmd>silent exec "!toclip 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role-i -r home-manager'"<cr>
+nnoremap <leader>udh <cmd>silent exec "!tmux send-keys -t :+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role-i -r home-manager -t fast' Enter"<cr>
+nnoremap <leader>udi <cmd>silent exec "!tmux send-keys -t :+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh install-i -t fast' Enter"<cr>
 
 let @h="yoecho \"\<c-r>\" = \$\<c-r>\"\"\<esc>j"
 echom 'Sourced'
@@ -676,7 +677,7 @@ case "$subcmd" in
     # var
     verbose=false
     tags='untagged'
-    hosts=''
+    hosts='docker'
 
     # parse the argumetns
     while getopts ':vg:t:r:' opt; do

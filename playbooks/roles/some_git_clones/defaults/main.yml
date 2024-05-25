@@ -10,5 +10,11 @@ some_git_clones:
   - repo: "{{ home_dir + '/repos/snapdrop' }}"
     url: https://github.com/RobinLinus/snapdrop.git
     version: 78a8b167de8452bf852d2564b82d1ebda29d8653
+  - repo: "{{ home_dir + '/repos/kinesisadv360pro' }}"
+    url: https://github.com/jkc-sw/Adv360-Pro-ZMK.git
+    version: "{{ kinesisadv360pro_repo_version }}"
+  - repo: "{{ home_dir + '/repos/kinesisadv360pro' }}"
+    url: https://github.com/jkc-sw/dotfiles.git
+    version: "{{ dotfiles_repo_version }}"
 
 # vim:et ts=2 sts=2 sw=2

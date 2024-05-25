@@ -1,6 +1,3 @@
 ---
 dependencies:
   - common_settings
-  - toclip_install
-  - nerd_fonts
-  - kitty_install

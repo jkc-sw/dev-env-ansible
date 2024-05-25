@@ -1,8 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-lua_repo_name: lua-5.4.0
-lua_repos: "{{ home_dir + '/repos/' + lua_repo_name }}"
-lua_dist_filename: "{{ lua_repo_name }}.tar.gz"
-luarocks_repo_name: luarocks-3.3.1
-luarocks_repos: "{{ home_dir + '/repos/' + luarocks_repo_name }}"
-luarocks_dist_filename: "{{ luarocks_repo_name }}.tar.gz"

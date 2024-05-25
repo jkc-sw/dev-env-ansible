@@ -1,7 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-luals_repos: "{{ home_dir + '/repos/lua-language-server' }}"
-shellfunc_path: "{{ home_dir + '/.shellfunc' }}"
-source_shellfunc: ". {{ shellfunc_path }} && sdev "
-dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
-dev_condaenv2: "{{ home_dir + '/miniconda3/envs/dev_env_ansible2' }}"

@@ -1,6 +1,5 @@
 ---
 dependencies:
   - common_settings
-  - openjdk_install
 
 # vim:et ts=2 sts=2 sw=2

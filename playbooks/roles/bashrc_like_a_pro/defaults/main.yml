@@ -1,4 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-bashrc_path: "{{ home_dir + '/.bashrc' }}"
-bashrc_append_path: "{{ home_dir + '/.bashrc_append' }}"

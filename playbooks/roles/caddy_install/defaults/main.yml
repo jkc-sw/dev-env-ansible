@@ -1,5 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-bashrc_path: "{{ home_dir + '/.bashrc' }}"
-source_bashrc: ". {{ bashrc_path }}"
-

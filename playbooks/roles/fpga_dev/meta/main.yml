@@ -1,4 +1,3 @@
 ---
 dependencies:
-  - ansible_dev
   - llvm_from_source

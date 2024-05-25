@@ -21,16 +21,6 @@
   when: nix_present.changed
   register: nix_install
 
-# # Disable this. Not really useful
-# - name: Install yq
-#   shell:
-#     cmd: |
-#       {{ nix_env_bin }} -iA nixpkgs.yq
-#     executable: /bin/bash
-#   register: nix_install
-#   changed_when: 'nix_install.rc != 0'
-#   failed_when: 'nix_install.rc != 0'
-
 - name: Enable experimental features of nix
   lineinfile:
     path: "{{ home_dir + '/.config/nix/nix.conf' }}"
@@ -46,43 +36,5 @@
     state: present
     backup: true
     create: true
-
-# Uninstall, not really useful
-- name: Uninstall yq
-  shell:
-    cmd: |
-      {{ nix_env_bin }} --uninstall yq
-    executable: /bin/bash
-  register: nix_install
-  changed_when: 'nix_install.rc != 0'
-  failed_when: 'nix_install.rc != 0'
-
-- name: Install nixpkgs.valgrind nixpkgs.kcachegrind
-  shell:
-    cmd: |
-      {{ nix_env_bin }} -iA nixpkgs.valgrind nixpkgs.kcachegrind
-    executable: /bin/bash
-  register: nix_install
-  changed_when: 'nix_install.rc != 0'
-  failed_when: 'nix_install.rc != 0'
-
-- name: Install dvc, manipulating large file text pointer like git-lfs does
-  shell:
-    cmd: |
-      {{ nix_env_bin }} -iA nixpkgs.dvc
-    executable: /bin/bash
-  register: nix_install
-  changed_when: 'nix_install.rc != 0'
-  failed_when: 'nix_install.rc != 0'
-
-# # template to use for the nix install
-# - name: Install something with nix for testing
-#   shell:
-#     cmd: |
-#       {{ nix_env_bin }} -iA nixpkgs.lua5_4
-#     executable: /bin/bash
-#   register: nix_install
-#   changed_when: 'nix_install.rc != 0'
-#   failed_when: 'nix_install.rc != 0'
 
 # vim:et ts=2 sts=2 sw=2

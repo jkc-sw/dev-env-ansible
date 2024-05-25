@@ -12,3 +12,4 @@ ps_modules:
   - name: 'JiraPS'
   - name: 'ConfluencePS'
   - name: 'platyPS'
+  - name: 'PSScriptAnalyzer'

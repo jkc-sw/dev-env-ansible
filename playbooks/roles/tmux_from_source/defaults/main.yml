@@ -1,3 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-tmux_repos: "{{ home_dir + '/repos/tmux' }}"

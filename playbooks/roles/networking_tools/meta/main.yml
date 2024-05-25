@@ -1,3 +1,4 @@
 ---
 dependencies:
   - common_settings
+  - home-manager

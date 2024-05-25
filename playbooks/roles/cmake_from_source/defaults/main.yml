@@ -1,5 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-cmake_repos: "{{ home_dir + '/repos/cmake' }}"
-
-# vim:et ts=2 sts=2 sw=2

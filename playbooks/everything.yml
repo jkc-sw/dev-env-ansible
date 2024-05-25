@@ -2,65 +2,31 @@
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   roles:
+    - common_settings
     - home-manager
     - scratch
     - docker_install
+    - brew_install
+    - docker_install
+    - dotfiles
+    - llvm_from_source
+    - lttng_install
+    - matlab_schemer
+    - networking_tools
+    - nix_install
+    - powershell_install
+    - some_git_clones
+    - zsh_setup
 
-    # - ansible_dev
-    # - bashrc_like_a_pro
-    # - bitwarden
-    # - brew_install
-    # - caddy_install
-    # - cargo_and_rustup
-    # - cmake_from_source
-    # - common_settings
     # - conda_install
-    # - ctags_from_source
-    # - doas_install
-    # - docker_install
-    # - dotfiles
-    # - doxygen_from_source
     # # - fpga_dev
-    # - general_cargo_install
-    # - git-p4
-    # - home-manager
     # # - insync_install
     # - kernel_tools
-    # - kinesisAdv360Pro
-    # - kitty_install
-    # - llvm_from_source
-    # - lookatme_install
-    # - lttng_install
-    # - lua_luarocks_from_source
-    # - mark-confluence
-    # - matlab_schemer
-    # - nerd_fonts
     # # - netmakers_netclient
-    # - networking_tools
-    # - nix_install
-    # - nvim_from_source
-    # - nvm_nodejs_yarn
-    # - openconnect_vpn
-    # - openjdk_install
-    # - p4
     # - podman_install
-    # - powershell_install
-    # - pwsh_lsp_deps
     # - qt_install
-    # - rust_analyzer_from_source
-    # - scratch
-    # - some_git_clones
-    # - tectonic_from_source
-    # - texlab_from_source
-    # - tmux_from_source
-    # - toclip_install
-    # - tpm_tmux_setup
-    # # - vagrant_install
-    # - vim_lsp_dependencies
-    # - vnc
-    # - ytdlp_install
     # # - zerotier_install
-    # - zsh_setup
+
 
 # - hosts: "{{ playbook_target }}"
 #   gather_facts: true

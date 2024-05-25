@@ -1,5 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-kinesisadv360pro_repos: "{{ home_dir + '/repos/kinesisadv360pro' }}"
-
-# vim:et ts=2 sts=2 sw=2
