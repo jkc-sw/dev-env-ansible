@@ -5,6 +5,7 @@ SOURCE_THESE_VIMS_START
 nnoremap <leader>ueo <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/local.yaml' Enter"<cr>
 nnoremap <leader>ued <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/docker-enc.yaml' Enter"<cr>
 nnoremap <leader>us <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role -r scratch -g asus' Enter"<cr>
+nnoremap <leader>ur <cmd>silent exec "!toclip 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role-i -r home-manager'"<cr>
 
 let @h="yoecho \"\<c-r>\" = \$\<c-r>\"\"\<esc>j"
 echom 'Sourced'
@@ -280,13 +281,6 @@ build_image() {
 # Setup nix
 setup_nix() {
     export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
-    if command -v nix &>/dev/null; then
-        return
-    fi
-    # Install nix
-    if [[ ! -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
-        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
-    fi
     # Getting nix-env
     if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
@@ -294,10 +288,30 @@ setup_nix() {
     fi
 }
 
+# instal nix
+install_nix() {
+    setup_nix
+    if ! command -v nix &>/dev/null; then
+        # Install nix
+        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
+        setup_nix
+    fi
+}
+
 # Setup env
 setup_brew() {
     if [[ -x /home/linuxbrew/.linuxbrew/bin/brew && -z "$HOMEBREW_PREFIX" ]]; then
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    fi
+}
+
+# instal brew
+install_brew() {
+    setup_brew
+    if ! command -v brew &>/dev/null; then
+        /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        brew install ansible
+        setup_brew
     fi
 }
 
@@ -323,21 +337,15 @@ decrypt_inventory_for_docker() {
 # function to install ansible
 install_ansible() {
     # check if the ansible is installed, if not, install it
-    if ! command -v ansible &>/dev/null; then
+    if ! command -v curl &>/dev/null; then
         # sudo apt install -y python3 python3-pip
         # sudo -H python3 -m pip install ansible
 
         sudo apt update
         sudo apt install -y curl git ca-certificates xz-utils
-
-        # /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # setup_brew
-        # brew install ansible
-
-        setup_nix
     fi
-    setup_nix
-    setup_brew
+    install_nix
+    # install_brew
 }
 
 # if args, print help
@@ -525,7 +533,8 @@ case "$subcmd" in
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    ansible-playbook --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    decrypt_inventory_for_docker
+    ansible-playbook -i ./inventory/docker.yaml -e "playbook_target=docker" --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
