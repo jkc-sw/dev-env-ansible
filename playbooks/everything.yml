@@ -4,37 +4,37 @@
   roles:
     - home-manager
     - scratch
-    - mark-confluence
-    - ytdlp_install
-    - bitwarden
-    - git-p4
-    # - vagrant_install
-    - podman_install
-    - kinesisAdv360Pro
-    - nix_install
-    - brew_install
-    # - netmakers_netclient
-    # - zerotier_install
-    - qt_install
-    - common_settings
-    - doas_install
-    - lttng_install
-    - kernel_tools
-    - zsh_setup
-    - caddy_install
-    - lookatme_install
-    - networking_tools
-    - matlab_schemer
-    # - insync_install
-    - openconnect_vpn
-    - p4
-    # - fpga_dev
+    # - mark-confluence
+    # - ytdlp_install
+    # - bitwarden
+    # - git-p4
+    # # - vagrant_install
+    # - podman_install
+    # - kinesisAdv360Pro
+    # - nix_install
+    # - brew_install
+    # # - netmakers_netclient
+    # # - zerotier_install
+    # - qt_install
+    # - common_settings
+    # - doas_install
+    # - lttng_install
+    # - kernel_tools
+    # - zsh_setup
+    # - caddy_install
+    # - lookatme_install
+    # - networking_tools
+    # - matlab_schemer
+    # # - insync_install
+    # - openconnect_vpn
+    # - p4
+    # # - fpga_dev
 
-- hosts: "{{ playbook_target }}"
-  gather_facts: true
-  tags:
-    - gui
-  roles:
-    - desktop
-    - qtile
-    - xmonad_wm
+# - hosts: "{{ playbook_target }}"
+#   gather_facts: true
+#   tags:
+#     - gui
+#   roles:
+#     - desktop
+#     - qtile
+#     - xmonad_wm

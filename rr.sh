@@ -322,7 +322,6 @@ decrypt_inventory_for_docker() {
 
 # function to install ansible
 install_ansible() {
-    setup_brew
     # check if the ansible is installed, if not, install it
     if ! command -v ansible &>/dev/null; then
         # sudo apt install -y python3 python3-pip
@@ -336,9 +335,9 @@ install_ansible() {
         # brew install ansible
 
         setup_nix
-        nix-env -iA nixpkgs.ansible
     fi
     setup_nix
+    setup_brew
 }
 
 # if args, print help

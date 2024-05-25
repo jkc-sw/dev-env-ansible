@@ -1,5 +1,3 @@
 ---
 dependencies:
   - common_settings
-  - nvim_from_source
-  - dotfiles

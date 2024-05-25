@@ -4,12 +4,8 @@
   apt:
     state: 'present'
     name:
-      - git
-      - curl
       - zsh
       - libcap-ng-dev
-      - nmap
-      - minicom
 
 - name: Remove the old installer
   file:
@@ -34,23 +30,6 @@
     state: present
     append: yes
     groups: 'dialout'
-
-- name: Update zsh plugins
-  shell:
-    cmd: |
-      . {{ zshrc_append_path }} && update_zsh_plugins
-    executable: /usr/bin/zsh
-  register: zsh_plugin_update
-  changed_when: "zsh_plugin_update.rc != 0"
-
-- name: Add zshrc append
-  lineinfile:
-    path: "{{ zshrc_path }}"
-    line: ". '{{ zshrc_append_path }}'"
-    state: present
-    backup: true
-    create: true
-    insertbefore: BOF
 
 - name: Remove old custom plugins
   file:

@@ -1,7 +1,6 @@
 ---
 - name: Update dotfiles
   tags:
-    - dotfiles
   set_fact:
     update_dotfile: true
 
