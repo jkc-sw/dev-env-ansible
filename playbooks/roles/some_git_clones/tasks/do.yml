@@ -23,5 +23,7 @@
     clone: true
     version: "{{ repo_version | default('HEAD') }}"
     update: true
+  register: git_clone
+  changed_when: "git_clone.before != git_clone.after"
 
 # vim:et ts=2 sts=2 sw=2
