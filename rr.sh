@@ -282,10 +282,13 @@ build_image() {
 # Setup nix
 setup_nix() {
     export LOCALE_ARCHIVE=/usr/lib/locale/locale-archive
-    # Getting nix-env
+    # Source nix if using nix-installer
+    if [[ -r "/nix/var/nix/profiles/default/etc/profile.d/nix.sh" ]]; then
+        . "/nix/var/nix/profiles/default/etc/profile.d/nix.sh"
+    fi
+    # Source nix if using nix official installer
     if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-        alias ni=nix-env
     fi
 }
 
