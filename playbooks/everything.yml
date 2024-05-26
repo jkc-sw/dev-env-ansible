@@ -27,7 +27,6 @@
     # - qt_install
     # # - zerotier_install
 
-
 # - hosts: "{{ playbook_target }}"
 #   gather_facts: true
 #   tags:

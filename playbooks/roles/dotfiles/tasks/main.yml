@@ -44,6 +44,15 @@
 #   with_items: "{{ stow_targets }}"
 #   changed_when: "restow.rc != 0"
 
+- name: Unstow them in favor of home manager
+  shell:
+    cmd: "stow -t '{{ home_dir }}' --no-folding -D {{ item }}"
+    chdir: "{{ dotfiles_repos }}"
+    executable: /bin/bash
+  register: restow
+  with_items: "{{ stow_targets }}"
+  changed_when: "restow.rc != 0"
+
 # - name: Stow the destination with sudo
 #   become: true
 #   shell:

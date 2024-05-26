@@ -1,7 +1,8 @@
 ---
 home_dir: "{{ ansible_env.HOME }}"
-jerry_nixos_repos: "{{ home_dir + '/jerry-nixos' }}"
+jerry_nixos_repos: "{{ home_dir + '/repos/jerry-nixos' }}"
 jerry_nixos_repo_version: "HEAD"
 nix_bin: "{{ home_dir + '/.nix-profile/bin/nix' }}"
+nix_env_bin: "{{ home_dir + '/.nix-profile/bin/nix-env' }}"
 
 # vim:et ts=2 sts=2 sw=2
