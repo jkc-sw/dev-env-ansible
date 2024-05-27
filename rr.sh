@@ -32,6 +32,7 @@ ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 DOCKER_VOLUME_MOUNT=(-v "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles")
 DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH")
 DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim")
+# DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos")
 DOCKER_VOLUME_MOUNT+=(-v "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519")
 
 # docker files dir
