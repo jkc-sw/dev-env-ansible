@@ -29,11 +29,7 @@ ANSIBLE_HOME="/home/$USER"
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 
 # docker volumn mount
-DOCKER_VOLUME_MOUNT=(-v "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles")
-DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH")
-DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim")
-# DOCKER_VOLUME_MOUNT+=(-v "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos")
-DOCKER_VOLUME_MOUNT+=(-v "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519")
+DOCKER_VOLUME_MOUNT=()
 
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
@@ -332,7 +328,7 @@ decrypt_inventory_for_docker() {
             fi
         done
         if [[ "$toexit" == true ]]; then
-            echo "ERR: Please make sure you install all the necessary tool first" >&2
+            echo "ERR (decrypt_inventory_for_docker): Please make sure you install all the necessary tool first" >&2
             exit 1
         fi
     fi
@@ -351,6 +347,36 @@ install_ansible() {
     fi
     install_nix
     # install_brew
+}
+
+# fnuction that check and set a docker mount when not fonud
+append_docker_mount_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 1 ]]; then
+        echo "ERR (append_docker_mount_global): need 1 argument only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local path="${args[0]}"
+    if [[ "${DOCKER_VOLUME_MOUNT[*]}" == *"$path"* ]]; then
+        return 0
+    fi
+    DOCKER_VOLUME_MOUNT+=(-v "$path")
+}
+
+# function to populate the docker mount in a function
+set_docker_mounts_global() {
+    # docker volumn mount
+    for each in \
+        "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles" \
+        "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
+        "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim" \
+        "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos" \
+        "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
+    ; do
+        append_docker_mount_global "$each"
+    done
 }
 
 # if args, print help
@@ -787,6 +813,7 @@ case "$subcmd" in
     fi
 
     decrypt_inventory_for_docker
+    set_docker_mounts_global
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
@@ -810,6 +837,7 @@ case "$subcmd" in
     fi
 
     decrypt_inventory_for_docker
+    set_docker_mounts_global
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
@@ -861,6 +889,7 @@ case "$subcmd" in
     done
 
     decrypt_inventory_for_docker
+    set_docker_mounts_global
 
     # start bash inside container
     if [[ -z $wdir ]]; then
@@ -891,6 +920,7 @@ case "$subcmd" in
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     decrypt_inventory_for_docker
+    set_docker_mounts_global
 
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
