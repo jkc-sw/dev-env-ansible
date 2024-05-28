@@ -195,7 +195,7 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
-    echo " run [ver]"
+    echo " run [-n UBUNTU_VER] [-w dir]"
     echo "   Start a new docker container only"  # desc
     echo ""
     echo " run-build [ver]"
@@ -204,7 +204,7 @@ displayHelp() {
     echo " commit ID TAG"
     echo "   Commit a running docker container ID with the TAG specified"  # desc
     echo ""
-    echo " use TAG [-w dir]"
+    echo " use -d TAG [-w dir]"
     echo "   Start a committed image only"  # desc
     echo ""
     echo " list"
@@ -222,8 +222,12 @@ displayHelp() {
     echo " use-role <ver> <role>"
     echo "   Start a committed image and run a role"  # desc
     echo ""
+    echo " where"
+    echo "  -n UBUNTU_VER > Ubuntu version to spawn a docker container. One of 18, 20, 22, 24"
+    echo "  -d TAG > One of the docker tag from image devenvansible"
+    echo "  -w dir > Bind mount this folder to the container"
     echo " arguments:"
-    echo "  ver > Specify the version to use. Default 18. Currently supported '16, 18', '20'"
+    echo "  ver > Specify the version to use. Default 18. One of 18, 20, 22, 24"
     echo "  ID  > This is the container name or ID to use to make a commit, full name required"
     echo "  TAG > This is by your preference on how the commited container to be tagged"
 }
@@ -806,11 +810,24 @@ case "$subcmd" in
     ;;
 
 'run')
-    # select docker
+    # var
     ver="$DOCKER_FILE_UBUNTU_22"
-    if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver $1)"
-    fi
+
+    # parse the argumetns
+    while getopts ':d:w:' opt; do
+        case "$opt" in
+        d)
+            ver="$(select_docker_ver "$OPTARG")"
+            ;;
+        w)
+            append_docker_mount_global "$OPTARG:$OPTARG"
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
 
     decrypt_inventory_for_docker
     set_docker_mounts_global
@@ -868,48 +885,42 @@ case "$subcmd" in
     ;;
 
 'use')
-    # get tag
-    tag=$1
-    shift
-    # parse the rest
-    while getopts ':w:' args; do
-        case "$args" in
+    # var
+    tag=''
+
+    # parse the argumetns
+    while getopts ':d:w:' opt; do
+        case "$opt" in
+        d)
+            tag="$OPTARG"
+            ;;
         w)
-            wdir="$OPTARG"
-            if [[ ! -d "$wdir" ]]; then
-                echo "$wdir is not found" >&2
-                exit 1
-            fi
-            DOCKER_VOLUME_MOUNT+=(-v "$wdir:$ANSIBLE_HOME/$(basename "$wdir")")
+            append_docker_mount_global "$OPTARG:$OPTARG"
             ;;
         *)
-            echo "WARN: cannot handle argument '$OPTARG'" >&2
+            echo "Unrecognized option $opt" >&2
+            displayHelp
             ;;
         esac
     done
+
+    # need a tag
+    if test -z "$tag"; then
+        echo "ERR ($0 use): Need to pass in a tag using -d" >&2
+        exit 1
+    fi
 
     decrypt_inventory_for_docker
     set_docker_mounts_global
 
     # start bash inside container
-    if [[ -z $wdir ]]; then
-        docker run --cpu-shares=1024 --rm -it \
-            --user "$USER:$USER" \
-            --network="host" \
-            "${DOCKER_VOLUME_MOUNT[@]}" \
-            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
-            "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
-
-    else
-        docker run --cpu-shares=1024 --rm -it \
-            --user "$USER:$USER" \
-            --network="host" \
-            "${DOCKER_VOLUME_MOUNT[@]}" \
-            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
-            "$DEV_ENV_REPOSITORY_NAME:$tag" \
-            bash -i -c "cd ./$(basename "$wdir"); command -v zsh &>/dev/null && exec zsh || exec bash"
-    fi
+    docker run --cpu-shares=1024 --rm -it \
+        --user "$USER:$USER" \
+        --network="host" \
+        "${DOCKER_VOLUME_MOUNT[@]}" \
+        --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
+        "$DEV_ENV_REPOSITORY_NAME:$tag" \
+        bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
     ;;
 
 'use-build')
