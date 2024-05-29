@@ -1,0 +1,9 @@
+permit {{ ansible_user_id }} as root
+permit nopass {{ ansible_user_id }} as root cmd openconnect
+permit nopass {{ ansible_user_id }} as root cmd p4p
+permit nopass {{ ansible_user_id }} as root cmd ip
+permit nopass {{ ansible_user_id }} as root cmd mount
+permit nopass {{ ansible_user_id }} as root cmd cperf
+permit nopass {{ ansible_user_id }} as root cmd cmonitor
+permit nopass {{ ansible_user_id }} as root cmd turbostat
+permit nopass {{ ansible_user_id }} as root cmd modprobe

@@ -5,6 +5,7 @@
     - common_settings
     - home-manager
     - scratch
+    - doas_install
     - docker_install
     - brew_install
     - dotfiles

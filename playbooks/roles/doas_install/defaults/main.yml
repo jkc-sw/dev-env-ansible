@@ -1,0 +1,5 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+doas_repos: "{{ home_dir + '/repos/doas' }}"
+
+# vim:et ts=2 sts=2 sw=2
