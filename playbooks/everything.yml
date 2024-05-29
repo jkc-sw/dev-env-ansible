@@ -17,8 +17,8 @@
     - powershell_install
     - some_git_clones
     - zsh_setup
+    - conda_install
 
-    # - conda_install
     # # - fpga_dev
     # # - insync_install
     # - kernel_tools
