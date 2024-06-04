@@ -367,6 +367,7 @@ append_docker_mount_global() {
         return 0
     fi
     DOCKER_VOLUME_MOUNT+=(-v "$path")
+    echo "DEBUG (append_docker_mount_global): Add '$path'" >&2
 }
 
 # function to populate the docker mount in a function
