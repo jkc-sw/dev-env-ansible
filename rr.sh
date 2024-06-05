@@ -24,12 +24,16 @@ pushd "$SCRIPT_DIR" &>/dev/null
 # container tag
 CONTAINER_TAG=devenvansible:1.0
 
+# lxc name
+LXC_NAME=tom
+
 # ansible workspace path
 ANSIBLE_HOME="/home/$USER"
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 
 # docker volumn mount
 DOCKER_VOLUME_MOUNT=()
+LXC_VOLUME_MOUNT=()
 
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
@@ -381,6 +385,63 @@ set_docker_mounts_global() {
         "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
     ; do
         append_docker_mount_global "$each"
+    done
+}
+
+# function ta append the lxc mount
+add_lxc_mount_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (add_lxc_mount_global): need 2 arguments (bin, path) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local path="${args[1]}"
+    "$cmd" config device add "$LXC_NAME" proj disk source="${path#*:}" path="${path%:*}"
+    echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
+}
+
+append_lxc_mount_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 1 ]]; then
+        echo "ERR (append_lxc_mount_global): need 1 argument only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local path="${args[0]}"
+    if [[ "${lXC_VOLUME_MOUNT[*]}" == *"$path"* ]]; then
+        return 0
+    fi
+    lXC_VOLUME_MOUNT+=("$path")
+    echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
+}
+
+# function to populate the docker mount in a function
+apply_lxc_mounts_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 1 ]]; then
+        echo "ERR (apply_lxc_mounts_global): need 1 arguments (bin) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    # Add default monut
+    for each in \
+        "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles" \
+        "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
+        "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim" \
+        "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos" \
+        "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
+    ; do
+        append_lxc_mount_global "$each"
+    done
+    # Apply the monts to the lxc
+    for each in "${LXC_VOLUME_MOUNT[@]}"; do
+        add_lxc_mount_global "$cmd" "$each"
     done
 }
 
@@ -883,6 +944,57 @@ case "$subcmd" in
     echo ""
     echo "All the running containers"
     docker ps
+    ;;
+
+'start')
+    # var
+    imgName='ubuntu:lts'
+    cmd=lxc
+
+    # parse the argumetns
+    while getopts ':i:w:' opt; do
+        case "$opt" in
+        i)
+            imgName="$OPTARG"
+            ;;
+        w)
+            append_lxc_mount_global "$OPTARG"
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    decrypt_inventory_for_docker
+
+    # # Start an instance
+    # "$cmd" launch --ephemeral "$imgName" "$LXC_NAME"
+    #
+    # # Remove default ubuntu user and add my user
+    # "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
+    # "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
+    # "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    #
+    # # map the user id in the container
+    # "$cmd" config set "$LXC_NAME" raw.idmap "both $(id -u) $(id -u)"
+    # "$cmd" restart "$LXC_NAME"
+    #
+    # # Mount folders
+    # apply_lxc_mounts_global "$cmd"
+    #
+    # # Fix the locale on debian
+    # "$cmd" exec "$LXC_NAME" -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+    #     && locale-gen en_US.UTF-8 \
+    #     && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+    #     && locale-gen en_US.UTF-8'
+
+    # start a bash shell
+    "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" --user "$(id -u)" -- bash
+
+    # stop the shell
+    echo "$cmd" stop "$LXC_NAME"
     ;;
 
 'use')
