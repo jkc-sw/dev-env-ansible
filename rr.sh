@@ -999,7 +999,22 @@ case "$subcmd" in
             && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal \
             && systemctl enable gdm.service \
             && systemctl start gdm.service'
+
     fi
+
+        # # Install the desktop environment
+        # "$cmd" exec "$LXC_NAME" -- cat /etc/os-release
+
+        # # Install vnc
+        # "$cmd" exec "$LXC_NAME" -- bash -c "cd /tmp \
+        #     && wget https://github.com/kasmtech/KasmVNC/releases/download/v1.3.1/kasmvncserver_jammy_1.3.1_amd64.deb \
+        #     && apt install -y --no-install-recommends ./kasmvncserver_jammy_1.3.1_amd64.deb \
+        #     && usermod -aG ssl-cert '$USER'"
+        # "$cmd" restart "$LXC_NAME"
+
+        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "echo $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver'
+        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver -list'
 
     # # Install vnc
     # "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
@@ -1029,8 +1044,8 @@ case "$subcmd" in
     # # start a bash shell as root
     # "$cmd" exec "$LXC_NAME" -- bash -l
 
-    # start a bash shell
-    "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
+    # # start a bash shell
+    # "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
 
     # # stop the shell
     # "$cmd" stop "$LXC_NAME"
