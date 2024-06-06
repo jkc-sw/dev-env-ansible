@@ -393,13 +393,14 @@ add_lxc_mount_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (add_lxc_mount_global): need 2 arguments (bin, path) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 3 ]]; then
+        echo "ERR (add_lxc_mount_global): need 3 arguments (bin, name, path) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
-    local path="${args[1]}"
-    "$cmd" config device add "$LXC_NAME" proj disk source="${path#*:}" path="${path%:*}"
+    local name="${args[1]}"
+    local path="${args[2]}"
+    "$cmd" config device add "$LXC_NAME" "$name" disk source="${path#*:}" path="${path%:*}"
     echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
 }
 
@@ -412,10 +413,10 @@ append_lxc_mount_global() {
         return 1
     fi
     local path="${args[0]}"
-    if [[ "${lXC_VOLUME_MOUNT[*]}" == *"$path"* ]]; then
+    if [[ "${LXC_VOLUME_MOUNT[*]}" == *"$path"* ]]; then
         return 0
     fi
-    lXC_VOLUME_MOUNT+=("$path")
+    LXC_VOLUME_MOUNT+=("$path")
     echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
 }
 
@@ -440,8 +441,9 @@ apply_lxc_mounts_global() {
         append_lxc_mount_global "$each"
     done
     # Apply the monts to the lxc
-    for each in "${LXC_VOLUME_MOUNT[@]}"; do
-        add_lxc_mount_global "$cmd" "$each"
+    for ii in $(seq 0 $(( "${#LXC_VOLUME_MOUNT[@]}" - 1)) ); do
+        local each="${LXC_VOLUME_MOUNT[ii]}"
+        add_lxc_mount_global "$cmd" "d$ii" "$each"
     done
 }
 
@@ -969,32 +971,70 @@ case "$subcmd" in
 
     decrypt_inventory_for_docker
 
-    # # Start an instance
-    # "$cmd" launch --ephemeral "$imgName" "$LXC_NAME"
+    if [[ "$(lxc list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .name" | wc -l)" -ne 1 ]]; then
+
+        # Start an instance
+        "$cmd" launch --ephemeral "$imgName" "$LXC_NAME"
+
+        # Remove default ubuntu user and add my user
+        "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
+        "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
+        "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
+
+        # map the user id in the container
+        "$cmd" config set "$LXC_NAME" raw.idmap "both $(id -u) $(id -u)"
+        "$cmd" restart "$LXC_NAME"
+
+        # Mount folders
+        apply_lxc_mounts_global "$cmd"
+
+        # Fix the locale on debian
+        "$cmd" exec "$LXC_NAME" -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+            && locale-gen en_US.UTF-8 \
+            && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+            && locale-gen en_US.UTF-8'
+
+        # Install the desktop environment
+        "$cmd" exec "$LXC_NAME" -- bash -c 'apt update \
+            && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal \
+            && systemctl enable gdm.service \
+            && systemctl start gdm.service'
+    fi
+
+    # # Install vnc
+    # "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+    #     gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
+    #     && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
+    #     && apt update \
+    #     && apt install -y --no-install-recommends turbovnc'
+
+    # # Install vnc
+    # "$cmd" exec "$LXC_NAME" -- bash -c 'apt install -y --no-install-recommends x11vnc'
+
+    # # Configure and start x11vnc
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'unset SSH_TTY ; nohup x11vnc -display ":0" -auth /var/lib/gdm3/greeter-dconf-defaults -forever -loop -noxdamage -repeat -rfbauth "$HOME/.vnc/passwd" -autoport 5900 -shared | tee "/tmp/x11vnc.$disp.$$"'
     #
-    # # Remove default ubuntu user and add my user
-    # "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
-    # "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
-    # "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
+    # # List the active vnc ports
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'x11vnc -finddpy'
+
+    # # Configure and start vnc
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'unset SSH_TTY ; /opt/TurboVNC/bin/vncserver -depth 24 -geometry "1920x1080"'
     #
-    # # map the user id in the container
-    # "$cmd" config set "$LXC_NAME" raw.idmap "both $(id -u) $(id -u)"
-    # "$cmd" restart "$LXC_NAME"
-    #
-    # # Mount folders
-    # apply_lxc_mounts_global "$cmd"
-    #
-    # # Fix the locale on debian
-    # "$cmd" exec "$LXC_NAME" -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
-    #     && locale-gen en_US.UTF-8 \
-    #     && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
-    #     && locale-gen en_US.UTF-8'
+    # # List the active vnc ports
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
+
+    # # print ip
+    # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+
+    # # start a bash shell as root
+    # "$cmd" exec "$LXC_NAME" -- bash -l
 
     # start a bash shell
-    "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" --user "$(id -u)" -- bash
+    "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
 
-    # stop the shell
-    echo "$cmd" stop "$LXC_NAME"
+    # # stop the shell
+    # "$cmd" stop "$LXC_NAME"
+
     ;;
 
 'use')
