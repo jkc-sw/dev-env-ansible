@@ -976,10 +976,21 @@ case "$subcmd" in
         # Start an instance
         "$cmd" launch --ephemeral "$imgName" "$LXC_NAME"
 
+        # # Remove default ubuntu user and add my user
+        # "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
+        # # "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
+        # # "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
+
         # Remove default ubuntu user and add my user
         "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
-        "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
-        "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
+        "$cmd" exec "$LXC_NAME" -- bash -c "export uid=$(id -u) gid=$(id -g) \
+            && mkdir -p /home/${USER} \
+            && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
+            && echo \"${USER}:x:\${uid}:\" >> /etc/group \
+            && echo \"${USER} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${USER} \
+            && chmod 0440 /etc/sudoers.d/${USER} \
+            && chown \${uid}:\${gid} -R ${HOME} \
+            && echo ${USER}:aoeu | chpasswd"
 
         # map the user id in the container
         "$cmd" config set "$LXC_NAME" raw.idmap "both $(id -u) $(id -u)"
@@ -996,15 +1007,16 @@ case "$subcmd" in
 
         # Install the desktop environment
         "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
-            && apt install -y --no-install-recommends xrdp xorg ubuntu-desktop-minimal \
-            && systemctl enable gdm.service \
-            && systemctl start gdm.service \
+            && apt install -y --no-install-recommends xrdp xorg xfce4 tasksel \
+            && tasksel \
             && systemctl enable xrdp \
             && systemctl start xrdp \
             && usermod -aG ssl-cert xrdp \
-            && echo 'export GNOME_SHELL_SESSION_MODE=ubuntu' >  /home/$USER/.xsessionrc \
-            && echo 'export XDG_CURRENT_DESKTOP=ubuntu:GNOME' >> /home/$USER/.xsessionrc \
-            && chown $USER:$USER /home/$USER/.xsessionrc \
+            && sed -i.bkp 's/test -x/\nunset DBUS_SESSION_BUS_ADDRESS\ntest -x/' /etc/xrdp/startwm.sh \
+            && sed -i.bkp 's/test -x/\nunset XDG_RUNTIME_DIR\ntest -x/' /etc/xrdp/startwm.sh \
+            && echo 'xfce4-session' >> /home/$USER/.xsession \
+            && chown $USER:$USER /home/$USER/.xsession \
+            && chmod 755 /home/$USER/.xsession \
             && systemctl start xrdp"
         "$cmd" restart "$LXC_NAME"
 
@@ -1017,8 +1029,10 @@ case "$subcmd" in
 
     fi
 
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "ip a"
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "cat /etc/netplan/10-lxc.yaml"
+    # "$cmd" exec "$LXC_NAME" -- bash -c "cat /etc/netplan/*"
+
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "ip -br a"
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "ps -aux"
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "echo $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver'
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver -list'
@@ -1030,15 +1044,6 @@ case "$subcmd" in
     #     && apt update \
     #     && apt install -y --no-install-recommends turbovnc'
 
-    # # Install vnc
-    # "$cmd" exec "$LXC_NAME" -- bash -c 'apt install -y --no-install-recommends x11vnc'
-
-    # # Configure and start x11vnc
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'unset SSH_TTY ; nohup x11vnc -display ":0" -auth /var/lib/gdm3/greeter-dconf-defaults -forever -loop -noxdamage -repeat -rfbauth "$HOME/.vnc/passwd" -autoport 5900 -shared | tee "/tmp/x11vnc.$disp.$$"'
-    #
-    # # List the active vnc ports
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'x11vnc -finddpy'
-
     # # Configure and start vnc
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'unset SSH_TTY ; /opt/TurboVNC/bin/vncserver -depth 24 -geometry "1920x1080"'
     #
@@ -1048,8 +1053,11 @@ case "$subcmd" in
     # # print ip
     # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
 
-    # # start a bash shell as root
-    # "$cmd" exec "$LXC_NAME" -- bash -l
+    # # Install x11vnc
+    # "$cmd" exec "$LXC_NAME" -- bash -c 'apt install -y --no-install-recommends x11vnc'
+
+    # start a bash shell as root
+    "$cmd" exec "$LXC_NAME" -- bash -l
 
     # # start a bash shell
     # "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
