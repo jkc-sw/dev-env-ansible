@@ -2,30 +2,30 @@
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   roles:
+    - brew_install
     - common_settings
-    - home-manager
-    - scratch
+    - conda_install
     - doas_install
     - docker_install
-    - brew_install
     - dotfiles
+    - home-manager
     - llvm_from_source
     - lttng_install
     - matlab_schemer
     - networking_tools
     - nix_install
     - powershell_install
+    - scratch
     - some_git_clones
     - zsh_setup
-    - conda_install
 
     # # - fpga_dev
     # # - insync_install
-    # - kernel_tools
     # # - netmakers_netclient
+    # # - zerotier_install
+    # - kernel_tools
     # - podman_install
     # - qt_install
-    # # - zerotier_install
 
 # - hosts: "{{ playbook_target }}"
 #   gather_facts: true
@@ -35,3 +35,4 @@
 #     - desktop
 #     - qtile
 #     - xmonad_wm
+
