@@ -995,15 +995,18 @@ case "$subcmd" in
             && locale-gen en_US.UTF-8'
 
         # Install the desktop environment
-        "$cmd" exec "$LXC_NAME" -- bash -c 'apt update \
-            && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal \
+        "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
+            && apt install -y --no-install-recommends xrdp xorg ubuntu-desktop-minimal \
             && systemctl enable gdm.service \
-            && systemctl start gdm.service'
-
-    fi
-
-        # # Install the desktop environment
-        # "$cmd" exec "$LXC_NAME" -- cat /etc/os-release
+            && systemctl start gdm.service \
+            && systemctl enable xrdp \
+            && systemctl start xrdp \
+            && usermod -aG ssl-cert xrdp \
+            && echo 'export GNOME_SHELL_SESSION_MODE=ubuntu' >  /home/$USER/.xsessionrc \
+            && echo 'export XDG_CURRENT_DESKTOP=ubuntu:GNOME' >> /home/$USER/.xsessionrc \
+            && chown $USER:$USER /home/$USER/.xsessionrc \
+            && systemctl start xrdp"
+        "$cmd" restart "$LXC_NAME"
 
         # # Install vnc
         # "$cmd" exec "$LXC_NAME" -- bash -c "cd /tmp \
@@ -1012,9 +1015,13 @@ case "$subcmd" in
         #     && usermod -aG ssl-cert '$USER'"
         # "$cmd" restart "$LXC_NAME"
 
-        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "echo $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver'
-        # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver -list'
+    fi
+
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "ip a"
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "cat /etc/netplan/10-lxc.yaml"
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c "echo $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver'
+    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver -list'
 
     # # Install vnc
     # "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
