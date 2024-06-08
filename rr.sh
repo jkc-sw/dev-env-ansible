@@ -950,7 +950,7 @@ case "$subcmd" in
 
 'start')
     # var
-    imgName='ubuntu:lts'
+    imgName='ubuntu:22.04'
     cmd=lxc
 
     # parse the argumetns
@@ -1005,29 +1005,42 @@ case "$subcmd" in
             && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
             && locale-gen en_US.UTF-8'
 
-        # Install the desktop environment
-        "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
-            && apt install -y --no-install-recommends xrdp xorg xfce4 tasksel \
-            && tasksel \
-            && systemctl enable xrdp \
-            && systemctl start xrdp \
-            && usermod -aG ssl-cert xrdp \
-            && sed -i.bkp 's/test -x/\nunset DBUS_SESSION_BUS_ADDRESS\ntest -x/' /etc/xrdp/startwm.sh \
-            && sed -i.bkp 's/test -x/\nunset XDG_RUNTIME_DIR\ntest -x/' /etc/xrdp/startwm.sh \
-            && echo 'xfce4-session' >> /home/$USER/.xsession \
-            && chown $USER:$USER /home/$USER/.xsession \
-            && chmod 755 /home/$USER/.xsession \
-            && systemctl start xrdp"
-        "$cmd" restart "$LXC_NAME"
+        # # Install the desktop environment
+        # "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
+        #     && apt install -y --no-install-recommends xrdp xorg xfce4 tasksel \
+        #     && tasksel \
+        #     && systemctl enable xrdp \
+        #     && systemctl start xrdp \
+        #     && usermod -aG ssl-cert xrdp \
+        #     && sed -i.bkp 's/test -x/\nunset DBUS_SESSION_BUS_ADDRESS\ntest -x/' /etc/xrdp/startwm.sh \
+        #     && sed -i.bkp 's/test -x/\nunset XDG_RUNTIME_DIR\ntest -x/' /etc/xrdp/startwm.sh \
+        #     && echo 'xfce4-session' >> /home/$USER/.xsession \
+        #     && chown $USER:$USER /home/$USER/.xsession \
+        #     && chmod 755 /home/$USER/.xsession \
+        #     && systemctl start xrdp"
+        # "$cmd" restart "$LXC_NAME"
 
-        # # Install vnc
-        # "$cmd" exec "$LXC_NAME" -- bash -c "cd /tmp \
-        #     && wget https://github.com/kasmtech/KasmVNC/releases/download/v1.3.1/kasmvncserver_jammy_1.3.1_amd64.deb \
-        #     && apt install -y --no-install-recommends ./kasmvncserver_jammy_1.3.1_amd64.deb \
-        #     && usermod -aG ssl-cert '$USER'"
+        # # Install the desktop environment and x2go
+        # "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
+        #     && apt install -y --no-install-recommends xrdp xorg xfce4 tasksel \
+        #     && tasksel \
+        #     && apt install -y --no-install-recommends software-properties-common \
+        #     && add-apt-repository ppa:x2go/stable \
+        #     && apt update \
+        #     && apt install -y --no-install-recommends x2goserver x2goserver-xsession"
         # "$cmd" restart "$LXC_NAME"
 
     fi
+
+        # # Install vnc
+        # "$cmd" exec "$LXC_NAME" -- bash -c "apt update \
+        #     && cd /tmp \
+        #     && wget https://github.com/kasmtech/KasmVNC/releases/download/v1.3.1/kasmvncserver_jammy_1.3.1_amd64.deb \
+        #     && apt install -y --no-install-recommends ./kasmvncserver_jammy_1.3.1_amd64.deb \
+        #     && apt install -y --no-install-recommends xrdp xorg xfce4 tasksel  \
+        #     && tasksel \
+        #     && usermod -aG ssl-cert '$USER'"
+        # "$cmd" restart "$LXC_NAME"
 
     # "$cmd" exec "$LXC_NAME" -- bash -c "cat /etc/netplan/*"
 
@@ -1037,16 +1050,22 @@ case "$subcmd" in
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver'
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'kasmvncserver -list'
 
-    # # Install vnc
-    # "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
-    #     gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
-    #     && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
-    #     && apt update \
-    #     && apt install -y --no-install-recommends turbovnc'
+    # Install vnc
+    "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+        gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
+        && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
+        && apt update \
+        && apt install -y --no-install-recommends xorg xfce4 turbovnc'
+    "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -depth 24 -geometry "1920x1080"'
 
-    # # Configure and start vnc
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c 'unset SSH_TTY ; /opt/TurboVNC/bin/vncserver -depth 24 -geometry "1920x1080"'
-    #
+    # Add forwarding rule
+    if [[ "$("$cmd" network forward list lxdbr0 -f json | jq --raw-output '.[].ports[].target_port')" != '5901' ]]; then
+        hostAddr="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output | sort | fzf)"
+        containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+        "$cmd" network forward create lxdbr0 "$hostAddr"
+        "$cmd" network forward port add lxdbr0 "$hostAddr" tcp 15901 $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")
+    fi
+
     # # List the active vnc ports
     # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
 
@@ -1056,11 +1075,11 @@ case "$subcmd" in
     # # Install x11vnc
     # "$cmd" exec "$LXC_NAME" -- bash -c 'apt install -y --no-install-recommends x11vnc'
 
-    # start a bash shell as root
-    "$cmd" exec "$LXC_NAME" -- bash -l
+    # # start a bash shell as root
+    # "$cmd" exec "$LXC_NAME" -- bash -l
 
-    # # start a bash shell
-    # "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
+    # start a bash shell
+    "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
 
     # # stop the shell
     # "$cmd" stop "$LXC_NAME"
