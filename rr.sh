@@ -314,6 +314,7 @@ setup_nix() {
 
 # instal nix
 install_nix() {
+    setup_nix
     # Check if nix is available
     if ! command -v nix &>/dev/null; then
         # Ask people to install
