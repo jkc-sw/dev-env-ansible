@@ -192,8 +192,10 @@ main() {
             && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
             && apt update \
             && apt install -y --no-install-recommends xorg xfce4 turbovnc'
+
+        # Configure the vnc
         "$cmd" exec "$lxc_name" -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
-            && echo -n aoeuaoeu | vncpasswd -f > '/home/$USER/.vnc/passwd' \
+            && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
             && chown -R '$USER:$USER' '/home/$USER/.vnc' \
             && chmod 0600 '/home/$USER/.vnc/passwd' \
             && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
@@ -205,7 +207,7 @@ main() {
     local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
     local detectedAddress="$(<<<"$forward" jq --raw-output '.[].ports[].target_address')"
     local detectedPort="$(<<<"$forward" jq --raw-output '.[].ports[].target_port')"
-    local listenAddress="$(<<<"$forward" jq --raw-output '.[].ports[].listen_address')"
+    local listenAddress="$(<<<"$forward" jq --raw-output '.[].listen_address')"
     local listenPort="$(<<<"$forward" jq --raw-output '.[].ports[].listen_port')"
     # TODO:
     # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
@@ -213,6 +215,7 @@ main() {
     if [[ -n "$detectedAddress" ]]; then
         # When any of the previous config is mismatched, delete them
         if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
+            echo "DEBUG: forward = $(<<<"$forward" jq .)"
             echo "DEBUG: containerAddr = $containerAddr"
             echo "DEBUG: detectedAddress = $detectedAddress"
             echo "DEBUG: detectedPort = $detectedPort"
