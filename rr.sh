@@ -306,15 +306,48 @@ setup_nix() {
     if [[ -r "$HOME/.nix-profile/etc/profile.d/nix.sh" ]]; then
         . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     fi
+    if [[ -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    fi
 }
 
 # instal nix
 install_nix() {
-    setup_nix
+    # Check if nix is available
     if ! command -v nix &>/dev/null; then
-        # Install nix
-        export NIX_INSTALLER_NO_MODIFY_PROFILE=1 ; /bin/bash <(curl -L https://nixos.org/nix/install)
-        setup_nix
+        # Ask people to install
+        echo 'WARN: nix is not found in your PATH' >&2
+        echo 'WARN: --------------------------------------------------------------------------' >&2
+        echo 'WARN: To install nix, the following commands would be run.' >&2
+        echo "WARN: \$ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install" >&2
+        echo 'WARN: --------------------------------------------------------------------------' >&2
+        totalCount=3
+        for count in $(seq $totalCount); do
+            echo "WARN: Asking $count/$totalCount. Select 'y' to automatically run the scripts above, or 'n' to abort." >&2
+            read -r -p "> " res
+            if [[ "$res" == 'y' || "$res" == 'Y' ]]; then
+                if curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install; then
+                    echo 'INFO: Installation completed.' >&2
+                    if [[ ! -r /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+                        echo 'ERR: Nix installation failed or nix not found' >&2
+                        exit 1
+                    fi
+                    setup_nix
+                    break
+                else
+                    echo 'ERR: Installation failed. Check error above.' >&2
+                    exit 1
+                fi
+            fi
+            if [[ "$res" == 'n' || "$res" == 'N' ]]; then
+                echo 'INFO: Installation aborted.' >&2
+                exit 0
+            fi
+        done
+    fi
+    if ! command -v nix &>/dev/null; then
+        echo 'ERR: Dependencies are not met. See error message above.' >&2
+        exit 1
     fi
 }
 
@@ -356,14 +389,11 @@ decrypt_inventory_for_docker() {
 
 # function to install ansible
 install_ansible() {
-    # check if the ansible is installed, if not, install it
-    if ! command -v curl &>/dev/null; then
-        # sudo apt install -y python3 python3-pip
-        # sudo -H python3 -m pip install ansible
-
-        sudo apt update
-        sudo apt install -y curl git ca-certificates xz-utils
-    fi
+    # # check if the ansible is installed, if not, install it
+    # if ! command -v curl &>/dev/null; then
+    #     sudo apt update \
+    #     && sudo apt install -y curl git ca-certificates xz-utils
+    # fi
     install_nix
     # install_brew
 }
@@ -605,7 +635,7 @@ case "$subcmd" in
     # List all the tags
     echo "Listing all the tags"
     decrypt_inventory_for_docker
-    ansible-playbook -i ./inventory/docker.yaml -e "playbook_target=docker" --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    nix shell 'nixpkgs#ansible' --command ansible-playbook -i ./inventory/docker.yaml -e "playbook_target=docker" --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -658,9 +688,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$playpath' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$playpath' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$playpath' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$playpath' --tags '$tags'"
     fi
     ;;
 
@@ -740,7 +770,7 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    ansible-playbook "${aargs[@]}"
+    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
     ;;
 
 'install-i')
@@ -777,9 +807,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix-shell -p ansible --command "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     fi
     ;;
 
@@ -831,7 +861,7 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    ansible-playbook "${aargs[@]}"
+    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
     ;;
 
 'tmux')
