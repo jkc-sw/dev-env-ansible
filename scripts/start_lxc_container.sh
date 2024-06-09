@@ -116,7 +116,7 @@ main() {
     local shell=false
 
     # parse the argumetns
-    while getopts 'r:f:i:b:c:p:n:w:s' opt; do
+    while getopts 'f:i:b:c:p:n:w:sr' opt; do
         case "$opt" in
         s)
             shell=true
