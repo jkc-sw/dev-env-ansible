@@ -195,16 +195,17 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r] [-w DIR]"
+    echo " start: [-r] [-w DIR] [-v]"
     echo "   Start a LXC container"
     echo ""
-    echo " stop:"
+    echo " stop: [-v]"
     echo "   Stop a LXC container"
     echo ""
-    echo " shell:"
+    echo " shell: [-v]"
     echo "   Spawn a bash shell to the LXC container"
     echo ""
     echo " where"
+    echo "  -v     > Enable verbose trace in the script"
     echo "  -r     > Stop and remove the running container"
     echo "  -w dir > Bind mount this folder to the container"
     echo ""
@@ -949,18 +950,49 @@ case "$subcmd" in
     ;;
 
 'stop')
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" -r
+    startarg=(-r)
+    # parse the argumetns
+    while getopts 'v' opt; do
+        case "$opt" in
+        v)
+            startarg+=(-v)
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
 'shell')
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" -s
+    startarg=(-s)
+    # parse the argumetns
+    while getopts 'v' opt; do
+        case "$opt" in
+        v)
+            startarg+=(-v)
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
 'start')
     startarg=()
     # parse the argumetns
-    while getopts ':rw:' opt; do
+    while getopts ':rvw:' opt; do
         case "$opt" in
+        v)
+            startarg+=(-v)
+            ;;
         w)
             each="$OPTARG"
             each="$(realpath "$each")"

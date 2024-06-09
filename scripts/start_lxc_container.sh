@@ -2,8 +2,10 @@
 
 : <<'20240423EOF'
 SOURCE_THESE_VIMS_START
-nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :.+1 'scripts/start_lxc_container.sh' Enter", '#'))<cr>
-nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :.+1 'scripts/start_lxc_container.sh -r' Enter", '#'))<cr>
+nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh start -v' Enter", '#'))<cr>
+nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh shell -v' Enter", '#'))<cr>
+nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh stop -v' Enter", '#'))<cr>
+nnoremap <leader>nu <cmd> silent call execute(escape("!tmux send-keys -t :.+1 '86' Enter", '#'))<cr>
 let @h="\"lyoecho \"DEBUG: \<c-r>l = \$\<c-r>l\"\<esc>j"
 echom 'Sourced'
 SOURCE_THESE_VIMS_END
@@ -27,6 +29,7 @@ displayHelp() {
     echo " -p VNC_PORT               : The VNC port inside the container. Default is 5901"
     echo " -r                        : Remove this container."
     echo " -h                        : Print this help command"
+    echo " -v                        : Verbose trace information"
 }
 
 # const
@@ -118,8 +121,11 @@ main() {
     local shell=false
 
     # parse the argumetns
-    while getopts 'f:i:b:c:p:n:w:sr' opt; do
+    while getopts 'vf:i:b:c:p:n:w:sr' opt; do
         case "$opt" in
+        v)
+            set -x  # enable verbose trace
+            ;;
         s)
             shell=true
             ;;
@@ -167,7 +173,7 @@ main() {
     # When asking to delete
     if [[ "$remove" == 'true' ]]; then
         # Stop/remove the container if found
-        if [[ "$(<<<"$containers" wc -l)" -eq 1 ]]; then
+        if [[ "$(echo -n "$containers" | wc -l)" -eq 1 ]]; then
             "$cmd" stop "$lxc_name"
         fi
         echo "INFO: Containers $lxc_name stopped and removed. The network forward is removed"
@@ -175,8 +181,8 @@ main() {
 
         # Remove the network forward port if any was set on this interface
         local forward="$("$cmd" network forward list "$brid" -f json)"
-        local listenAddress="$(<<<"$forward" jq --raw-output '.[].ports[].listen_address')"
-        local listenPort="$(<<<"$forward" jq --raw-output '.[].ports[].listen_port')"
+        local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_address')"
+        local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
             "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
         fi
@@ -186,8 +192,7 @@ main() {
     fi
 
     # Create a new container if none found
-    # BUG: the wc -l would return 1 when empty. Use echo -n instead
-    if [[ "$(<<<"$containers" wc -l)" -ne 1 ]]; then
+    if [[ -z "$containers" ]]; then
         # var
         local uid="$(id -u)"
         local gid="$(id -g)"
@@ -240,22 +245,23 @@ main() {
     # Add forwarding rule
     local forward="$("$cmd" network forward list "$brid" -f json)"
     local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    local detectedAddress="$(<<<"$forward" jq --raw-output '.[].ports[].target_address')"
-    local detectedPort="$(<<<"$forward" jq --raw-output '.[].ports[].target_port')"
-    local listenAddress="$(<<<"$forward" jq --raw-output '.[].listen_address')"
-    local listenPort="$(<<<"$forward" jq --raw-output '.[].ports[].listen_port')"
+    local detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
+    local detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
+    local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+    local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
     # TODO:
     # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
     # Find any previous config
-    if [[ -n "$detectedAddress" ]]; then
+    if [[ -n "$listenPort" ]]; then
         # When any of the previous config is mismatched, delete them
         if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
-            echo "DEBUG: forward = $(<<<"$forward" jq .)"
+            echo "DEBUG: forward = $(echo -n "$forward" | jq .)"
             echo "DEBUG: containerAddr = $containerAddr"
             echo "DEBUG: detectedAddress = $detectedAddress"
             echo "DEBUG: detectedPort = $detectedPort"
             echo "DEBUG: listenAddress = $listenAddress"
             echo "DEBUG: listenPort = $listenPort"
+            echo "DEBUG: hostAddr = $hostAddr"
             echo "ERR: The forward has a different container address/port configuration." >&2
             echo "ERR: Removing the old definition" >&2
             "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
@@ -270,7 +276,7 @@ main() {
             "$cmd" network forward create "$brid" "$hostAddr"
         fi
         # Listen and forward a network port
-        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")" "$vnc_port"
+        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
     fi
 
     # Just print status
