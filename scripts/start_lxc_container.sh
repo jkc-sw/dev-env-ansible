@@ -37,13 +37,14 @@ add_lxc_mount_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 3 ]]; then
-        echo "ERR (add_lxc_mount_global): need 3 arguments (bin, name, path) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 4 ]]; then
+        echo "ERR (add_lxc_mount_global): need 4 arguments (bin, container name, disk name, path) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
-    local name="${args[1]}"
-    local path="${args[2]}"
+    local lxc_name="${args[1]}"
+    local name="${args[2]}"
+    local path="${args[3]}"
     local src="${path#*:}"
     if [[ ! -e "$src" ]]; then
         echo "ERR (add_lxc_mount_global): src path '$src' is not found." >&2
@@ -75,15 +76,16 @@ apply_lxc_mounts_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 1 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 1 arguments (bin) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
-        add_lxc_mount_global "$cmd" "d$ii" "$each"
+        add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
     done
 }
 
@@ -184,6 +186,7 @@ main() {
     fi
 
     # Create a new container if none found
+    # BUG: the wc -l would return 1 when empty. Use echo -n instead
     if [[ "$(<<<"$containers" wc -l)" -ne 1 ]]; then
         # var
         local uid="$(id -u)"
@@ -208,7 +211,7 @@ main() {
         "$cmd" restart "$lxc_name"
 
         # Mount folders
-        apply_lxc_mounts_global "$cmd"
+        apply_lxc_mounts_global "$cmd" "$lxc_name"
 
         # Fix the locale on debian
         "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
