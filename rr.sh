@@ -946,6 +946,8 @@ case "$subcmd" in
         esac
     done
 
+    decrypt_inventory_for_docker
+
     startarg+=("${lxc_volume_mount[@]}")
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
