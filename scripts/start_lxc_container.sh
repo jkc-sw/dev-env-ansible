@@ -139,7 +139,7 @@ main() {
             "$cmd" stop "$lxc_name"
         fi
         echo "INFO: Containers $lxc_name stopped and removed. The network forward is removed"
-        "$cmd" list
+        "$cmd" list -c ns4t,image.description:image
 
         # Remove the network forward port if any was set on this interface
         local forward="$("$cmd" network forward list "$brid" -f json)"
@@ -237,6 +237,10 @@ main() {
         # Listen and forward a network port
         "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")" "$vnc_port"
     fi
+
+    # Just print status
+    "$cmd" list -c ns4t,image.description:image
+    "$cmd" network forward list "$bird"
 
     # "$cmd" exec "$lxc_name" -- bash -c "cat /etc/netplan/*"
 
