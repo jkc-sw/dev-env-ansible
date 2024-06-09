@@ -17,6 +17,7 @@ displayHelp() {
     echo "${BASH_SOURCE[0]} [flags] Create lxc container for testing"
     echo ""
     echo "Flags:"
+    echo " -s                        : Drop me into a bash shell"
     echo " -c CMD                    : Command to use. Default is lxc"
     echo " -i IMAGE_NAME             : Ubuntu image to use. Default is 22.04"
     echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
@@ -43,7 +44,13 @@ add_lxc_mount_global() {
     local cmd="${args[0]}"
     local name="${args[1]}"
     local path="${args[2]}"
-    "$cmd" config device add "$lxc_name" "$name" disk source="${path#*:}" path="${path%:*}"
+    local src="${path#*:}"
+    if [[ ! -e "$src" ]]; then
+        echo "ERR (add_lxc_mount_global): src path '$src' is not found." >&2
+        return 1
+    fi
+    local dest="${path%:*}"
+    "$cmd" config device add "$lxc_name" "$name" disk source="$src" path="$dest"
     echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
 }
 
@@ -80,6 +87,22 @@ apply_lxc_mounts_global() {
     done
 }
 
+# Check dependencies
+check_dependencies() {
+    # Check dependencies
+    toexit=false
+    for c in lxc jq ip fzf; do
+        if ! command -v "$c" &>/dev/null; then
+            echo "ERR: $c is not found in your PATH" >&2
+            toexit=true
+        fi
+    done
+    if [[ "$toexit" == true ]]; then
+        echo "ERR: Please make sure you install all the necessary tool first" >&2
+        exit 1
+    fi
+}
+
 main() {
     # var
     local imgName='ubuntu:22.04'
@@ -90,10 +113,14 @@ main() {
     local vnc_port_on_host=15901
     local vnc_port=5901
     local remove=false
+    local shell=false
 
     # parse the argumetns
-    while getopts 'r:f:i:b:c:p:n:w:' opt; do
+    while getopts 'r:f:i:b:c:p:n:w:s' opt; do
         case "$opt" in
+        s)
+            shell=true
+            ;;
         r)
             remove=true
             ;;
@@ -132,10 +159,13 @@ main() {
         return 1
     fi
 
+    # var
+    local containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
+
     # When asking to delete
     if [[ "$remove" == 'true' ]]; then
         # Stop/remove the container if found
-        if [[ "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name" | wc -l)" -eq 1 ]]; then
+        if [[ "$(<<<"$containers" wc -l)" -eq 1 ]]; then
             "$cmd" stop "$lxc_name"
         fi
         echo "INFO: Containers $lxc_name stopped and removed. The network forward is removed"
@@ -146,7 +176,7 @@ main() {
         local listenAddress="$(<<<"$forward" jq --raw-output '.[].ports[].listen_address')"
         local listenPort="$(<<<"$forward" jq --raw-output '.[].ports[].listen_port')"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
-            $cmd network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
+            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
         fi
         echo "INFO: The network forward is removed"
         "$cmd" network forward list "$brid"
@@ -154,7 +184,7 @@ main() {
     fi
 
     # Create a new container if none found
-    if [[ "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name" | wc -l)" -ne 1 ]]; then
+    if [[ "$(<<<"$containers" wc -l)" -ne 1 ]]; then
         # var
         local uid="$(id -u)"
         local gid="$(id -g)"
@@ -163,8 +193,8 @@ main() {
         "$cmd" launch --ephemeral "$imgName" "$lxc_name"
 
         # Remove default ubuntu user and add my user
-        "$cmd" exec "$lxc_name" -- bash -c "deluser \"\$(id -un $uid)\""
-        "$cmd" exec "$lxc_name" -- bash -c "export uid=$uid gid=$gid \
+        "$cmd" exec "$lxc_name" -t -- bash -c "deluser \"\$(id -un $uid)\""
+        "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
             && mkdir -p /home/${USER} \
             && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
             && echo \"${USER}:x:\${uid}:\" >> /etc/group \
@@ -181,25 +211,27 @@ main() {
         apply_lxc_mounts_global "$cmd"
 
         # Fix the locale on debian
-        "$cmd" exec "$lxc_name" -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+        "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
             && locale-gen en_US.UTF-8 \
             && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
             && locale-gen en_US.UTF-8'
 
         # Install vnc
-        "$cmd" exec "$lxc_name" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+        "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
             gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
             && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
             && apt update \
             && apt install -y --no-install-recommends xorg xfce4 turbovnc'
 
         # Configure the vnc
-        "$cmd" exec "$lxc_name" -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
+        "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
             && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
             && chown -R '$USER:$USER' '/home/$USER/.vnc' \
             && chmod 0600 '/home/$USER/.vnc/passwd' \
             && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
 
+        # Update the container status
+        containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
     fi
 
     # Add forwarding rule
@@ -223,12 +255,12 @@ main() {
             echo "DEBUG: listenPort = $listenPort"
             echo "ERR: The forward has a different container address/port configuration." >&2
             echo "ERR: Removing the old definition" >&2
-            $cmd network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
+            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
             # Reset this var to meet the next network forward creation code conditional
-            detectedPort=''
+            listenPort=''
         fi
     fi
-    if [[ "$detectedPort" != "$vnc_port" ]]; then
+    if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
         # Create a network forward when none found
         if [[ -z "$listenAddress" ]]; then
             echo "INFO: Create a network forward to $listenAddress"
@@ -240,24 +272,26 @@ main() {
 
     # Just print status
     "$cmd" list -c ns4t,image.description:image
-    "$cmd" network forward list "$bird"
+    "$cmd" network forward list "$brid"
 
-    # "$cmd" exec "$lxc_name" -- bash -c "cat /etc/netplan/*"
+    # "$cmd" exec "$lxc_name" -t -- bash -c "cat /etc/netplan/*"
 
     # # List the active vnc ports
-    # "$cmd" exec "$lxc_name" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
+    # "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
 
     # # print ip
     # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
 
     # # Install x11vnc
-    # "$cmd" exec "$lxc_name" -- bash -c 'apt install -y --no-install-recommends x11vnc'
+    # "$cmd" exec "$lxc_name" -t -- bash -c 'apt install -y --no-install-recommends x11vnc'
 
     # # start a bash shell as root
-    # "$cmd" exec "$lxc_name" -- bash -l
+    # "$cmd" exec "$lxc_name" -t -- bash -l
 
-    # # start a bash shell
-    # "$cmd" exec "$lxc_name" --cwd "/home/$USER" -- su - "$USER"
+    if [[ "$shell" == 'true' ]]; then
+        # start a bash shell
+        "$cmd" exec "$lxc_name" -t --cwd "/home/$USER" -- su - "$USER"
+    fi
 
     # # stop the shell
     # "$cmd" stop "$lxc_name"

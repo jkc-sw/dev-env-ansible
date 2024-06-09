@@ -25,8 +25,7 @@ pushd "$SCRIPT_DIR" &>/dev/null
 CONTAINER_TAG=devenvansible:1.0
 
 # ansible workspace path
-ANSIBLE_HOME="/home/$USER"
-ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
+ANSIBLE_DEV_ENV_ANSIBLE_PATH="$SCRIPT_DIR"
 
 # docker volumn mount
 DOCKER_VOLUME_MOUNT=()
@@ -191,16 +190,23 @@ displayHelp() {
     echo "   NAME : The name of the role appears in the folder"
     echo ""
     echo "--------------------------------------------------------------------------------"
-    echo "Start a tmux session to develop this repo"
+    echo "Spawn a tmux session to develop this repo"
     echo " tmux : Start the tmux development session"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r]"
-    echo "   Start/stop a LXC container"
+    echo " start: [-r] [-w DIR]"
+    echo "   Start a LXC container"
+    echo ""
+    echo " stop:"
+    echo "   Stop a LXC container"
+    echo ""
+    echo " shell:"
+    echo "   Spawn a bash shell to the LXC container"
     echo ""
     echo " where"
-    echo "  -r > Stop and remove the running container"
+    echo "  -r     > Stop and remove the running container"
+    echo "  -w dir > Bind mount this folder to the container"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
@@ -399,10 +405,10 @@ append_lxc_mount_global() {
 set_mounts_global() {
     # docker volumn mount
     for each in \
-        "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles" \
+        "$HOME/repos/dotfiles:$HOME/repos/dotfiles" \
         "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
-        "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim" \
-        "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos" \
+        "$HOME/repos/focus-side.vim:$HOME/repos/focus-side.vim" \
+        "$HOME/repos/jerry-nixos:$HOME/repos/jerry-nixos" \
         "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
     ; do
         append_docker_mount_global "$each"
@@ -912,11 +918,24 @@ case "$subcmd" in
     docker ps
     ;;
 
+'stop')
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" -r
+    ;;
+
+'shell')
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" -s
+    ;;
+
 'start')
     startarg=()
     # parse the argumetns
-    while getopts ':r' opt; do
+    while getopts ':rw:' opt; do
         case "$opt" in
+        w)
+            each="$OPTARG"
+            each="$(realpath "$each")"
+            append_lxc_mount_global "$each:$each"
+            ;;
         r)
             startarg=(-r)
             ;;
