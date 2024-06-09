@@ -1000,7 +1000,7 @@ case "$subcmd" in
             append_lxc_mount_global "$each:$each"
             ;;
         r)
-            startarg=(-r)
+            startarg+=(-r)
             ;;
         *)
             echo "Unrecognized option $opt" >&2

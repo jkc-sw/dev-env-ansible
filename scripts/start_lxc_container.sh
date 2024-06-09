@@ -3,7 +3,7 @@
 : <<'20240423EOF'
 SOURCE_THESE_VIMS_START
 nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh start -v' Enter", '#'))<cr>
-nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh shell -v' Enter", '#'))<cr>
+nnoremap <leader>na <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh shell -v' Enter", '#'))<cr>
 nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh stop -v' Enter", '#'))<cr>
 nnoremap <leader>nu <cmd> silent call execute(escape("!tmux send-keys -t :.+1 '86' Enter", '#'))<cr>
 let @h="\"lyoecho \"DEBUG: \<c-r>l = \$\<c-r>l\"\<esc>j"
@@ -173,20 +173,31 @@ main() {
     # When asking to delete
     if [[ "$remove" == 'true' ]]; then
         # Stop/remove the container if found
-        if [[ "$(echo -n "$containers" | wc -l)" -eq 1 ]]; then
+        if [[ -n "$containers" ]]; then
+            echo "INFO: Stop and remove containers $lxc_name"
             "$cmd" stop "$lxc_name"
+            if [[ "$?" -ne 0 ]]; then
+                echo "ERR: Cannot stop the container $lxc_name" >&2
+                return 1
+            fi
         fi
-        echo "INFO: Containers $lxc_name stopped and removed. The network forward is removed"
         "$cmd" list -c ns4t,image.description:image
 
         # Remove the network forward port if any was set on this interface
         local forward="$("$cmd" network forward list "$brid" -f json)"
-        local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_address')"
+        echo "DEBUG: forward = $forward"
+        local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        echo "DEBUG: listenAddress = $listenAddress"
         local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        echo "DEBUG: listenPort = $listenPort"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
+            echo "INFO: Removing network forward port"
             "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
+            if [[ "$?" -ne 0 ]]; then
+                echo "ERR: Cannot remove network forward port" >&2
+                return 1
+            fi
         fi
-        echo "INFO: The network forward is removed"
         "$cmd" network forward list "$brid"
         return 0
     fi
