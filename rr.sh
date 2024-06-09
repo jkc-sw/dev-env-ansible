@@ -24,16 +24,13 @@ pushd "$SCRIPT_DIR" &>/dev/null
 # container tag
 CONTAINER_TAG=devenvansible:1.0
 
-# lxc name
-LXC_NAME=tom
-
 # ansible workspace path
 ANSIBLE_HOME="/home/$USER"
 ANSIBLE_DEV_ENV_ANSIBLE_PATH=$ANSIBLE_HOME/repos/dev-env-ansible
 
 # docker volumn mount
 DOCKER_VOLUME_MOUNT=()
-LXC_VOLUME_MOUNT=()
+lxc_volume_mount=()
 
 # docker files dir
 DOCKER_FILE_DIR=./dockerfiles
@@ -196,6 +193,14 @@ displayHelp() {
     echo "--------------------------------------------------------------------------------"
     echo "Start a tmux session to develop this repo"
     echo " tmux : Start the tmux development session"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Manage a bespoked lxc container for testing this repository"
+    echo " start: [-r]"
+    echo "   Start/stop a LXC container"
+    echo ""
+    echo " where"
+    echo "  -r > Stop and remove the running container"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
@@ -374,36 +379,6 @@ append_docker_mount_global() {
     echo "DEBUG (append_docker_mount_global): Add '$path'" >&2
 }
 
-# function to populate the docker mount in a function
-set_docker_mounts_global() {
-    # docker volumn mount
-    for each in \
-        "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles" \
-        "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
-        "$SCRIPT_DIR/../focus-side.vim:$ANSIBLE_HOME/repos/focus-side.vim" \
-        "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos" \
-        "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
-    ; do
-        append_docker_mount_global "$each"
-    done
-}
-
-# function ta append the lxc mount
-add_lxc_mount_global() {
-    # Get arguments
-    local args=("$@")
-    # Need 1 argument
-    if [[ "${#args[@]}" -ne 3 ]]; then
-        echo "ERR (add_lxc_mount_global): need 3 arguments (bin, name, path) only, but found ${#args[@]}" >&2
-        return 1
-    fi
-    local cmd="${args[0]}"
-    local name="${args[1]}"
-    local path="${args[2]}"
-    "$cmd" config device add "$LXC_NAME" "$name" disk source="${path#*:}" path="${path%:*}"
-    echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
-}
-
 append_lxc_mount_global() {
     # Get arguments
     local args=("$@")
@@ -413,24 +388,16 @@ append_lxc_mount_global() {
         return 1
     fi
     local path="${args[0]}"
-    if [[ "${LXC_VOLUME_MOUNT[*]}" == *"$path"* ]]; then
+    if [[ "${lxc_volume_mount[*]}" == *"$path"* ]]; then
         return 0
     fi
-    LXC_VOLUME_MOUNT+=("$path")
+    lxc_volume_mount+=(-w "$path")
     echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
 }
 
 # function to populate the docker mount in a function
-apply_lxc_mounts_global() {
-    # Get arguments
-    local args=("$@")
-    # Need 1 argument
-    if [[ "${#args[@]}" -ne 1 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 1 arguments (bin) only, but found ${#args[@]}" >&2
-        return 1
-    fi
-    local cmd="${args[0]}"
-    # Add default monut
+set_mounts_global() {
+    # docker volumn mount
     for each in \
         "$SCRIPT_DIR/../dotfiles:$ANSIBLE_HOME/repos/dotfiles" \
         "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
@@ -438,12 +405,8 @@ apply_lxc_mounts_global() {
         "$SCRIPT_DIR/../jerry-nixos:$ANSIBLE_HOME/repos/jerry-nixos" \
         "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
     ; do
+        append_docker_mount_global "$each"
         append_lxc_mount_global "$each"
-    done
-    # Apply the monts to the lxc
-    for ii in $(seq 0 $(( "${#LXC_VOLUME_MOUNT[@]}" - 1)) ); do
-        local each="${LXC_VOLUME_MOUNT[ii]}"
-        add_lxc_mount_global "$cmd" "d$ii" "$each"
     done
 }
 
@@ -452,6 +415,9 @@ if test "$#" -eq 0; then
     displayHelp
     exit 0
 fi
+
+# Set the mounts to a list
+set_mounts_global
 
 # if there are arg for test, run test
 subcmd="$1"
@@ -894,7 +860,6 @@ case "$subcmd" in
     done
 
     decrypt_inventory_for_docker
-    set_docker_mounts_global
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
@@ -918,7 +883,6 @@ case "$subcmd" in
     fi
 
     decrypt_inventory_for_docker
-    set_docker_mounts_global
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
@@ -949,18 +913,12 @@ case "$subcmd" in
     ;;
 
 'start')
-    # var
-    imgName='ubuntu:22.04'
-    cmd=lxc
-
+    startarg=()
     # parse the argumetns
-    while getopts ':i:w:' opt; do
+    while getopts ':r' opt; do
         case "$opt" in
-        i)
-            imgName="$OPTARG"
-            ;;
-        w)
-            append_lxc_mount_global "$OPTARG"
+        r)
+            startarg=(-r)
             ;;
         *)
             echo "Unrecognized option $opt" >&2
@@ -969,90 +927,8 @@ case "$subcmd" in
         esac
     done
 
-    decrypt_inventory_for_docker
-
-    if [[ "$(lxc list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .name" | wc -l)" -ne 1 ]]; then
-
-        # Start an instance
-        "$cmd" launch --ephemeral "$imgName" "$LXC_NAME"
-
-        # # Remove default ubuntu user and add my user
-        # "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
-        # # "$cmd" exec "$LXC_NAME" -- adduser --uid "$(id -u)" "$USER"
-        # # "$cmd" exec "$LXC_NAME" -- bash -c "echo '$USER ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers"
-
-        # Remove default ubuntu user and add my user
-        "$cmd" exec "$LXC_NAME" -- bash -c "deluser \"\$(id -un $(id -u))\""
-        "$cmd" exec "$LXC_NAME" -- bash -c "export uid=$(id -u) gid=$(id -g) \
-            && mkdir -p /home/${USER} \
-            && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
-            && echo \"${USER}:x:\${uid}:\" >> /etc/group \
-            && echo \"${USER} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${USER} \
-            && chmod 0440 /etc/sudoers.d/${USER} \
-            && chown \${uid}:\${gid} -R ${HOME} \
-            && echo ${USER}:aoeu | chpasswd"
-
-        # map the user id in the container
-        "$cmd" config set "$LXC_NAME" raw.idmap "both $(id -u) $(id -u)"
-        "$cmd" restart "$LXC_NAME"
-
-        # Mount folders
-        apply_lxc_mounts_global "$cmd"
-
-        # Fix the locale on debian
-        "$cmd" exec "$LXC_NAME" -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
-            && locale-gen en_US.UTF-8 \
-            && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
-            && locale-gen en_US.UTF-8'
-
-        # Install vnc
-        "$cmd" exec "$LXC_NAME" -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
-            gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
-            && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
-            && apt update \
-            && apt install -y --no-install-recommends xorg xfce4 turbovnc'
-        "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -depth 24 -geometry "1920x1080"'
-
-    fi
-
-    # "$cmd" exec "$LXC_NAME" -- bash -c "cat /etc/netplan/*"
-
-    # Add forwarding rule
-    forward="$("$cmd" network forward list lxdbr0 -f json)"
-    echo 'INFO: Please select the host address from this list'
-    hostAddr="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output | sort | fzf)"
-    containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    detectedAddress="$(<<<"$forward" jq --raw-output '.[].ports[].target_address')"
-    detectedPort="$(<<<"$forward" jq --raw-output '.[].ports[].target_port')"
-    if [[ -n "$detectedAddress" && "$detectedAddress" != "$containerAddr" ]]; then
-        echo "ERR: The forward has a different container address, $detectedAddress, defined instead of the current address, $containerAddr" >&2
-        echo "ERR: Removing the old definition" >&2
-        $cmd network forward delete lxdbr0 "$hostAddr"
-        detectedPort=''
-    fi
-    if [[ "$detectedPort" != '5901' ]]; then
-        "$cmd" network forward create lxdbr0 "$hostAddr"
-        "$cmd" network forward port add lxdbr0 "$hostAddr" tcp 15901 $("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")
-    fi
-
-    # # List the active vnc ports
-    # "$cmd" exec "$LXC_NAME" -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
-
-    # # print ip
-    # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$LXC_NAME\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-
-    # # Install x11vnc
-    # "$cmd" exec "$LXC_NAME" -- bash -c 'apt install -y --no-install-recommends x11vnc'
-
-    # # start a bash shell as root
-    # "$cmd" exec "$LXC_NAME" -- bash -l
-
-    # # start a bash shell
-    # "$cmd" exec "$LXC_NAME" --cwd "/home/$USER" -- su - "$USER"
-
-    # # stop the shell
-    # "$cmd" stop "$LXC_NAME"
-
+    startarg+=("${lxc_volume_mount[@]}")
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
 'use')
@@ -1082,7 +958,6 @@ case "$subcmd" in
     fi
 
     decrypt_inventory_for_docker
-    set_docker_mounts_global
 
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
@@ -1102,7 +977,6 @@ case "$subcmd" in
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
 
     decrypt_inventory_for_docker
-    set_docker_mounts_global
 
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
