@@ -19,15 +19,18 @@ displayHelp() {
     echo "${BASH_SOURCE[0]} [flags] Create lxc container for testing"
     echo ""
     echo "Flags:"
+    echo " -c                        : Creat a new container instance"
+    echo " -r                        : Remove this container instance"
     echo " -s                        : Drop me into a bash shell"
-    echo " -c CMD                    : Command to use. Default is lxc"
+    echo ""
+    echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
+    echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
     echo " -i IMAGE_NAME             : Ubuntu image to use. Default is 22.04"
     echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
-    echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
-    echo " -w HOST_DIR:CONATINER_DIR : Map this folder to the container. Can call multiple times"
-    echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
     echo " -p VNC_PORT               : The VNC port inside the container. Default is 5901"
-    echo " -r                        : Remove this container."
+    echo " -w HOST_DIR:CONATINER_DIR : Map this folder to the container. Can call multiple times"
+    echo " -x CMD                    : Command to use. Default is lxc"
+    echo ""
     echo " -h                        : Print this help command"
     echo " -v                        : Verbose trace information"
 }
@@ -121,7 +124,7 @@ main() {
     local shell=false
 
     # parse the argumetns
-    while getopts 'vf:i:b:c:p:n:w:sr' opt; do
+    while getopts 'vf:i:b:x:p:n:w:sr' opt; do
         case "$opt" in
         v)
             set -x  # enable verbose trace
@@ -138,7 +141,7 @@ main() {
         f)
             vnc_port_on_host="$OPTARG"
             ;;
-        c)
+        x)
             cmd="$OPTARG"
             ;;
         n)
