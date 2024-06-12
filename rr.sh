@@ -180,7 +180,10 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage and handle the ansible vault for inventory file"
-    echo " edit: Edit the inventory file"
+    echo " edit FILE: Edit the inventory file"
+    echo ""
+    echo "  where:"
+    echo "   FILE : Inventory file"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Create a new row template"
@@ -414,7 +417,7 @@ append_docker_mount_global() {
         return 0
     fi
     DOCKER_VOLUME_MOUNT+=(-v "$path")
-    echo "DEBUG (append_docker_mount_global): Add '$path'" >&2
+    # echo "DEBUG (append_docker_mount_global): Add '$path'" >&2
 }
 
 append_lxc_mount_global() {
@@ -430,7 +433,7 @@ append_lxc_mount_global() {
         return 0
     fi
     lxc_volume_mount+=(-w "$path")
-    echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
+    # echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
 }
 
 # function to populate the docker mount in a function

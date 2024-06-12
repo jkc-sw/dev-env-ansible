@@ -38,6 +38,37 @@ displayHelp() {
 # const
 SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
+# function to locate the hostAddr
+get_host_addr() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (get_host_addr): need 2 arguments (cmd, bridge) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local brid="${args[1]}"
+    local forward="$("$cmd" network forward list "$brid" -f json)"
+    local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+    local currentIpOutput="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output)"
+    # Find an existing one and return it
+    while read -r each; do
+        if [[ "$currentIpOutput" == *"$each"* ]]; then
+            echo -n "$each"
+            return 0
+        fi
+    done <<<"$listenAddress"
+    # otherwise, use fzf to search it
+    local selectedHostIp="$(echo -n "$currentIpOutput" | fzf)"
+    if [[ "$?" -ne 0 || -z "$selectedHostIp" ]]; then
+        echo "ERR (get_host_addr): Cannot get the host address using fzf" >&2
+        return 1
+    fi
+    echo -n "$selectedHostIp"
+    return 0
+}
+
 # function ta append the lxc mount
 add_lxc_mount_global() {
     # Get arguments
@@ -51,12 +82,12 @@ add_lxc_mount_global() {
     local lxc_name="${args[1]}"
     local name="${args[2]}"
     local path="${args[3]}"
-    local src="${path#*:}"
+    local src="${path%:*}"
     if [[ ! -e "$src" ]]; then
         echo "ERR (add_lxc_mount_global): src path '$src' is not found." >&2
         return 1
     fi
-    local dest="${path%:*}"
+    local dest="${path#*:}"
     "$cmd" config device add "$lxc_name" "$name" disk source="$src" path="$dest"
     echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
 }
@@ -77,6 +108,20 @@ append_lxc_mount_global() {
     echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
 }
 
+chown_lxc_mount_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 3 ]]; then
+        echo "ERR (chown_lxc_mount_global): need 3 argument (bin, container name, path), but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local dest="${path#*:}"
+    "$cmd" exec "$lxc_name" chown -R "$USER:$USER" "$dest"
+}
+
 # function to populate the docker mount in a function
 apply_lxc_mounts_global() {
     # Get arguments
@@ -88,10 +133,13 @@ apply_lxc_mounts_global() {
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
+    local path="${args[2]}"
+    local dest="${path%:*}"
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
-        add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
+        # add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
+        chown_lxc_mount_global "$cmd" "$lxc_name"
     done
 }
 
@@ -163,13 +211,6 @@ main() {
         esac
     done
 
-    echo 'INFO: Please select the host address from this list'
-    local hostAddr="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output | sort | fzf)"
-    if [[ -z "$hostAddr" ]]; then
-        echo 'ERR: No host address selected' >&2
-        return 1
-    fi
-
     # var
     local containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
 
@@ -194,7 +235,9 @@ main() {
         local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
         echo "DEBUG: listenPort = $listenPort"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
+            echo "INFO: Find the host address from the output"
             echo "INFO: Removing network forward port"
+            local hostAddr="$(get_host_addr "$cmd" "$brid")"
             "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
             if [[ "$?" -ne 0 ]]; then
                 echo "ERR: Cannot remove network forward port" >&2
@@ -229,9 +272,6 @@ main() {
         "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
         "$cmd" restart "$lxc_name"
 
-        # Mount folders
-        apply_lxc_mounts_global "$cmd" "$lxc_name"
-
         # Fix the locale on debian
         "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
             && locale-gen en_US.UTF-8 \
@@ -252,6 +292,9 @@ main() {
             && chmod 0600 '/home/$USER/.vnc/passwd' \
             && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
 
+        # Mount folders
+        apply_lxc_mounts_global "$cmd" "$lxc_name"
+
         # Update the container status
         containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
     fi
@@ -268,6 +311,7 @@ main() {
     # Find any previous config
     if [[ -n "$listenPort" ]]; then
         # When any of the previous config is mismatched, delete them
+        local hostAddr="$(get_host_addr "$cmd" "$brid")"
         if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
             echo "DEBUG: forward = $(echo -n "$forward" | jq .)"
             echo "DEBUG: containerAddr = $containerAddr"
@@ -284,6 +328,7 @@ main() {
         fi
     fi
     if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
+        local hostAddr="$(get_host_addr "$cmd" "$brid")"
         # Create a network forward when none found
         if [[ -z "$listenAddress" ]]; then
             echo "INFO: Create a network forward to $listenAddress"
