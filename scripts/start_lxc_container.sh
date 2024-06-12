@@ -138,7 +138,7 @@ apply_lxc_mounts_global() {
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
-        # add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
+        add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
         chown_lxc_mount_global "$cmd" "$lxc_name"
     done
 }
