@@ -69,7 +69,22 @@ get_host_addr() {
     return 0
 }
 
-# function ta append the lxc mount
+# function to calculating the checksum of the argument
+get_all_mounted_paths_from_containers() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (get_all_mounted_paths_from_containers): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local paths="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .devices[] | \"\(.path):\(.source)\"")"
+    echo -n "$paths"
+}
+
+# function to get all the mounted disks
 add_lxc_mount_global() {
     # Get arguments
     local args=("$@")
@@ -88,7 +103,8 @@ add_lxc_mount_global() {
         return 1
     fi
     local dest="${path#*:}"
-    "$cmd" config device add "$lxc_name" "$name" disk source="$src" path="$dest"
+    # Add this disk because it is not found
+    "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
     echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
 }
 
@@ -118,8 +134,9 @@ chown_lxc_mount_global() {
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
+    local path="${args[2]}"
     local dest="${path#*:}"
-    "$cmd" exec "$lxc_name" chown -R "$USER:$USER" "$dest"
+    "$cmd" exec "$lxc_name" -- chown -R "$USER:$USER" "$dest"
 }
 
 # function to populate the docker mount in a function
@@ -133,13 +150,17 @@ apply_lxc_mounts_global() {
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
-    local path="${args[2]}"
-    local dest="${path%:*}"
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
+        local mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
+        # Skip this path if already monuted
+        if [[ "$mountedPaths" == *"$each"* ]]; then
+            echo "INFO (add_lxc_mount_global): Skip '$each' because it is mounted"
+            continue
+        fi
         add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
-        chown_lxc_mount_global "$cmd" "$lxc_name"
+        chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
     done
 }
 
@@ -292,12 +313,12 @@ main() {
             && chmod 0600 '/home/$USER/.vnc/passwd' \
             && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
 
-        # Mount folders
-        apply_lxc_mounts_global "$cmd" "$lxc_name"
-
         # Update the container status
         containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
     fi
+
+    # Mount folders
+    apply_lxc_mounts_global "$cmd" "$lxc_name"
 
     # Add forwarding rule
     local forward="$("$cmd" network forward list "$brid" -f json)"

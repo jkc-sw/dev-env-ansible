@@ -198,11 +198,14 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r] [-w DIR] [-v]"
+    echo " start: [-r] [-w DIR]... [-v]"
     echo "   Start a LXC container"
     echo ""
     echo " stop: [-v]"
     echo "   Stop a LXC container"
+    echo ""
+    echo " mount: [-w DIR]... [-v]"
+    echo "   Mount this additional paths plus all the default paths"
     echo ""
     echo " shell: [-v]"
     echo "   Spawn a bash shell to the LXC container"
@@ -986,6 +989,34 @@ case "$subcmd" in
         esac
     done
 
+    decrypt_inventory_for_docker
+
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+    ;;
+
+'mount')
+    startarg=()
+    # parse the argumetns
+    while getopts ':vw:' opt; do
+        case "$opt" in
+        v)
+            startarg+=(-v)
+            ;;
+        w)
+            each="$OPTARG"
+            each="$(realpath "$each")"
+            append_lxc_mount_global "$each:$each"
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    decrypt_inventory_for_docker
+
+    startarg+=("${lxc_volume_mount[@]}")
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
