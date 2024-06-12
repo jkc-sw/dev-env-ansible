@@ -2,10 +2,10 @@
 
 : <<'20240423EOF'
 SOURCE_THESE_VIMS_START
-nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh start -v' Enter", '#'))<cr>
-nnoremap <leader>na <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh shell -v' Enter", '#'))<cr>
-nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :.+1 './rr.sh stop -v' Enter", '#'))<cr>
-nnoremap <leader>nu <cmd> silent call execute(escape("!tmux send-keys -t :.+1 '86' ; sleep 0.5 ; tmux send-keys -t :.+1 Enter", '#'))<cr>
+nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh start -v' Enter", '#'))<cr>
+nnoremap <leader>na <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh shell -v' Enter", '#'))<cr>
+nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
+nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
 let @h="\"lyoecho \"DEBUG: \<c-r>l = \$\<c-r>l\"\<esc>j"
 echom 'Sourced'
 SOURCE_THESE_VIMS_END
