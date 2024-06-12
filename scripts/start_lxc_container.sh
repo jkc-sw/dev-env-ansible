@@ -103,6 +103,8 @@ add_lxc_mount_global() {
         return 1
     fi
     local dest="${path#*:}"
+    local out="$(sha1sum <<<"$path")"
+    local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
     echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
