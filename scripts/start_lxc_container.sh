@@ -6,7 +6,7 @@ nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :+1 './
 nnoremap <leader>na <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh shell -v' Enter", '#'))<cr>
 nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
 nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
-let @h="\"lyoecho \"DEBUG: \<c-r>l = \$\<c-r>l\"\<esc>j"
+let @h="\"lyoechodebug \"\<c-r>l = \$\<c-r>l\"\<esc>j"
 echom 'Sourced'
 SOURCE_THESE_VIMS_END
 20240423EOF
@@ -37,6 +37,13 @@ displayHelp() {
 
 # const
 SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
+
+# Function to echo debug
+echodebug() {
+    if [[ -n "$DEBUG_LXC" ]]; then
+        echo "DEBUG: $*"
+    fi
+}
 
 # function to locate the hostAddr
 get_host_addr() {
@@ -107,7 +114,7 @@ add_lxc_mount_global() {
     local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
-    echo "DEBUG (add_lxc_mount_global): Added '$path'" >&2
+    echo "INFO (add_lxc_mount_global): Added '$path'" >&2
 }
 
 append_lxc_mount_global() {
@@ -123,7 +130,7 @@ append_lxc_mount_global() {
         return 0
     fi
     lxc_volume_mount+=("$path")
-    echo "DEBUG (append_lxc_mount_global): Added '$path'" >&2
+    echo "INFO (append_lxc_mount_global): Added '$path'" >&2
 }
 
 chown_lxc_mount_global() {
@@ -186,12 +193,14 @@ apply_lxc_mounts_global() {
         local mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
         # Skip this path if already monuted
         if [[ "$mountedPaths" == *"$each"* ]]; then
-            echo "INFO (add_lxc_mount_global): Skip '$each' because it is mounted"
+            echo "INFO (add_lxc_mount_global): Skip mounted '$each'"
             continue
         fi
         add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
         chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
     done
+    # chown the entire home dir
+    "$cmd" exec "$lxc_name" -- chown -R "$USER:$USER" "$HOME"
 }
 
 # Check dependencies
@@ -282,11 +291,11 @@ main() {
 
         # Remove the network forward port if any was set on this interface
         local forward="$("$cmd" network forward list "$brid" -f json)"
-        echo "DEBUG: forward = $forward"
+        echodebug "forward = $forward"
         local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-        echo "DEBUG: listenAddress = $listenAddress"
+        echodebug "listenAddress = $listenAddress"
         local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-        echo "DEBUG: listenPort = $listenPort"
+        echodebug "listenPort = $listenPort"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
             echo "INFO: Find the host address from the output"
             echo "INFO: Removing network forward port"
@@ -362,13 +371,13 @@ main() {
         # When any of the previous config is mismatched, delete them
         local hostAddr="$(get_host_addr "$cmd" "$brid")"
         if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
-            echo "DEBUG: forward = $(echo -n "$forward" | jq .)"
-            echo "DEBUG: containerAddr = $containerAddr"
-            echo "DEBUG: detectedAddress = $detectedAddress"
-            echo "DEBUG: detectedPort = $detectedPort"
-            echo "DEBUG: listenAddress = $listenAddress"
-            echo "DEBUG: listenPort = $listenPort"
-            echo "DEBUG: hostAddr = $hostAddr"
+            echodebug "forward = $(echo -n "$forward" | jq .)"
+            echodebug "containerAddr = $containerAddr"
+            echodebug "detectedAddress = $detectedAddress"
+            echodebug "detectedPort = $detectedPort"
+            echodebug "listenAddress = $listenAddress"
+            echodebug "listenPort = $listenPort"
+            echodebug "hostAddr = $hostAddr"
             echo "ERR: The forward has a different container address/port configuration." >&2
             echo "ERR: Removing the old definition" >&2
             "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
