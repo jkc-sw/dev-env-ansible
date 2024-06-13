@@ -141,6 +141,34 @@ chown_lxc_mount_global() {
     "$cmd" exec "$lxc_name" -- chown -R "$USER:$USER" "$dest"
 }
 
+# function to setup generic stuff in the container
+apply_generic_configurations() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local uid="$(id -u)"
+    local gid="$(id -g)"
+    # Remove default ubuntu user and add my user
+    "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\""
+    "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
+        && mkdir -p /home/${USER} \
+        && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
+        && echo \"${USER}:x:\${uid}:\" >> /etc/group \
+        && echo \"${USER} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${USER} \
+        && chmod 0440 /etc/sudoers.d/${USER} \
+        && chown \${uid}:\${gid} -R ${HOME} \
+        && echo ${USER}:aoeu | chpasswd"
+    # map the user id in the container
+    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+    "$cmd" restart "$lxc_name"
+}
+
 # function to populate the docker mount in a function
 apply_lxc_mounts_global() {
     # Get arguments
@@ -185,9 +213,11 @@ check_dependencies() {
 main() {
     # var
     local imgName='ubuntu:22.04'
+    # local imgName='images:archlinux/current/default'
     local cmd='lxc'
     local brid='lxdbr0'
     local lxc_name='tom'
+    # local lxc_name='btw'
     local lxc_volume_mount=()
     local vnc_port_on_host=15901
     local vnc_port=5901
@@ -273,47 +303,43 @@ main() {
 
     # Create a new container if none found
     if [[ -z "$containers" ]]; then
-        # var
-        local uid="$(id -u)"
-        local gid="$(id -g)"
-
         # Start an instance
         "$cmd" launch --ephemeral "$imgName" "$lxc_name"
+        if [[ "$?" -ne 0 ]]; then
+            echo "Err: Failed to create a container" >&2
+            exit 1
+        fi
 
-        # Remove default ubuntu user and add my user
-        "$cmd" exec "$lxc_name" -t -- bash -c "deluser \"\$(id -un $uid)\""
-        "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
-            && mkdir -p /home/${USER} \
-            && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
-            && echo \"${USER}:x:\${uid}:\" >> /etc/group \
-            && echo \"${USER} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${USER} \
-            && chmod 0440 /etc/sudoers.d/${USER} \
-            && chown \${uid}:\${gid} -R ${HOME} \
-            && echo ${USER}:aoeu | chpasswd"
+        # Configure generic stuff
+        apply_generic_configurations "$cmd" "$lxc_name"
 
-        # map the user id in the container
-        "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
-        "$cmd" restart "$lxc_name"
+        if [[ "$imgName" == *'ubuntu'* ]]; then
+            # Fix the locale on debian
+            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+                && locale-gen en_US.UTF-8 \
+                && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+                && locale-gen en_US.UTF-8'
 
-        # Fix the locale on debian
-        "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
-            && locale-gen en_US.UTF-8 \
-            && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
-            && locale-gen en_US.UTF-8'
+            # Install vnc
+            "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+                gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
+                && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
+                && apt update \
+                && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
 
-        # Install vnc
-        "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
-            gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
-            && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
-            && apt update \
-            && apt install -y --no-install-recommends xorg xfce4 turbovnc'
+            # Configure the vnc
+            "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
+                && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
+                && chown -R '$USER:$USER' '/home/$USER/.vnc' \
+                && chmod 0600 '/home/$USER/.vnc/passwd' \
+                && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
 
-        # Configure the vnc
-        "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
-            && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
-            && chown -R '$USER:$USER' '/home/$USER/.vnc' \
-            && chmod 0600 '/home/$USER/.vnc/passwd' \
-            && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
+        elif [[ "$imgName" == *'archlinux'* ]]; then
+            # TODO: Fix this
+            #   err msg: error: failed retrieving file 'alsa-ucm-conf-1.2.11-1-any.pkg.tar.zst' from mirrors.kernel.org : The requested URL returned error: 404
+            # Install vnc
+            "$cmd" exec "$lxc_name" -t -- bash -c 'pacman --noconfirm -S xfce4'
+        fi
 
         # Update the container status
         containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
