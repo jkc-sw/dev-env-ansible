@@ -163,6 +163,7 @@ apply_generic_configurations() {
     local gid="$(id -g)"
     # Remove default ubuntu user and add my user
     "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\""
+    "$cmd" exec "$lxc_name" -t -- bash -c "timedatectl set-timezone America/Los_Angeles"
     "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
         && mkdir -p /home/${USER} \
         && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
@@ -221,14 +222,20 @@ check_dependencies() {
 
 main() {
     # var
+
+    # Ubuntu
     local imgName='ubuntu:22.04'
+    local lxc_name='tom'
+    local vnc_port_on_host=15901
+
+    # # arch
     # local imgName='images:archlinux/current/default'
+    # local lxc_name='btw'
+    # local vnc_port_on_host=15902
+
     local cmd='lxc'
     local brid='lxdbr0'
-    local lxc_name='tom'
-    # local lxc_name='btw'
     local lxc_volume_mount=()
-    local vnc_port_on_host=15901
     local vnc_port=5901
     local remove=false
     local shell=false
@@ -320,6 +327,8 @@ main() {
         fi
 
         # Configure generic stuff
+        echo "INFO: Sleeping 3 seconds to wait for the up network"
+        sleep 3
         apply_generic_configurations "$cmd" "$lxc_name"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
