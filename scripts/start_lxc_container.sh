@@ -154,7 +154,7 @@ apply_generic_configurations() {
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        echo "ERR (apply_generic_configurations): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -162,8 +162,11 @@ apply_generic_configurations() {
     local uid="$(id -u)"
     local gid="$(id -g)"
     # Remove default ubuntu user and add my user
+    echodebug "(apply_generic_configurations): Removes ubuntu default user if found"
     "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\""
+    echodebug "(apply_generic_configurations): Sets timezone"
     "$cmd" exec "$lxc_name" -t -- bash -c "timedatectl set-timezone America/Los_Angeles"
+    echodebug "(apply_generic_configurations): Add user $USER ($uid)"
     "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
         && mkdir -p /home/${USER} \
         && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
@@ -173,7 +176,9 @@ apply_generic_configurations() {
         && chown \${uid}:\${gid} -R ${HOME} \
         && echo ${USER}:aoeu | chpasswd"
     # map the user id in the container
+    echodebug "(apply_generic_configurations): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+    echodebug "(apply_generic_configurations): restart container $lxc_name"
     "$cmd" restart "$lxc_name"
 }
 
