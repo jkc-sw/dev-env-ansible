@@ -238,19 +238,19 @@ check_dependencies() {
 main() {
     # var
 
-    # # Ubuntu
-    # local imgName='ubuntu:22.04'
-    # local lxc_name='tom'
-    # local vnc_port_on_host=15901
+    # Ubuntu
+    local imgName='ubuntu:22.04'
+    local lxc_name='tom'
+    local vnc_port_on_host=15901
 
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
     # local vnc_port_on_host=15902
 
-    local imgName='images:nixos/23.11/default'
-    local lxc_name='nix'
-    local vnc_port_on_host=15903
+    # local imgName='images:nixos/23.11/default'
+    # local lxc_name='nix'
+    # local vnc_port_on_host=15903
 
 
     local cmd='lxc'
