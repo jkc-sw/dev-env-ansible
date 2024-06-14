@@ -335,11 +335,6 @@ decrypt_inventory_for_docker() {
 
 # function to install ansible
 install_ansible() {
-    if [[ $# -ne 1 ]]; then
-        echo 'ERR install_ansible: needs 1 argument' >&2
-        exit 1
-    fi
-    local tags="$1"
     setup_brew
     # check if the ansible is installed, if not, install it
     if ! command -v ansible &>/dev/null; then
@@ -589,7 +584,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible "$tags"
+    install_ansible
 
     # Write the role
     playpath="$(writePlaybook "$role")"
@@ -657,7 +652,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible "$tags"
+    install_ansible
 
     # Write the role
     playpath="$(writePlaybook "$role")"
