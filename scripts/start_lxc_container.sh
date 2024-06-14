@@ -5,7 +5,7 @@ SOURCE_THESE_VIMS_START
 nnoremap <leader>ne <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh start -v' Enter", '#'))<cr>
 nnoremap <leader>na <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh shell -v' Enter", '#'))<cr>
 nnoremap <leader>nE <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
-nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh stop -v' Enter", '#'))<cr>
+nnoremap <leader>no <cmd> silent call execute(escape("!tmux send-keys -t :+1 './rr.sh init -v' Enter", '#'))<cr>
 let @h="\"lyoechodebug \"\<c-r>l = \$\<c-r>l\"\<esc>j"
 echom 'Sourced'
 SOURCE_THESE_VIMS_END
@@ -21,6 +21,7 @@ displayHelp() {
     echo "Flags:"
     echo " -c                        : Creat a new container instance"
     echo " -r                        : Remove this container instance"
+    echo " -e                        : Configure the instance"
     echo " -s                        : Drop me into a bash shell"
     echo ""
     echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
@@ -149,12 +150,12 @@ chown_lxc_mount_global() {
 }
 
 # function to setup generic stuff in the container
-apply_lxc_settings() {
+map_uid_gid() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        echo "ERR (map_uid_gid): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -172,7 +173,7 @@ apply_generic_configurations() {
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        echo "ERR (apply_generic_configurations): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -190,6 +191,8 @@ apply_generic_configurations() {
         && chmod 0440 /etc/sudoers.d/${USER} \
         && chown \${uid}:\${gid} -R ${HOME} \
         && echo ${USER}:aoeu | chpasswd"
+    # map uid and gid
+    map_uid_gid
 }
 
 # function to populate the docker mount in a function
@@ -259,12 +262,20 @@ main() {
     local vnc_port=5901
     local remove=false
     local shell=false
+    local configure=false
+    local create=false
 
     # parse the argumetns
-    while getopts 'vf:i:b:x:p:n:w:sr' opt; do
+    while getopts 'vf:i:b:x:p:n:w:srec' opt; do
         case "$opt" in
         v)
             set -x  # enable verbose trace
+            ;;
+        c)
+            create=true
+            ;;
+        e)
+            configure=true
             ;;
         s)
             shell=true
@@ -338,18 +349,26 @@ main() {
     fi
 
     # Create a new container if none found
-    if [[ -z "$containers" ]]; then
+    if [[ "$create" == 'true' ]]; then
+        if [[ -n "$containers" ]]; then
+            echo "INFO: Skip. '$lxc_name' is running"
+            return 0
+        fi
         # Start an instance
         "$cmd" launch --ephemeral "$imgName" "$lxc_name"
         if [[ "$?" -ne 0 ]]; then
             echo "Err: Failed to create a container" >&2
-            exit 1
+            return 1
         fi
+        echo "INFO: Sleeping 5 seconds to wait for the up network"
+        sleep 5
+    fi
 
-        # Configure generic stuff
-        echo "INFO: Sleeping 3 seconds to wait for the up network"
-        sleep 3
-        apply_lxc_settings "$cmd" "$lxc_name"
+    if [[ "$configure" == 'true' ]]; then
+        if [[ -z "$containers" ]]; then
+            echo "Err: No running container found. Please start a new one" >&2
+            return 1
+        fi
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
             # Setup basic stuff
@@ -387,48 +406,53 @@ main() {
 
         # Update the container status
         containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
-    fi
 
-    # Mount folders
-    apply_lxc_mounts_global "$cmd" "$lxc_name"
+        # Mount folders
+        apply_lxc_mounts_global "$cmd" "$lxc_name"
 
-    # Add forwarding rule
-    local forward="$("$cmd" network forward list "$brid" -f json)"
-    local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    local detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
-    local detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
-    local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-    # TODO:
-    # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
-    # Find any previous config
-    if [[ -n "$listenPort" ]]; then
-        # When any of the previous config is mismatched, delete them
-        local hostAddr="$(get_host_addr "$cmd" "$brid")"
-        if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
-            echodebug "forward = $(echo -n "$forward" | jq .)"
-            echodebug "containerAddr = $containerAddr"
-            echodebug "detectedAddress = $detectedAddress"
-            echodebug "detectedPort = $detectedPort"
-            echodebug "listenAddress = $listenAddress"
-            echodebug "listenPort = $listenPort"
-            echodebug "hostAddr = $hostAddr"
-            echo "ERR: The forward has a different container address/port configuration." >&2
-            echo "ERR: Removing the old definition" >&2
-            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
-            # Reset this var to meet the next network forward creation code conditional
-            listenPort=''
+        # Add forwarding rule
+        local forward="$("$cmd" network forward list "$brid" -f json)"
+        local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+        local detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
+        local detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
+        local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        # TODO:
+        # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
+        # Find any previous config
+        if [[ -n "$listenPort" ]]; then
+            # When any of the previous config is mismatched, delete them
+            local hostAddr="$(get_host_addr "$cmd" "$brid")"
+            if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
+                echodebug "forward = $(echo -n "$forward" | jq .)"
+                echodebug "containerAddr = $containerAddr"
+                echodebug "detectedAddress = $detectedAddress"
+                echodebug "detectedPort = $detectedPort"
+                echodebug "listenAddress = $listenAddress"
+                echodebug "listenPort = $listenPort"
+                echodebug "hostAddr = $hostAddr"
+                echo "ERR: The forward has a different container address/port configuration." >&2
+                echo "ERR: Removing the old definition" >&2
+                "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
+                # Reset this var to meet the next network forward creation code conditional
+                listenPort=''
+            fi
+        fi
+        if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
+            local hostAddr="$(get_host_addr "$cmd" "$brid")"
+            # Create a network forward when none found
+            if [[ -z "$listenAddress" ]]; then
+                echo "INFO: Create a network forward to $listenAddress"
+                "$cmd" network forward create "$brid" "$hostAddr"
+            fi
+            # Listen and forward a network port
+            "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
         fi
     fi
-    if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
-        local hostAddr="$(get_host_addr "$cmd" "$brid")"
-        # Create a network forward when none found
-        if [[ -z "$listenAddress" ]]; then
-            echo "INFO: Create a network forward to $listenAddress"
-            "$cmd" network forward create "$brid" "$hostAddr"
-        fi
-        # Listen and forward a network port
-        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
+
+    if [[ -n "$containers" ]]; then
+        # Mount folders
+        apply_lxc_mounts_global "$cmd" "$lxc_name"
     fi
 
     # Just print status

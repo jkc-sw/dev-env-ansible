@@ -198,8 +198,11 @@ displayHelp() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r] [-w DIR]... [-v]"
+    echo " start: [-w DIR]... [-v]"
     echo "   Start a LXC container"
+    echo ""
+    echo " init: [-w DIR]... [-v]"
+    echo "   Initialize the container with basic utilities"
     echo ""
     echo " stop: [-v]"
     echo "   Stop a LXC container"
@@ -974,6 +977,26 @@ case "$subcmd" in
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
+'init')
+    startarg=(-e)
+    # parse the argumetns
+    while getopts 'v' opt; do
+        case "$opt" in
+        v)
+            startarg+=(-v)
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            ;;
+        esac
+    done
+
+    decrypt_inventory_for_docker
+
+    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+    ;;
+
 'shell')
     startarg=(-s)
     # parse the argumetns
@@ -1021,7 +1044,7 @@ case "$subcmd" in
     ;;
 
 'start')
-    startarg=()
+    startarg=(-c)
     # parse the argumetns
     while getopts ':rvw:' opt; do
         case "$opt" in
