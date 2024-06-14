@@ -353,12 +353,12 @@ install_ansible() {
         # setup_brew
         # brew install ansible
 
-        setup_nix "$tags"
+        setup_nix
         nix-env -iA nixpkgs.ansible
         # setup_nix
         # sudo "$(which nix)" profile install nixpkgs#ansible
     fi
-    setup_nix "$tags"
+    setup_nix
 }
 
 # if args, print help
