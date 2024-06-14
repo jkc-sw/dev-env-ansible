@@ -149,6 +149,24 @@ chown_lxc_mount_global() {
 }
 
 # function to setup generic stuff in the container
+apply_lxc_settings() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local uid="$(id -u)"
+    local gid="$(id -g)"
+    # map the user id in the container
+    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+    "$cmd" restart "$lxc_name"
+}
+
+# function to setup generic stuff in the container
 apply_generic_configurations() {
     # Get arguments
     local args=("$@")
@@ -172,9 +190,6 @@ apply_generic_configurations() {
         && chmod 0440 /etc/sudoers.d/${USER} \
         && chown \${uid}:\${gid} -R ${HOME} \
         && echo ${USER}:aoeu | chpasswd"
-    # map the user id in the container
-    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
-    "$cmd" restart "$lxc_name"
 }
 
 # function to populate the docker mount in a function
@@ -223,15 +238,20 @@ check_dependencies() {
 main() {
     # var
 
-    # Ubuntu
-    local imgName='ubuntu:22.04'
-    local lxc_name='tom'
-    local vnc_port_on_host=15901
+    # # Ubuntu
+    # local imgName='ubuntu:22.04'
+    # local lxc_name='tom'
+    # local vnc_port_on_host=15901
 
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
     # local vnc_port_on_host=15902
+
+    local imgName='images:nixos/23.11/default'
+    local lxc_name='nix'
+    local vnc_port_on_host=15903
+
 
     local cmd='lxc'
     local brid='lxdbr0'
@@ -329,9 +349,12 @@ main() {
         # Configure generic stuff
         echo "INFO: Sleeping 3 seconds to wait for the up network"
         sleep 3
-        apply_generic_configurations "$cmd" "$lxc_name"
+        apply_lxc_settings "$cmd" "$lxc_name"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
+            # Setup basic stuff
+            apply_generic_configurations "$cmd" "$lxc_name"
+
             # Fix the locale on debian
             "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
                 && locale-gen en_US.UTF-8 \
@@ -353,6 +376,9 @@ main() {
                 && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
 
         elif [[ "$imgName" == *'archlinux'* ]]; then
+            # Setup basic stuff
+            apply_generic_configurations "$cmd" "$lxc_name"
+
             # TODO: Fix this
             #   err msg: error: failed retrieving file 'alsa-ucm-conf-1.2.11-1-any.pkg.tar.zst' from mirrors.kernel.org : The requested URL returned error: 404
             # Install vnc
@@ -420,12 +446,15 @@ main() {
     # # Install x11vnc
     # "$cmd" exec "$lxc_name" -t -- bash -c 'apt install -y --no-install-recommends x11vnc'
 
-    # # start a bash shell as root
-    # "$cmd" exec "$lxc_name" -t -- bash -l
 
     if [[ "$shell" == 'true' ]]; then
+
+        # # start a bash shell as root
+        # "$cmd" exec "$lxc_name" -t -- sh -l
+
         # start a bash shell
         "$cmd" exec "$lxc_name" -t --cwd "/home/$USER" -- su - "$USER"
+
     fi
 
     # # stop the shell
