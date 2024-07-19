@@ -712,7 +712,7 @@ case "$subcmd" in
         exit 0
     fi
 
-    "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
+    nix shell 'nixpkgs#ansible' --command "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
     ;;
 
 'role')
