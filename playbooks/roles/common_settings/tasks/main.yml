@@ -89,6 +89,23 @@
         - sshpass
         - nvme-cli
         - iputils-ping
+        - exfat-fuse
+
+  - name: Ubuntu 20 specific
+    become: true
+    when: "ansible_lsb.release == '20.04'"
+    apt:
+      state: present
+      name:
+        - exfat-utils
+
+  - name: Not Ubuntu 20 specific
+    become: true
+    when: "ansible_lsb.release != '20.04'"
+    apt:
+      state: present
+      name:
+        - exfatprogs
 
   - name: Other not on Ubuntu 24 or had a different name before Ubuntu 24
     become: true
