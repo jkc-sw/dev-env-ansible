@@ -35,6 +35,14 @@
   when: not skip_common_settings | default(true)
   block:
 
+  - name: Make sure these are not installed because of vulnerabilities
+    become: true
+    apt:
+      state: 'absent'
+      update_cache: true
+      name:
+        - cups-browsed
+
   - name: Make sure some system dependencies are installed
     become: true
     apt:
