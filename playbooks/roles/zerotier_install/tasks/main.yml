@@ -1,7 +1,7 @@
 ---
 - name: Download and Add Key to Apt-Get Keyring
   become: true
-  apt_key:
+  deb822_repository:
     url: "https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg"
     state: present
 

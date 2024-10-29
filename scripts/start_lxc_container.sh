@@ -229,7 +229,7 @@ main() {
     # var
 
     # Ubuntu
-    local imgName='ubuntu:22.04'
+    local imgName='ubuntu:24.04'
     local lxc_name='tom'
     local vnc_port_on_host=15901
 

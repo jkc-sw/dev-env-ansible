@@ -12,7 +12,7 @@
 
 - name: Download and Add docker Key to Apt-Get Keyring
   become: true
-  apt_key:
+  deb822_repository:
     url: "https://download.docker.com/linux/ubuntu/gpg"
     state: present
 

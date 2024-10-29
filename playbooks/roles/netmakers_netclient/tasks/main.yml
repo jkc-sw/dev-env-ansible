@@ -1,7 +1,7 @@
 ---
 - name: Download and Add Key to Apt-Get Keyring
   become: true
-  apt_key:
+  deb822_repository:
     url: "https://apt.netmaker.org/gpg.key"
     state: present
 

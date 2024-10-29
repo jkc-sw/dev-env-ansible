@@ -1,7 +1,7 @@
 ---
 - name: Get the key
   become: true
-  apt_key:
+  deb822_repository:
     id: ACCAF35C
     keyserver: keyserver.ubuntu.com
     state: present
