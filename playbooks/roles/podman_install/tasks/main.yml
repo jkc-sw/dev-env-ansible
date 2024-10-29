@@ -32,7 +32,7 @@
 
     - name: Download and Add Key to Apt-Get Keyring
       become: true
-      apt_key:
+      deb822_repository:
         url: "http://downloadcontent.opensuse.org/repositories/home:/alvistack/xUbuntu_{{ ansible_lsb.release }}/Release.key"
         state: present
 
