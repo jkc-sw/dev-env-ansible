@@ -352,7 +352,8 @@ main() {
                 gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
                 && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
                 && apt update \
-                && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+                # && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
 
             # Configure the vnc
             "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
