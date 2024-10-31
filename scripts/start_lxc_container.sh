@@ -347,20 +347,48 @@ main() {
                 && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
                 && locale-gen en_US.UTF-8'
 
-            # Install vnc
+            # # Install x11vnc
+            # "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
+            #     && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies x11vnc'
+
+            # # configure x11vnc
+            # "$cmd" exec "$lxc_name" -t -- bash -c "mkdir -p /etc/vnc \
+            #     && x11vnc -storepasswd 'aoeuaoeu' /etc/vnc/passwd \
+            #     && x11vnc -display ':0' -auth guess -forever -loop -noxdamage -repeat -rfbauth '/home/$USER/.vnc/passwd' -autoport 5900 -shared \
+            #     && echo -n '' > /etc/systemd/system/x11vnc.service \
+            #     && {
+            #         echo '[Unit]'
+            #         echo 'Description=\"x11vnc\"'
+            #         echo 'Requires=display-manager.service'
+            #         echo 'After=display-manager.service'
+            #         echo ''
+            #         echo '[Service]'
+            #         echo 'ExecStart=/usr/bin/x11vnc -xkb -noxrecord -noxfixes -noxdamage -display :0 -auth guess -rfbauth /etc/vnc/passwd'
+            #         echo 'ExecStop=/usr/bin/killall x11vnc'
+            #         echo 'Restart=on-failure'
+            #         echo 'Restart-sec=2'
+            #         echo ''
+            #         echo '[Install]'
+            #         echo 'WantedBy=multi-user.target'
+            #     } >> /etc/systemd/system/x11vnc.service \
+            #     && systemctl daemon-reload \
+            #     && systemctl start x11vnc \
+            #     && systemctl enable x11vnc"
+
+            # Install turbovnc
             "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
                 gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
                 && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
                 && apt update \
-                && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
-                # && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
 
             # Configure the vnc
             "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
                 && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
                 && chown -R '$USER:$USER' '/home/$USER/.vnc' \
                 && chmod 0600 '/home/$USER/.vnc/passwd' \
-                && /opt/TurboVNC/bin/vncserver -depth 24 -geometry '1920x1080'"
+                && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080'"
 
         elif [[ "$imgName" == *'archlinux'* ]]; then
             # TODO: Fix this
