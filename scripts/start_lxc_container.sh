@@ -347,6 +347,11 @@ main() {
                 && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
                 && locale-gen en_US.UTF-8'
 
+            # Install Browser
+            "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
+                && apt install -y --no-install-recommends firefox'
+                # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+
             # # Install x11vnc
             # "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
             #     && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies x11vnc'
