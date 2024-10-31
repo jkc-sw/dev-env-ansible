@@ -231,7 +231,7 @@ main() {
     # Ubuntu
     local imgName='ubuntu:22.04'
     local lxc_name='tom'
-    local vnc_port_on_host=15901
+    local vnc_port_on_host=15900
 
     # # arch
     # local imgName='images:archlinux/current/default'
@@ -245,7 +245,7 @@ main() {
     local cmd='lxc'
     local brid='lxdbr0'
     local lxc_volume_mount=()
-    local vnc_port=5901
+    local vnc_port=5900
     local remove=false
     local shell=false
 
