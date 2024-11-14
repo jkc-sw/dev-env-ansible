@@ -7,6 +7,7 @@
     - dotfiles
     - scratch
     - some_git_clones
+    - vnc
 
 - hosts: "{{ playbook_target }}"
   gather_facts: true
