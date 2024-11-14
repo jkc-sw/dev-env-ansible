@@ -1,0 +1,24 @@
+---
+- name: Install the TurboVNC server
+  become: true
+  apt:
+    deb: "https://github.com/TurboVNC/turbovnc/releases/download/{{ turbovnc_deb_version }}/turbovnc_{{ turbovnc_deb_version }}_amd64.deb"
+    state: 'present'
+
+- name: Install the virtualgl server
+  become: true
+  apt:
+    deb: "https://github.com/VirtualGL/virtualgl/releases/download/{{ virtualgl_deb_version }}/virtualgl_{{ virtualgl_deb_version }}_amd64.deb"
+    state: 'present'
+
+# - name: Uninstall the TurboVNC server
+#   become: true
+#   apt:
+#     name: 'turbovnc'
+#     state: 'absent'
+
+- name: Remove the tigervnc server
+  become: true
+  apt:
+    name: 'tigervnc-standalone-server'
+    state: 'absent'

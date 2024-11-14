@@ -1,0 +1,5 @@
+---
+home_dir: "{{ ansible_env.HOME }}"
+turbovnc_deb_version: '3.1.3'
+virtualgl_deb_version: '3.1.1'
+
