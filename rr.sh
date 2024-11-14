@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 : <<AEOF
 SOURCE_THESE_VIMS_START
