@@ -249,12 +249,13 @@ main() {
     local vnc_port=5900
     local remove=false
     local shell=false
+    local source_only=false
 
     # parse the argumetns
     while getopts 'hvf:i:b:x:p:n:w:sr.' opt; do
         case "$opt" in
         .)
-            return 0
+            source_only=true
             ;;
         v)
             set -x  # enable verbose trace
@@ -484,6 +485,8 @@ main() {
     # "$cmd" stop "$lxc_name"
 }
 
-main "${args[@]}"
+if [[ "$source_only" == "false" ]]; then
+    main "${args[@]}"
+fi
 
 # vim:et ts=4 sts=4 sw=4
