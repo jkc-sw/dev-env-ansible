@@ -20,6 +20,7 @@ displayHelp() {
     echo ""
     echo "Flags:"
     echo " -c                        : Creat a new container instance"
+    echo " -.                        : Source the command without executing"
     echo " -r                        : Remove this container instance"
     echo " -s                        : Drop me into a bash shell"
     echo ""
@@ -248,10 +249,14 @@ main() {
     local vnc_port=5900
     local remove=false
     local shell=false
+    local source_only=false
 
     # parse the argumetns
-    while getopts 'vf:i:b:x:p:n:w:sr' opt; do
+    while getopts 'vf:i:b:x:p:n:w:sr.' opt; do
         case "$opt" in
+        .)
+            source_only=true
+            ;;
         v)
             set -x  # enable verbose trace
             ;;
@@ -475,6 +480,8 @@ main() {
     # "$cmd" stop "$lxc_name"
 }
 
-main "${args[@]}"
+if [[ "$source_only" == "false" ]]; then
+    main "${args[@]}"
+fi
 
 # vim:et ts=4 sts=4 sw=4
