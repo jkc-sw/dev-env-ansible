@@ -239,7 +239,7 @@ main() {
     # local lxc_name='btw'
     # local vnc_port_on_host=15902
 
-    # local imgName='images:nixos/23.11/default'
+    # local imgName='images:nixos/24.05/default'
     # local lxc_name='nix'
     # local vnc_port_on_host=15903
 
@@ -249,13 +249,12 @@ main() {
     local vnc_port=5900
     local remove=false
     local shell=false
-    local source_only=false
 
     # parse the argumetns
-    while getopts 'vf:i:b:x:p:n:w:sr.' opt; do
+    while getopts 'hvf:i:b:x:p:n:w:sr.' opt; do
         case "$opt" in
         .)
-            source_only=true
+            return 0
             ;;
         v)
             set -x  # enable verbose trace
@@ -287,9 +286,14 @@ main() {
         w)
             append_lxc_mount_global "$OPTARG"
             ;;
+        h)
+            displayHelp
+            return 0
+            ;;
         *)
             echo "Unrecognized option $opt" >&2
             displayHelp
+            return 1
             ;;
         esac
     done
@@ -480,8 +484,6 @@ main() {
     # "$cmd" stop "$lxc_name"
 }
 
-if [[ "$source_only" == "false" ]]; then
-    main "${args[@]}"
-fi
+main "${args[@]}"
 
 # vim:et ts=4 sts=4 sw=4
