@@ -20,6 +20,7 @@ displayHelp() {
     echo ""
     echo "Flags:"
     echo " -c                        : Creat a new container instance"
+    echo " -.                        : Source the command without executing"
     echo " -r                        : Remove this container instance"
     echo " -s                        : Drop me into a bash shell"
     echo ""
@@ -238,7 +239,7 @@ main() {
     # local lxc_name='btw'
     # local vnc_port_on_host=15902
 
-    # local imgName='images:nixos/23.11/default'
+    # local imgName='images:nixos/24.05/default'
     # local lxc_name='nix'
     # local vnc_port_on_host=15903
 
@@ -250,8 +251,11 @@ main() {
     local shell=false
 
     # parse the argumetns
-    while getopts 'vf:i:b:x:p:n:w:sr' opt; do
+    while getopts 'hvf:i:b:x:p:n:w:sr.' opt; do
         case "$opt" in
+        .)
+            return 0
+            ;;
         v)
             set -x  # enable verbose trace
             ;;
@@ -282,9 +286,14 @@ main() {
         w)
             append_lxc_mount_global "$OPTARG"
             ;;
+        h)
+            displayHelp
+            return 0
+            ;;
         *)
             echo "Unrecognized option $opt" >&2
             displayHelp
+            return 1
             ;;
         esac
     done
