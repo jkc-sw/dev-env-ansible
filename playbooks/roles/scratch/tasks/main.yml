@@ -1,12 +1,12 @@
 ---
-- name: Print facts
-  debug:
-    var: ansible_facts
-
-- name: Print more var from encrypted inventory
-  debug:
-    msg: |
-      home_git_server_ip = {{ home_git_server_ip }}
-      home_git_server_dir_path = {{ home_git_server_dir_path }}
+# - name: Print facts
+#   debug:
+#     var: ansible_facts
+#
+# - name: Print more var from encrypted inventory
+#   debug:
+#     msg: |
+#       home_git_server_ip = {{ home_git_server_ip }}
+#       home_git_server_dir_path = {{ home_git_server_dir_path }}
 
 # vim:et ts=2 sts=2 sw=2

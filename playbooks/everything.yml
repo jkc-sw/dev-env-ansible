@@ -2,37 +2,58 @@
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   roles:
-    - brew_install
     - common_settings
-    - conda_install
-    - doas_install
     - docker_install
     - dotfiles
-    # - home-manager
+    - scratch
+    - some_git_clones
+
+- hosts: "{{ playbook_target }}"
+  gather_facts: true
+  tags:
+    - extra
+  roles:
+    - conda_install
+
+- hosts: "{{ playbook_target }}"
+  gather_facts: true
+  tags:
+    - rare
+  roles:
+    - brew_install
     - llvm_from_source
     - lttng_install
     - matlab_schemer
     - networking_tools
-    - nix_install
+
+- hosts: "{{ playbook_target }}"
+  gather_facts: true
+  tags:
+    - never
+  roles:
+    - kernel_tools
+    - podman_install
+    - qt_install
     - powershell_install
-    - scratch
-    - some_git_clones
     - zsh_setup
 
-    # # - fpga_dev
-    # # - insync_install
-    # # - netmakers_netclient
-    # # - zerotier_install
-    # - kernel_tools
-    # - podman_install
-    # - qt_install
+- hosts: "{{ playbook_target }}"
+  gather_facts: true
+  tags:
+    - broken
+  roles:
+    - fpga_dev
+    - insync_install
+    - netmakers_netclient
+    - zerotier_install
+    - home-manager
 
-# - hosts: "{{ playbook_target }}"
-#   gather_facts: true
-#   tags:
-#     - gui
-#   roles:
-#     - desktop
-#     - qtile
-#     - xmonad_wm
+- hosts: "{{ playbook_target }}"
+  gather_facts: true
+  tags:
+    - gui
+  roles:
+    - desktop
+    - qtile
+    - xmonad_wm
 
