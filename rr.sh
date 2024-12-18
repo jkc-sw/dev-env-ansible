@@ -2,7 +2,7 @@
 
 : <<AEOF
 SOURCE_THESE_VIMS_START
-nnoremap <leader>ueo <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/local.yaml' Enter"<cr>
+nnoremap <leader>ueo <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/localhost.yaml' Enter"<cr>
 nnoremap <leader>ued <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh edit ./inventory/docker-enc.yaml' Enter"<cr>
 nnoremap <leader>us <cmd>silent exec "!tmux send-keys -t :.+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role -r scratch -g asus' Enter"<cr>
 nnoremap <leader>udh <cmd>silent exec "!tmux send-keys -t :+ 'ANSIBLE_DEBUG=false ANSIBLE_VERBOSITY=1 ./rr.sh role-i -r home-manager -t fast' Enter"<cr>
@@ -45,10 +45,6 @@ DOCKER_FILE_UBUNTU_16="$DOCKER_FILE_DIR/ubuntu1604/Dockerfile"
 DEV_ENV_REPOSITORY_NAME=devenvansible
 RUN_PREFIX_FOR_NAME=run
 USE_PREFIX_FOR_NAME=use
-
-# Docker only password file path
-DOCKER_INVENTORY_FILE_ENCRYPETED="$PROJECT_DIR/inventory/docker-enc.yaml"
-DOCKER_INVENTORY_FILE="$PROJECT_DIR/inventory/docker.yaml"
 
 # Temp playbook
 WHOLE_PLAYBOOK_PATH="$SCRIPT_DIR/playbooks/everything.yml"
@@ -376,25 +372,6 @@ install_brew() {
     fi
 }
 
-# NOTE: This should only be used for the ephemeral docker image
-decrypt_inventory_for_docker() {
-    if [[ -n "$PASSWORD_STORE_DIR" ]]; then
-        # Check dependencies
-        toexit=false
-        for c in pass; do
-            if ! command -v "$c" &>/dev/null; then
-                echo "ERR: $c is not found in your PATH" >&2
-                toexit=true
-            fi
-        done
-        if [[ "$toexit" == true ]]; then
-            echo "ERR (decrypt_inventory_for_docker): Please make sure you install all the necessary tool first" >&2
-            exit 1
-        fi
-    fi
-    "$PROJECT_DIR/scripts/decrypt_file.sh" "$DOCKER_INVENTORY_FILE_ENCRYPETED" "$DOCKER_INVENTORY_FILE"
-}
-
 # function to install ansible
 install_ansible() {
     # # check if the ansible is installed, if not, install it
@@ -642,8 +619,7 @@ case "$subcmd" in
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    decrypt_inventory_for_docker
-    nix shell 'nixpkgs#ansible' --command ansible-playbook -i ./inventory/docker.yaml -e "playbook_target=docker" --vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    nix shell 'nixpkgs#ansible' --command ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -651,14 +627,10 @@ case "$subcmd" in
     verbose=false
     tags='untagged'
     role=''
-    hosts='docker'
 
     # parse the argumetns
-    while getopts ':vg:t:r:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
-        g)
-            hosts="$OPTARG"
-            ;;
         v)
             verbose=true
             ;;
@@ -681,11 +653,6 @@ case "$subcmd" in
         exit 1
     fi
 
-    if [[ -z "$hosts" ]]; then
-        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
-        exit 1
-    fi
-
     install_ansible
 
     # Write the role
@@ -696,9 +663,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$playpath' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$playpath' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$playpath' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$playpath' --tags '$tags'"
     fi
     ;;
 
@@ -720,14 +687,10 @@ case "$subcmd" in
     verbose=false
     tags='untagged'
     role=''
-    hosts=''
 
     # parse the argumetns
-    while getopts ':vg:t:r:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
-        g)
-            hosts="$OPTARG"
-            ;;
         v)
             verbose=true
             ;;
@@ -749,10 +712,6 @@ case "$subcmd" in
         echo "ERR: No role specified, use -r <role> to run a role" >&2
         exit 1
     fi
-    if [[ -z "$hosts" ]]; then
-        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
-        exit 1
-    fi
 
     install_ansible
 
@@ -764,14 +723,13 @@ case "$subcmd" in
 
     # buil args
     aargs=()
-    aargs+=(--vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh")
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
         aargs+=("-vvv")
     fi
-    aargs+=(-e "playbook_target=$hosts")
-    aargs+=(-i "./inventory/local.yaml")
+    aargs+=(-e "playbook_target=localhost")
+    aargs+=(-i "./inventory/localhost.yaml")
     aargs+=("$playpath")
     aargs+=("--tags")
     aargs+=("$tags")
@@ -785,14 +743,10 @@ case "$subcmd" in
     # var
     verbose=false
     tags='untagged'
-    hosts='docker'
 
     # parse the argumetns
-    while getopts ':vg:t:r:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
-        g)
-            hosts="$OPTARG"
-            ;;
         v)
             verbose=true
             ;;
@@ -806,18 +760,13 @@ case "$subcmd" in
         esac
     done
 
-    if [[ -z "$hosts" ]]; then
-        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
-        exit 1
-    fi
-
     install_ansible
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/docker.yaml -e 'playbook_target=$hosts' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     fi
     ;;
 
@@ -825,14 +774,10 @@ case "$subcmd" in
     # var
     verbose=false
     tags='untagged'
-    hosts=''
 
     # parse the argumetns
-    while getopts ':vg:t:r:' opt; do
+    while getopts ':vt:r:' opt; do
         case "$opt" in
-        g)
-            hosts="$OPTARG"
-            ;;
         v)
             verbose=true
             ;;
@@ -846,23 +791,17 @@ case "$subcmd" in
         esac
     done
 
-    if [[ -z "$hosts" ]]; then
-        echo 'ERR: no hosts specified. Add -g HOSTS to the command and try again' >&2
-        exit 1
-    fi
-
     install_ansible
 
     # buil args
     aargs=()
-    aargs+=(--vault-id "prod@$PROJECT_DIR/scripts/vault-client.sh")
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
         aargs+=("-vvv")
     fi
-    aargs+=(-i "./inventory/local.yaml")
-    aargs+=(-e "playbook_target=$hosts")
+    aargs+=(-i "./inventory/localhost.yaml")
+    aargs+=(-e "playbook_target=localhost")
     aargs+=("$WHOLE_PLAYBOOK_PATH")
     aargs+=("--tags")
     aargs+=("$tags")
@@ -903,8 +842,6 @@ case "$subcmd" in
         esac
     done
 
-    decrypt_inventory_for_docker
-
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm -it \
@@ -925,8 +862,6 @@ case "$subcmd" in
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
-
-    decrypt_inventory_for_docker
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
@@ -989,8 +924,6 @@ case "$subcmd" in
         esac
     done
 
-    decrypt_inventory_for_docker
-
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
     ;;
 
@@ -1013,8 +946,6 @@ case "$subcmd" in
             ;;
         esac
     done
-
-    decrypt_inventory_for_docker
 
     startarg+=("${lxc_volume_mount[@]}")
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
@@ -1042,8 +973,6 @@ case "$subcmd" in
             ;;
         esac
     done
-
-    decrypt_inventory_for_docker
 
     startarg+=("${lxc_volume_mount[@]}")
     "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
@@ -1075,8 +1004,6 @@ case "$subcmd" in
         exit 1
     fi
 
-    decrypt_inventory_for_docker
-
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
         --user "$USER:$USER" \
@@ -1093,8 +1020,6 @@ case "$subcmd" in
     # build up the command here
     cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
     cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
-
-    decrypt_inventory_for_docker
 
     # start bash inside container
     docker run --cpu-shares=1024 --rm -it \
@@ -1123,8 +1048,6 @@ case "$subcmd" in
         ver="$(select_docker_ver $1)"
     fi
 
-    decrypt_inventory_for_docker
-
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL
 
@@ -1148,8 +1071,6 @@ case "$subcmd" in
     # build up the command here
     cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
     cmd="$cmd '$role'"
-
-    decrypt_inventory_for_docker
 
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
@@ -1180,8 +1101,6 @@ case "$subcmd" in
     if [[ $# -gt 0 ]]; then
         ver="$(select_docker_ver $1)"
     fi
-
-    decrypt_inventory_for_docker
 
     # trap remove
     trap "rm -f $log" EXIT SIGINT SIGTERM KILL

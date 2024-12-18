@@ -8,7 +8,7 @@
     - doas_install
     - docker_install
     - dotfiles
-    - home-manager
+    # - home-manager
     - llvm_from_source
     - lttng_install
     - matlab_schemer
