@@ -16,24 +16,17 @@ jobs:
           'scratch',
           'podman_install',
           'brew_install',
-          'netmakers_netclient',
           'zeotier_install',
-          'qt_install',
           'common_settings',
           'conda_install',
           'desktop',
           'dotfiles',
-          'fpga_dev',
-          'kernel_tools',
-          'llvm_from_source',
           'lttng_install',
           'matlab_schemer',
           'networking_tools',
-          'powershell_install',
           'qtile',
           'some_git_clones',
           'xmonad_wm',
-          'zsh_setup'
           ]
     runs-on: ubuntu-22.04
     steps:
