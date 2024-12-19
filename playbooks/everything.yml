@@ -21,8 +21,6 @@
     - rare
   roles:
     - brew_install
-    - llvm_from_source
-    - lttng_install
     - matlab_schemer
     - networking_tools
 
@@ -31,22 +29,16 @@
   tags:
     - never
   roles:
-    - kernel_tools
     - podman_install
-    - qt_install
-    - powershell_install
-    - zsh_setup
+    - home-manager
 
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   tags:
     - broken
   roles:
-    - fpga_dev
+    - lttng_install
     - insync_install
-    - netmakers_netclient
-    - zerotier_install
-    - home-manager
 
 - hosts: "{{ playbook_target }}"
   gather_facts: true

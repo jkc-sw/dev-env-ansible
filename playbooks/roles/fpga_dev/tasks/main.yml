@@ -1,6 +1,0 @@
----
-- name: Install GHDL if not u16
-  include_tasks: other.yml
-  when: "ansible_lsb.release != '16.04'"
-
-# vim:et ts=2 sts=2 sw=2

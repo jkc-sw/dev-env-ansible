@@ -1,5 +1,0 @@
----
-dependencies:
-  - conda_install
-  - home-manager
-
