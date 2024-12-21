@@ -243,6 +243,9 @@ main() {
     # local lxc_name='nix'
     # local vnc_port_on_host=15903
 
+    # local cmd='lxc'
+    # local brid='incusbr0'
+
     local cmd='lxc'
     local brid='lxdbr0'
     local lxc_volume_mount=()
