@@ -137,7 +137,37 @@ compose_container_name() {
     echo -n "${prefix}_${tag}_${suffix}"
 }
 
-displayHelp() {
+displayHelpLxc() {
+    # print help here
+    echo "${BASH_SOURCE[0]} lxc [...]"
+    echo " Commands to handle the lxc containers setup"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Display Help"
+    echo " -h|--help|h|hel|help  : Print this help command"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Manage a bespoked lxc container for testing this repository"
+    echo " start: [-r] [-w DIR]... [-v] [-d]"
+    echo "   Start a LXC container"
+    echo ""
+    echo " stop: [-v]"
+    echo "   Stop a LXC container"
+    echo ""
+    echo " mount: [-w DIR]... [-v]"
+    echo "   Mount this additional paths plus all the default paths"
+    echo ""
+    echo " shell: [-v]"
+    echo "   Spawn a bash shell to the LXC container"
+    echo ""
+    echo " where"
+    echo "  -v     > Enable verbose trace in the script"
+    echo "  -d     > Enable desktop environment install via VNC"
+    echo "  -r     > Stop and remove the running container"
+    echo "  -w dir > Bind mount this folder to the container"
+}
+
+displayHelpMain() {
     # print help here
     echo "${BASH_SOURCE[0]} [...]"
     echo " One-stop shop to do everything related to this repository"
@@ -198,27 +228,15 @@ displayHelp() {
     echo "   NAME : The name of the role appears in the folder"
     echo ""
     echo "--------------------------------------------------------------------------------"
+    echo "Manage the LXC containers for testing the ansible locally"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "Spawn a tmux session to develop this repo"
     echo " tmux : Start the tmux development session"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r] [-w DIR]... [-v]"
-    echo "   Start a LXC container"
-    echo ""
-    echo " stop: [-v]"
-    echo "   Stop a LXC container"
-    echo ""
-    echo " mount: [-w DIR]... [-v]"
-    echo "   Mount this additional paths plus all the default paths"
-    echo ""
-    echo " shell: [-v]"
-    echo "   Spawn a bash shell to the LXC container"
-    echo ""
-    echo " where"
-    echo "  -v     > Enable verbose trace in the script"
-    echo "  -r     > Stop and remove the running container"
-    echo "  -w dir > Bind mount this folder to the container"
+    echo " lxc [...]: Use '${BASH_SOURCE[0]} lxc -h' subcommand to learn more"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "This is used to manage the lifetime of the containers"
@@ -287,7 +305,7 @@ select_docker_ver() {
 
     *)
         echo "Invalid version tag $ver" >&2
-        displayHelp
+        displayHelpMain
         exit 1
         ;;
     esac
@@ -429,720 +447,771 @@ set_mounts_global() {
     done
 }
 
-# if args, print help
-if test "$#" -eq 0; then
-    displayHelp
-    exit 0
-fi
-
-# Only allow the command to be run when in nix shell
-if [[ -z "$IN_NIX_RR_SHELL" ]]; then
-    echo "ERR: Please run ./shell.sh to start a nix shell, then run ./rr.sh ..." >&2
-    exit 1
-fi
-
 # Set the mounts to a list
 set_mounts_global
 
-# if there are arg for test, run test
-subcmd="$1"
-shift
-case "$subcmd" in
-'-h'|'--help'|'h'|'hel'|'help')
-    displayHelp
-    exit 1
-    ;;
-
-'new-role')
-    # need 1 argrs
-    if test "$#" -ne 1; then
-        echo "Need 1 argument <NAME> for the role to be created" >&2
-        exit 1
-    fi
-    name="$1"
-
-    # create the folders
-    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/meta"
-    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/tasks"
-    mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/defaults"
-
-    # write meta
-    echo '---'                      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
-    echo 'dependencies:'            >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
-    echo '  - common_settings'      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
-    echo ''                         >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
-
-    # write tasks
-    echo '---'                                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-    echo '- name: PLACEHOLDER'                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-    echo '  fail:'                                  >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-    echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-    echo ''                                         >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
-
-    # write defaults
-    echo '---'                                 >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
-    echo 'home_dir: "{{ ansible_env.HOME }}" ' >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
-    echo ''                                    >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
-    echo '# vim:et ts=2 sts=2 sw=2'            >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
-
-    # add to playbook in case I forgot
-    awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
-    if test "$?" -eq 0; then
-        test -r "$WHOLE_PLAYBOOK_PATH.tmp" && mv "$WHOLE_PLAYBOOK_PATH.tmp" "$WHOLE_PLAYBOOK_PATH"
-    fi
-
-    # add to workflow in case I forgot
-    awk "1; /role:/ { if (found == 0) { print \"          '$name',\" }; found++ }" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
-    if test "$?" -eq 0; then
-        test -r "$WORKFLOW_PATH.tmp" && mv "$WORKFLOW_PATH.tmp" "$WORKFLOW_PATH"
-    fi
-    ;;
-
-'check')
-    # if not being called from the rr.sh script itself
-    if [[ -z $FROM_RR_CHECK ]]; then
-        # recursively call itself
-        FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} check"
-        # edit when done
-        exit $?
-    fi
-
-    # below are for the best effort
-    . "$HOME/.bashrc"
-    . "$HOME/.bashrc_append"
-    sdev
-    nv
-
-    # # do it here, as I don't want it in bashrc to slow it down
-    # nvm use --lts
-
-    # get a list of commands to check
-    cmds=( \
-        'ansible' \
-        'ansible-playbook' \
-        'bash-language-server' \
-        'bat' \
-        'caddy' \
-        'cargo' \
-        'clang' \
-        'clangd' \
-        'cmake' \
-        'conda' \
-        'ctags' \
-        'dmenu' \
-        'doas' \
-        'docker' \
-        'docker-langserver' \
-        'doxygen' \
-        'dust' \
-        'eza' \
-        'fd' \
-        'git' \
-        'gtop' \
-        'hdl_checker' \
-        'java' \
-        'javac' \
-        'kitty' \
-        'lua' \
-        'luarocks' \
-        'nethogs' \
-        'node' \
-        'npm' \
-        'nvim' \
-        'nvm' \
-        'openconnect' \
-        'p4' \
-        'p4p' \
-        'p4v' \
-        'procs' \
-        'pwsh' \
-        'python3' \
-        'rg' \
-        'rofi' \
-        'rustc' \
-        'rustup' \
-        'sd' \
-        'starship' \
-        'svls' \
-        'tmux' \
-        'toclip' \
-        'tokei' \
-        'tracecompass' \
-        'tree-sitter' \
-        'tshark' \
-        'typescript-language-server' \
-        'vncserver' \
-        'vscode-json-language-server' \
-        'wireshark' \
-        'xclip' \
-        'xmobar' \
-        'xmonad' \
-        'yaml-language-server' \
-        'yarn' \
-    )
-    ret=0
-    for c in "${cmds[@]}"; do
-        if ! checkCmd "$c"; then
-            ret=1
-        fi
-    done
-    exit $ret
-    ;;
-
-'preupgrade')
-    # if not being called from the rr.sh script itself
-    if [[ -z $FROM_RR_CHECK ]]; then
-        # recursively call itself
-        FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} preupgrade"
-        # edit when done
-        exit $?
-    fi
-    # below are for the best effort
-    . "$HOME/.bashrc"
-    . "$HOME/.bashrc_append"
-    sdev
-    # do it here, as I don't want it in bashrc to slow it down
-    nvm use --lts
-    # Do the node upgrade
-    nvm install-latest-npm
-    ;;
-
-'roles')
-    # List all the roles
-    while read -d $'\0' -r each; do
-        eachrole="${each##*/roles}"
-        if [[ -z "${eachrole:1}" ]]; then
-            continue
-        fi
-        echo "role: ${eachrole:1}"
-    done < <(find "$SCRIPT_DIR/playbooks/roles" -maxdepth 1 -type d -print0)
-    ;;
-
-'tags')
-    # List all the tags
-    echo "Listing all the tags"
-    ansible-playbook -i ./inventory/localhost.yaml -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
-    ;;
-
-'role-i')
-    # var
-    verbose=false
-    tags='untagged'
-    role=''
-
-    # parse the argumetns
-    while getopts ':vt:r:' opt; do
-        case "$opt" in
-        v)
-            verbose=true
-            ;;
-        r)
-            role="$OPTARG"
-            ;;
-        t)
-            tags="$tags,$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    # need a role
-    if test -z "$role"; then
-        echo "ERR: No role specified, use -r <role> to run a role" >&2
-        exit 1
-    fi
-
-    install_nix
-
-    # Write the role
-    playpath="$(writePlaybook "$role")"
-    ret="$?"
-    if [[ "$ret" -ne 0 ]]; then
-        exit "$ret"
-    fi
-
-    # trap remove
-    trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
-
-    # install with ansible playbook
-    if [[ "$verbose" == 'true' ]]; then
-        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -vvv "$playpath" --tags "$tags"
-    elif [[ "$verbose" == 'false' ]]; then
-        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" "$playpath" --tags "$tags"
-    fi
-    ;;
-
-'edit')
-    # Get arguments
-    args=("$@")
-
-    # Need 1 argument
-    if [[ "${#args[@]}" -ne 1 ]]; then
-        echo "ERR: edit command need an encrypted inventory file, but you have ${#args[@]}."
+# A submain just for the lxc command
+sub_main_lxc() {
+    # if args, print help
+    if test "$#" -eq 0; then
+        displayHelpLxc
         exit 0
     fi
+    # if there are arg for test, run test
+    subcmd="$1"
+    shift
+    # Get a list of args here before they get consumed
+    local args=("$@")
+    # Iterate each subcommand
+    case "$subcmd" in
+    '-h'|'--help'|'h'|'hel'|'help')
+        displayHelpLxc
+        exit 1
+        ;;
 
-    "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
-    ;;
+    'stop')
+        startarg=(-r)
+        # parse the argumetns
+        while getopts 'v' opt; do
+            case "$opt" in
+            v)
+                startarg+=(-v)
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpLxc
+                exit 1
+                ;;
+            esac
+        done
 
-'role')
-    # var
-    verbose=false
-    tags='untagged'
-    role=''
+        "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+        ;;
 
-    # parse the argumetns
-    while getopts ':vt:r:' opt; do
-        case "$opt" in
-        v)
-            verbose=true
-            ;;
-        t)
-            tags="$tags,$OPTARG"
-            ;;
-        r)
-            role="$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
+    'shell')
+        startarg=(-s)
+        # parse the argumetns
+        while getopts 'v' opt; do
+            case "$opt" in
+            v)
+                startarg+=(-v)
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpLxc
+                exit 1
+                ;;
+            esac
+        done
 
-    # need a role
-    if test -z "$role"; then
-        echo "ERR: No role specified, use -r <role> to run a role" >&2
+        "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+        ;;
+
+    'mount')
+        startarg=()
+        # parse the argumetns
+        while getopts ':vw:' opt; do
+            case "$opt" in
+            v)
+                startarg+=(-v)
+                ;;
+            w)
+                each="$OPTARG"
+                each="$(realpath "$each")"
+                append_lxc_mount_global "$each:$each"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpLxc
+                exit 1
+                ;;
+            esac
+        done
+
+        startarg+=("${lxc_volume_mount[@]}")
+        "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+        ;;
+
+    'start')
+        startarg=()
+        # parse the argumetns
+        while getopts ':rdvw:' opt; do
+            case "$opt" in
+            d)
+                startarg+=(-d)
+                ;;
+            v)
+                startarg+=(-v)
+                ;;
+            w)
+                each="$OPTARG"
+                each="$(realpath "$each")"
+                append_lxc_mount_global "$each:$each"
+                ;;
+            r)
+                startarg+=(-r)
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpLxc
+                exit 1
+                ;;
+            esac
+        done
+
+        startarg+=("${lxc_volume_mount[@]}")
+        "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
+        ;;
+    esac
+}
+
+# Main for the entire program
+main() {
+    # if args, print help
+    if test "$#" -eq 0; then
+        displayHelpMain
+        exit 0
+    fi
+    # if there are arg for test, run test
+    subcmd="$1"
+    shift
+    # Get a list of args here before they get consumed
+    local args=("$@")
+
+    # Handle to subcommands hele
+    case "$subcmd" in
+    'lxc')
+        # delegate to the lxc submain
+        sub_main_lxc "${args[@]}"
+        exit "$?"
+        ;;
+    esac
+
+    # Main command required nix shell
+    if [[ -z "$IN_NIX_RR_SHELL" ]]; then
+        echo "ERR: Please run ./shell.sh to start a nix shell, then run ./rr.sh ..." >&2
         exit 1
     fi
 
-    install_nix
-
-    # Write the role
-    playpath="$(writePlaybook "$role")"
-    ret="$?"
-    if [[ "$ret" -ne 0 ]]; then
-        exit "$ret"
-    fi
-
-    # trap remove
-    trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
-
-    # buil args
-    aargs=()
-
-    # install with ansible playbook
-    if [[ "$verbose" == 'true' ]]; then
-        aargs+=("-vvv")
-    fi
-    aargs+=(-e "playbook_target=localhost")
-    aargs+=(-e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
-    aargs+=(-i "./inventory/localhost.yaml")
-    aargs+=("$playpath")
-    aargs+=("--tags")
-    aargs+=("$tags")
-
-    time PY_COLORS=1 \
-    ANSIBLE_FORCE_COLOR=1 \
-    ansible-playbook "${aargs[@]}"
-    # which python3.12
-    # ansible_playbook_python
-    # python3.12 -m ansible.cli.playbook "${aargs[@]}"
-    ;;
-
-'install-i')
-    # var
-    verbose=false
-    tags='untagged'
-
-    # parse the argumetns
-    while getopts ':vt:r:' opt; do
-        case "$opt" in
-        v)
-            verbose=true
-            ;;
-        t)
-            tags="$tags,$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    install_nix
-
-    # install with ansible playbook
-    if [[ "$verbose" == 'true' ]]; then
-        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
-    elif [[ "$verbose" == 'false' ]]; then
-        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
-    fi
-    ;;
-
-'install')
-    # var
-    verbose=false
-    tags='untagged'
-
-    # parse the argumetns
-    while getopts ':vt:r:' opt; do
-        case "$opt" in
-        v)
-            verbose=true
-            ;;
-        t)
-            tags="$tags,$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    install_nix
-
-    # buil args
-    aargs=()
-
-    # install with ansible playbook
-    if [[ "$verbose" == 'true' ]]; then
-        aargs+=("-vvv")
-    fi
-    aargs+=(-i "./inventory/localhost.yaml")
-    aargs+=(-e "playbook_target=localhost")
-    aargs+=( -e "playbook_target=localhost")
-    aargs+=("$WHOLE_PLAYBOOK_PATH")
-    aargs+=("--tags")
-    aargs+=("$tags")
-
-    time PY_COLORS=1 \
-    ANSIBLE_FORCE_COLOR=1 \
-    ansible-playbook "${aargs[@]}"
-    ;;
-
-'tmux')
-    if ! (tmux ls | grep -q blah); then
-        tmux new-session -d -s blah -n dev-env-ansible -c "$SCRIPT_DIR"
-        tmux new-window -d -t blah: -n dockers -c "$SCRIPT_DIR"
-        [[ -d "$SCRIPT_DIR/../dotfiles" ]] && tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
-        [[ -d "$SCRIPT_DIR/../kinesisadv360pro" ]] && tmux new-window -d -t blah: -n adv360pro -c "$SCRIPT_DIR/../kinesisadv360pro"
-        # tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
-    fi
-    tmux attach-session -t blah
-    ;;
-
-'run')
-    # var
-    ver="$DOCKER_FILE_UBUNTU_22"
-
-    # parse the argumetns
-    while getopts ':d:w:' opt; do
-        case "$opt" in
-        d)
-            ver="$(select_docker_ver "$OPTARG")"
-            ;;
-        w)
-            append_docker_mount_global "$OPTARG:$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    # start bash inside container
-    build_image "$CONTAINER_TAG" "$ver" && \
-    docker run --cpu-shares=1024 --rm -it \
-        --user "$USER:$USER" \
-        --network="host" \
-        "${DOCKER_VOLUME_MOUNT[@]}" \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
-        "$CONTAINER_TAG" \
-        bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
-    ;;
-
-'run-build')
-    # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
-    # select docker
-    ver="$DOCKER_FILE_UBUNTU_22"
-    if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver "$1")"
-    fi
-
-    # start bash inside container
-    build_image "$CONTAINER_TAG" "$ver" && \
-    docker run --cpu-shares=1024 --rm -it \
-        --user "$USER:$USER" \
-        --network="host" \
-        "${DOCKER_VOLUME_MOUNT[@]}" \
-        --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
-        "$CONTAINER_TAG" \
-        bash -i -c "$cmd ; command -v zsh && exec zsh || exec bash"
-    ;;
-
-'commit')
-    # get args
-    ident=$1
-    tag=$2
-    # make a commit
-    docker commit "$ident" "$DEV_ENV_REPOSITORY_NAME:$tag"
-    ;;
-
-'list')
-    # list all the images
-    echo "All the committed images"
-    docker images
-    echo ""
-    echo "All the running containers"
-    docker ps
-    ;;
-
-'stop')
-    startarg=(-r)
-    # parse the argumetns
-    while getopts 'v' opt; do
-        case "$opt" in
-        v)
-            startarg+=(-v)
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
-    ;;
-
-'shell')
-    startarg=(-s)
-    # parse the argumetns
-    while getopts 'v' opt; do
-        case "$opt" in
-        v)
-            startarg+=(-v)
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
-    ;;
-
-'mount')
-    startarg=()
-    # parse the argumetns
-    while getopts ':vw:' opt; do
-        case "$opt" in
-        v)
-            startarg+=(-v)
-            ;;
-        w)
-            each="$OPTARG"
-            each="$(realpath "$each")"
-            append_lxc_mount_global "$each:$each"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    startarg+=("${lxc_volume_mount[@]}")
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
-    ;;
-
-'start')
-    startarg=()
-    # parse the argumetns
-    while getopts ':rvw:' opt; do
-        case "$opt" in
-        v)
-            startarg+=(-v)
-            ;;
-        w)
-            each="$OPTARG"
-            each="$(realpath "$each")"
-            append_lxc_mount_global "$each:$each"
-            ;;
-        r)
-            startarg+=(-r)
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    startarg+=("${lxc_volume_mount[@]}")
-    "$PROJECT_DIR/scripts/start_lxc_container.sh" "${startarg[@]}"
-    ;;
-
-'use')
-    # var
-    tag=''
-
-    # parse the argumetns
-    while getopts ':d:w:' opt; do
-        case "$opt" in
-        d)
-            tag="$OPTARG"
-            ;;
-        w)
-            append_docker_mount_global "$OPTARG:$OPTARG"
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            ;;
-        esac
-    done
-
-    # need a tag
-    if test -z "$tag"; then
-        echo "ERR ($0 use): Need to pass in a tag using -d" >&2
+    # Iterate each subcommand
+    case "$subcmd" in
+    '-h'|'--help'|'h'|'hel'|'help')
+        displayHelpMain
         exit 1
-    fi
+        ;;
 
-    # start bash inside container
-    docker run --cpu-shares=1024 --rm -it \
-        --user "$USER:$USER" \
-        --network="host" \
-        "${DOCKER_VOLUME_MOUNT[@]}" \
-        --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
-        "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
-    ;;
+    'new-role')
+        # need 1 argrs
+        if test "$#" -ne 1; then
+            echo "Need 1 argument <NAME> for the role to be created" >&2
+            exit 1
+        fi
+        name="$1"
 
-'use-build')
-    # get arg
-    tag=$1
-    # build up the command here
-    cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
+        # create the folders
+        mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/meta"
+        mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/tasks"
+        mkdir -p "$SCRIPT_DIR/playbooks/roles/$name/defaults"
 
-    # start bash inside container
-    docker run --cpu-shares=1024 --rm -it \
-        --user "$USER:$USER" \
-        --network="host" \
-        "${DOCKER_VOLUME_MOUNT[@]}" \
-        --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
-        "$DEV_ENV_REPOSITORY_NAME:$tag" \
-        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
-    ;;
+        # write meta
+        echo '---'                      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+        echo 'dependencies:'            >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+        echo '  - common_settings'      >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+        echo ''                         >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
+        echo '# vim:et ts=2 sts=2 sw=2' >> "$SCRIPT_DIR/playbooks/roles/$name/meta/main.yml"
 
-'run-role')
-    # get args
-    ver="$1"
-    role="$2"
+        # write tasks
+        echo '---'                                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+        echo '- name: PLACEHOLDER'                      >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+        echo '  fail:'                                  >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+        echo "    msg: 'need to implement $name tasks'" >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+        echo ''                                         >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
+        echo '# vim:et ts=2 sts=2 sw=2'                 >> "$SCRIPT_DIR/playbooks/roles/$name/tasks/main.yml"
 
-    log="./role-$role-on-$ver.log"
+        # write defaults
+        echo '---'                                 >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+        echo 'home_dir: "{{ ansible_env.HOME }}" ' >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+        echo ''                                    >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
+        echo '# vim:et ts=2 sts=2 sw=2'            >> "$SCRIPT_DIR/playbooks/roles/$name/defaults/main.yml"
 
-    # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -v -t "tagged,fast" -r'
-    cmd="$cmd '$role'"
+        # add to playbook in case I forgot
+        awk "1; /roles:/ { if (found == 0) { print \"    - $name\" }; found++ }" "$WHOLE_PLAYBOOK_PATH" > "$WHOLE_PLAYBOOK_PATH.tmp"
+        if test "$?" -eq 0; then
+            test -r "$WHOLE_PLAYBOOK_PATH.tmp" && mv "$WHOLE_PLAYBOOK_PATH.tmp" "$WHOLE_PLAYBOOK_PATH"
+        fi
 
-    # select docker
-    ver="$DOCKER_FILE_UBUNTU_22"
-    if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver "$1")"
-    fi
+        # add to workflow in case I forgot
+        awk "1; /role:/ { if (found == 0) { print \"          '$name',\" }; found++ }" "$WORKFLOW_PATH" > "$WORKFLOW_PATH.tmp"
+        if test "$?" -eq 0; then
+            test -r "$WORKFLOW_PATH.tmp" && mv "$WORKFLOW_PATH.tmp" "$WORKFLOW_PATH"
+        fi
+        ;;
 
-    # trap remove
-    trap "rm -f '$log'" EXIT SIGINT SIGTERM
+    'check')
+        # if not being called from the rr.sh script itself
+        if [[ -z $FROM_RR_CHECK ]]; then
+            # recursively call itself
+            FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} check"
+            # edit when done
+            exit $?
+        fi
 
-    # start bash inside container
-    build_image "$CONTAINER_TAG" "$ver" && \
-    docker run --cpu-shares=1024 --rm \
-        --user "$USER:$USER" \
-        --network="host" \
-        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
-        "$CONTAINER_TAG" \
-        bash -c "$cmd" | tee "$log"
-    # perform check
-    roleCheck "$log"
-    ;;
+        # below are for the best effort
+        . "$HOME/.bashrc"
+        . "$HOME/.bashrc_append"
+        sdev
+        nv
 
-'use-role')
-    # get args
-    ver="$1"
-    role="$2"
+        # # do it here, as I don't want it in bashrc to slow it down
+        # nvm use --lts
 
-    # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
-    cmd="$cmd '$role'"
+        # get a list of commands to check
+        cmds=( \
+            'ansible' \
+            'ansible-playbook' \
+            'bash-language-server' \
+            'bat' \
+            'caddy' \
+            'cargo' \
+            'clang' \
+            'clangd' \
+            'cmake' \
+            'conda' \
+            'ctags' \
+            'dmenu' \
+            'doas' \
+            'docker' \
+            'docker-langserver' \
+            'doxygen' \
+            'dust' \
+            'eza' \
+            'fd' \
+            'git' \
+            'gtop' \
+            'hdl_checker' \
+            'java' \
+            'javac' \
+            'kitty' \
+            'lua' \
+            'luarocks' \
+            'nethogs' \
+            'node' \
+            'npm' \
+            'nvim' \
+            'nvm' \
+            'openconnect' \
+            'p4' \
+            'p4p' \
+            'p4v' \
+            'procs' \
+            'pwsh' \
+            'python3' \
+            'rg' \
+            'rofi' \
+            'rustc' \
+            'rustup' \
+            'sd' \
+            'starship' \
+            'svls' \
+            'tmux' \
+            'toclip' \
+            'tokei' \
+            'tracecompass' \
+            'tree-sitter' \
+            'tshark' \
+            'typescript-language-server' \
+            'vncserver' \
+            'vscode-json-language-server' \
+            'wireshark' \
+            'xclip' \
+            'xmobar' \
+            'xmonad' \
+            'yaml-language-server' \
+            'yarn' \
+        )
+        ret=0
+        for c in "${cmds[@]}"; do
+            if ! checkCmd "$c"; then
+                ret=1
+            fi
+        done
+        exit $ret
+        ;;
 
-    # select docker
-    ver="$DOCKER_FILE_UBUNTU_22"
-    if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver "$1")"
-    fi
+    'preupgrade')
+        # if not being called from the rr.sh script itself
+        if [[ -z $FROM_RR_CHECK ]]; then
+            # recursively call itself
+            FROM_RR_CHECK=1 bash -i -c "$SCRIPT_DIR/${BASH_SOURCE[0]#./*} preupgrade"
+            # edit when done
+            exit $?
+        fi
+        # below are for the best effort
+        . "$HOME/.bashrc"
+        . "$HOME/.bashrc_append"
+        sdev
+        # do it here, as I don't want it in bashrc to slow it down
+        nvm use --lts
+        # Do the node upgrade
+        nvm install-latest-npm
+        ;;
 
-    # start bash inside container
-    build_image "$CONTAINER_TAG" "$ver" && \
-    docker run --cpu-shares=1024 --rm \
-        --user "$USER:$USER" \
-        --network="host" \
-        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
-        "$CONTAINER_TAG" \
-        bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
-    ;;
+    'roles')
+        # List all the roles
+        while read -d $'\0' -r each; do
+            eachrole="${each##*/roles}"
+            if [[ -z "${eachrole:1}" ]]; then
+                continue
+            fi
+            echo "role: ${eachrole:1}"
+        done < <(find "$SCRIPT_DIR/playbooks/roles" -maxdepth 1 -type d -print0)
+        ;;
 
-'run-test')
-    # build up the command here
-    cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -v -t "tagged,fast"'
-    cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -v -t 'tagged,fast' && ./rr.sh check"
-    cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -v -t 'tagged,fast' && ./rr.sh check"
+    'tags')
+        # List all the tags
+        echo "Listing all the tags"
+        ansible-playbook -i ./inventory/localhost.yaml -e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
+        ;;
 
-    log="./test-$1.log"
+    'role-i')
+        # var
+        verbose=false
+        tags='untagged'
+        role=''
 
-    # select docker
-    ver="$DOCKER_FILE_UBUNTU_22"
-    if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver "$1")"
-    fi
+        # parse the argumetns
+        while getopts ':vt:r:' opt; do
+            case "$opt" in
+            v)
+                verbose=true
+                ;;
+            r)
+                role="$OPTARG"
+                ;;
+            t)
+                tags="$tags,$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
 
-    # trap remove
-    trap "rm -f '$log'" EXIT SIGINT SIGTERM
+        # need a role
+        if test -z "$role"; then
+            echo "ERR: No role specified, use -r <role> to run a role" >&2
+            exit 1
+        fi
 
-    [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
+        install_nix
 
-    # start bash inside container
-    build_image "$CONTAINER_TAG" "$ver" && \
-    docker run --cpu-shares=1024 --rm \
-        --user "$USER:$USER" \
-        --network="host" \
-        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
-        "$CONTAINER_TAG" \
-        bash -c "$cmd" | tee "$log"
+        # Write the role
+        playpath="$(writePlaybook "$role")"
+        ret="$?"
+        if [[ "$ret" -ne 0 ]]; then
+            exit "$ret"
+        fi
 
-    [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
-    # perform check
-    ansibleCheck "$log"
-    ;;
+        # trap remove
+        trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
 
-*)
-    # error out
-    echo "subcommand $subcmd invalid" >&2
-    # print help
-    displayHelp
-    exit 1
-    ;;
-esac
+        # install with ansible playbook
+        if [[ "$verbose" == 'true' ]]; then
+            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -vvv "$playpath" --tags "$tags"
+        elif [[ "$verbose" == 'false' ]]; then
+            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" "$playpath" --tags "$tags"
+        fi
+        ;;
+
+    'edit')
+        # Get arguments
+        args=("$@")
+
+        # Need 1 argument
+        if [[ "${#args[@]}" -ne 1 ]]; then
+            echo "ERR: edit command need an encrypted inventory file, but you have ${#args[@]}."
+            exit 0
+        fi
+
+        "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
+        ;;
+
+    'role')
+        # var
+        verbose=false
+        tags='untagged'
+        role=''
+
+        # parse the argumetns
+        while getopts ':vt:r:' opt; do
+            case "$opt" in
+            v)
+                verbose=true
+                ;;
+            t)
+                tags="$tags,$OPTARG"
+                ;;
+            r)
+                role="$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
+
+        # need a role
+        if test -z "$role"; then
+            echo "ERR: No role specified, use -r <role> to run a role" >&2
+            exit 1
+        fi
+
+        install_nix
+
+        # Write the role
+        playpath="$(writePlaybook "$role")"
+        ret="$?"
+        if [[ "$ret" -ne 0 ]]; then
+            exit "$ret"
+        fi
+
+        # trap remove
+        trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
+
+        # buil args
+        aargs=()
+
+        # install with ansible playbook
+        if [[ "$verbose" == 'true' ]]; then
+            aargs+=("-vvv")
+        fi
+        aargs+=(-e "playbook_target=localhost")
+        aargs+=(-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
+        aargs+=(-i "./inventory/localhost.yaml")
+        aargs+=("$playpath")
+        aargs+=("--tags")
+        aargs+=("$tags")
+
+        time PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook "${aargs[@]}"
+        # which python3.12
+        # ansible_python_interpreter
+        # python3.12 -m ansible.cli.playbook "${aargs[@]}"
+        ;;
+
+    'install-i')
+        # var
+        verbose=false
+        tags='untagged'
+
+        # parse the argumetns
+        while getopts ':vt:r:' opt; do
+            case "$opt" in
+            v)
+                verbose=true
+                ;;
+            t)
+                tags="$tags,$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
+
+        install_nix
+
+        # install with ansible playbook
+        if [[ "$verbose" == 'true' ]]; then
+            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        elif [[ "$verbose" == 'false' ]]; then
+            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+        fi
+        ;;
+
+    'install')
+        # var
+        verbose=false
+        tags='untagged'
+
+        # parse the argumetns
+        while getopts ':vt:r:' opt; do
+            case "$opt" in
+            v)
+                verbose=true
+                ;;
+            t)
+                tags="$tags,$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
+
+        install_nix
+
+        # buil args
+        aargs=()
+
+        # install with ansible playbook
+        if [[ "$verbose" == 'true' ]]; then
+            aargs+=("-vvv")
+        fi
+        aargs+=(-i "./inventory/localhost.yaml")
+        aargs+=(-e "playbook_target=localhost")
+        aargs+=( -e "playbook_target=localhost")
+        aargs+=("$WHOLE_PLAYBOOK_PATH")
+        aargs+=("--tags")
+        aargs+=("$tags")
+
+        time PY_COLORS=1 \
+        ANSIBLE_FORCE_COLOR=1 \
+        ansible-playbook "${aargs[@]}"
+        ;;
+
+    'tmux')
+        if ! (tmux ls | grep -q blah); then
+            tmux new-session -d -s blah -n dev-env-ansible -c "$SCRIPT_DIR"
+            tmux new-window -d -t blah: -n dockers -c "$SCRIPT_DIR"
+            [[ -d "$SCRIPT_DIR/../dotfiles" ]] && tmux new-window -d -t blah: -n dotfiles -c "$SCRIPT_DIR/../dotfiles"
+            [[ -d "$SCRIPT_DIR/../kinesisadv360pro" ]] && tmux new-window -d -t blah: -n adv360pro -c "$SCRIPT_DIR/../kinesisadv360pro"
+            # tmux new-window -d -t blah: -n focusside -c "$SCRIPT_DIR/../focus-side.vim"
+        fi
+        tmux attach-session -t blah
+        ;;
+
+    'run')
+        # var
+        ver="$DOCKER_FILE_UBUNTU_22"
+
+        # parse the argumetns
+        while getopts ':d:w:' opt; do
+            case "$opt" in
+            d)
+                ver="$(select_docker_ver "$OPTARG")"
+                ;;
+            w)
+                append_docker_mount_global "$OPTARG:$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
+
+        # start bash inside container
+        build_image "$CONTAINER_TAG" "$ver" && \
+        docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
+            --network="host" \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
+            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
+            "$CONTAINER_TAG" \
+            bash -i -c "cd ./repos/dev-env-ansible ; bash -i"
+        ;;
+
+    'run-build')
+        # build up the command here
+        cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i"
+        cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
+        # select docker
+        ver="$DOCKER_FILE_UBUNTU_22"
+        if [[ $# -gt 0 ]]; then
+            ver="$(select_docker_ver "$1")"
+        fi
+
+        # start bash inside container
+        build_image "$CONTAINER_TAG" "$ver" && \
+        docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
+            --network="host" \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
+            --name "$(compose_container_name "$RUN_PREFIX_FOR_NAME" "$1")" \
+            "$CONTAINER_TAG" \
+            bash -i -c "$cmd ; command -v zsh && exec zsh || exec bash"
+        ;;
+
+    'commit')
+        # get args
+        ident=$1
+        tag=$2
+        # make a commit
+        docker commit "$ident" "$DEV_ENV_REPOSITORY_NAME:$tag"
+        ;;
+
+    'list')
+        # list all the images
+        echo "All the committed images"
+        docker images
+        echo ""
+        echo "All the running containers"
+        docker ps
+        ;;
+
+    'use')
+        # var
+        tag=''
+
+        # parse the argumetns
+        while getopts ':d:w:' opt; do
+            case "$opt" in
+            d)
+                tag="$OPTARG"
+                ;;
+            w)
+                append_docker_mount_global "$OPTARG:$OPTARG"
+                ;;
+            *)
+                echo "Unrecognized option $opt" >&2
+                displayHelpMain
+                exit 1
+                ;;
+            esac
+        done
+
+        # need a tag
+        if test -z "$tag"; then
+            echo "ERR ($0 use): Need to pass in a tag using -d" >&2
+            exit 1
+        fi
+
+        # start bash inside container
+        docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
+            --network="host" \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
+            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
+            "$DEV_ENV_REPOSITORY_NAME:$tag" \
+            bash -i -c "cd ./repos/dev-env-ansible; command -v zsh &>/dev/null && exec zsh || exec bash"
+        ;;
+
+    'use-build')
+        # get arg
+        tag=$1
+        # build up the command here
+        cmd="cd ./repos/dev-env-ansible && ./rr.sh install-i -t 'tagged'"
+        cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append"
+
+        # start bash inside container
+        docker run --cpu-shares=1024 --rm -it \
+            --user "$USER:$USER" \
+            --network="host" \
+            "${DOCKER_VOLUME_MOUNT[@]}" \
+            --name "$(compose_container_name "$USE_PREFIX_FOR_NAME" "$tag")" \
+            "$DEV_ENV_REPOSITORY_NAME:$tag" \
+            bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
+        ;;
+
+    'run-role')
+        # get args
+        ver="$1"
+        role="$2"
+
+        log="./role-$role-on-$ver.log"
+
+        # build up the command here
+        cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -v -t "tagged,fast" -r'
+        cmd="$cmd '$role'"
+
+        # select docker
+        ver="$DOCKER_FILE_UBUNTU_22"
+        if [[ $# -gt 0 ]]; then
+            ver="$(select_docker_ver "$1")"
+        fi
+
+        # trap remove
+        trap "rm -f '$log'" EXIT SIGINT SIGTERM
+
+        # start bash inside container
+        build_image "$CONTAINER_TAG" "$ver" && \
+        docker run --cpu-shares=1024 --rm \
+            --user "$USER:$USER" \
+            --network="host" \
+            -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
+            "$CONTAINER_TAG" \
+            bash -c "$cmd" | tee "$log"
+        # perform check
+        roleCheck "$log"
+        ;;
+
+    'use-role')
+        # get args
+        ver="$1"
+        role="$2"
+
+        # build up the command here
+        cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh role-i -r'
+        cmd="$cmd '$role'"
+
+        # select docker
+        ver="$DOCKER_FILE_UBUNTU_22"
+        if [[ $# -gt 0 ]]; then
+            ver="$(select_docker_ver "$1")"
+        fi
+
+        # start bash inside container
+        build_image "$CONTAINER_TAG" "$ver" && \
+        docker run --cpu-shares=1024 --rm \
+            --user "$USER:$USER" \
+            --network="host" \
+            -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
+            "$CONTAINER_TAG" \
+            bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
+        ;;
+
+    'run-test')
+        # build up the command here
+        cmd='cd ./repos/dev-env-ansible && export ANSIBLE_CONFIG="$(pwd)/ansible.cfg" && ./rr.sh install-i -v -t "tagged,fast"'
+        cmd="$cmd && . ~/.bashrc && . ~/.bashrc_append && ./rr.sh install-i -v -t 'tagged,fast' && ./rr.sh check"
+        cmd="$cmd && ./rr.sh preupgrade && ./rr.sh install-i -v -t 'tagged,fast' && ./rr.sh check"
+
+        log="./test-$1.log"
+
+        # select docker
+        ver="$DOCKER_FILE_UBUNTU_22"
+        if [[ $# -gt 0 ]]; then
+            ver="$(select_docker_ver "$1")"
+        fi
+
+        # trap remove
+        trap "rm -f '$log'" EXIT SIGINT SIGTERM
+
+        [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
+
+        # start bash inside container
+        build_image "$CONTAINER_TAG" "$ver" && \
+        docker run --cpu-shares=1024 --rm \
+            --user "$USER:$USER" \
+            --network="host" \
+            -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
+            "$CONTAINER_TAG" \
+            bash -c "$cmd" | tee "$log"
+
+        [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
+        # perform check
+        ansibleCheck "$log"
+        ;;
+
+    *)
+        # error out
+        echo "subcommand $subcmd invalid" >&2
+        # print help
+        displayHelpMain
+        exit 1
+        ;;
+    esac
+}
+
+main "$@"
