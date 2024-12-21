@@ -28,23 +28,21 @@
           };
         };
 
+        pythonEnvWithAnsible = pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian]);
+
         packages = with pkgs; [
-          just
           bitwarden-cli
           jq
-          # ansible
-          (pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian] ))
+          pythonEnvWithAnsible
         ];
-        # ] ++ (with pkgs.python312Packages; [ ansible ansible-core ]);
 
       in
       {
         formatter = pkgs.nixpkgs-fmt;
-        # packages.default = pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian] );
-        # packages.ansible = pkgs.ansible;
-        # packages.ansible-core = pkgs.ansible-core;
         devShells.default = pkgs.mkShell {
           buildInputs = packages;
+          # The following var is used in ansible-playbook like this `-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE"`
+          EXPLICIT_PYTHON_PATH_FOR_ANSIBLE = "${pythonEnvWithAnsible}/bin/python3";
           shellHook = ''
             export IN_NIX_RR_SHELL=1
             if [[ -z "$DISPLAY" ]]; then
