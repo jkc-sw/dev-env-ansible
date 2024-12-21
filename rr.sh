@@ -58,8 +58,9 @@ playbookName() {
     role="$1"
 
     # Find all the roles
-    if ! ls "$SCRIPT_DIR/playbooks/roles" | grep -q "$role"; then
-        echo "role $role cannot be found in the ./playbooks/roles folder" >&2
+    # if ! ls "$SCRIPT_DIR/playbooks/roles" | grep -q "$role"; then
+    if [[ ! -d "$SCRIPT_DIR/playbooks/roles/$role" ]]; then
+        echo "role '$role' cannot be found in the ./playbooks/roles folder" >&2
         exit 1
     fi
 
@@ -75,6 +76,10 @@ writePlaybook() {
 
     # playname
     playpath="$(playbookName "$role")"
+    ret="$?"
+    if [[ "$ret" -ne 0 ]]; then
+        exit "$ret"
+    fi
 
     cat <<EOF > "$playpath"
 ---
@@ -118,7 +123,7 @@ ansibleCheck() {
 # use command to check if cmd is present
 checkCmd() {
     cmd=$1
-    if ! command -v $cmd &>/dev/null; then
+    if ! command -v "$cmd" &>/dev/null; then
         echo "$cmd not installed properly"
         return 1
     fi
@@ -136,6 +141,10 @@ displayHelp() {
     # print help here
     echo "${BASH_SOURCE[0]} [...]"
     echo " One-stop shop to do everything related to this repository"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
+    echo "Pre-requisite"
+    echo " Please run './shell.sh' to start a nix shell before running any command below"
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Display Help"
@@ -372,17 +381,6 @@ install_brew() {
     fi
 }
 
-# function to install ansible
-install_ansible() {
-    # # check if the ansible is installed, if not, install it
-    # if ! command -v curl &>/dev/null; then
-    #     sudo apt update \
-    #     && sudo apt install -y curl git ca-certificates xz-utils
-    # fi
-    install_nix
-    # install_brew
-}
-
 # fnuction that check and set a docker mount when not fonud
 append_docker_mount_global() {
     # Get arguments
@@ -435,6 +433,12 @@ set_mounts_global() {
 if test "$#" -eq 0; then
     displayHelp
     exit 0
+fi
+
+# Only allow the command to be run when in nix shell
+if [[ -z "$IN_NIX_RR_SHELL" ]]; then
+    echo "ERR: Please run ./shell.sh to start a nix shell, then run ./rr.sh ..." >&2
+    exit 1
 fi
 
 # Set the mounts to a list
@@ -506,8 +510,8 @@ case "$subcmd" in
     fi
 
     # below are for the best effort
-    . $HOME/.bashrc
-    . $HOME/.bashrc_append
+    . "$HOME/.bashrc"
+    . "$HOME/.bashrc_append"
     sdev
     nv
 
@@ -516,9 +520,6 @@ case "$subcmd" in
 
     # get a list of commands to check
     cmds=( \
-        # 'fzf' \
-        # 'ghdl' \
-        # 'iverilog' \
         'ansible' \
         'ansible-playbook' \
         'bash-language-server' \
@@ -583,8 +584,7 @@ case "$subcmd" in
     )
     ret=0
     for c in "${cmds[@]}"; do
-        checkCmd $c
-        if [[ $? -ne 0 ]]; then
+        if ! checkCmd "$c"; then
             ret=1
         fi
     done
@@ -600,8 +600,8 @@ case "$subcmd" in
         exit $?
     fi
     # below are for the best effort
-    . $HOME/.bashrc
-    . $HOME/.bashrc_append
+    . "$HOME/.bashrc"
+    . "$HOME/.bashrc_append"
     sdev
     # do it here, as I don't want it in bashrc to slow it down
     nvm use --lts
@@ -611,15 +611,19 @@ case "$subcmd" in
 
 'roles')
     # List all the roles
-    ls "$SCRIPT_DIR/playbooks/roles" \
-    | sort \
-    | xargs printf 'role: %s\n'
+    while read -d $'\0' -r each; do
+        eachrole="${each##*/roles}"
+        if [[ -z "${eachrole:1}" ]]; then
+            continue
+        fi
+        echo "role: ${eachrole:1}"
+    done < <(find "$SCRIPT_DIR/playbooks/roles" -maxdepth 1 -type d -print0)
     ;;
 
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    nix shell 'nixpkgs#ansible' --command ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    ansible-playbook -i ./inventory/localhost.yaml -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -653,19 +657,23 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_nix
 
     # Write the role
     playpath="$(writePlaybook "$role")"
+    ret="$?"
+    if [[ "$ret" -ne 0 ]]; then
+        exit "$ret"
+    fi
 
     # trap remove
-    trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
+    trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$playpath' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" -vvv "$playpath" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$playpath' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE" "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -679,7 +687,7 @@ case "$subcmd" in
         exit 0
     fi
 
-    nix shell 'nixpkgs#ansible' --command "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
+    "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
     ;;
 
 'role')
@@ -713,13 +721,17 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_nix
 
     # Write the role
     playpath="$(writePlaybook "$role")"
+    ret="$?"
+    if [[ "$ret" -ne 0 ]]; then
+        exit "$ret"
+    fi
 
     # trap remove
-    trap "rm -f $playpath" EXIT SIGINT SIGTERM KILL
+    trap "rm -f '$playpath'" EXIT SIGINT SIGTERM
 
     # buil args
     aargs=()
@@ -729,6 +741,7 @@ case "$subcmd" in
         aargs+=("-vvv")
     fi
     aargs+=(-e "playbook_target=localhost")
+    aargs+=(-e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
     aargs+=(-i "./inventory/localhost.yaml")
     aargs+=("$playpath")
     aargs+=("--tags")
@@ -736,7 +749,10 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
+    ansible-playbook "${aargs[@]}"
+    # which python3.12
+    # ansible_playbook_python
+    # python3.12 -m ansible.cli.playbook "${aargs[@]}"
     ;;
 
 'install-i')
@@ -760,13 +776,13 @@ case "$subcmd" in
         esac
     done
 
-    install_ansible
+    install_nix
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
@@ -791,7 +807,7 @@ case "$subcmd" in
         esac
     done
 
-    install_ansible
+    install_nix
 
     # buil args
     aargs=()
@@ -802,13 +818,14 @@ case "$subcmd" in
     fi
     aargs+=(-i "./inventory/localhost.yaml")
     aargs+=(-e "playbook_target=localhost")
+    aargs+=( -e "playbook_target=localhost")
     aargs+=("$WHOLE_PLAYBOOK_PATH")
     aargs+=("--tags")
     aargs+=("$tags")
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
+    ansible-playbook "${aargs[@]}"
     ;;
 
 'tmux')
@@ -860,7 +877,7 @@ case "$subcmd" in
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver $1)"
+        ver="$(select_docker_ver "$1")"
     fi
 
     # start bash inside container
@@ -1045,18 +1062,18 @@ case "$subcmd" in
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver $1)"
+        ver="$(select_docker_ver "$1")"
     fi
 
     # trap remove
-    trap "rm -f $log" EXIT SIGINT SIGTERM KILL
+    trap "rm -f '$log'" EXIT SIGINT SIGTERM
 
     # start bash inside container
     build_image "$CONTAINER_TAG" "$ver" && \
     docker run --cpu-shares=1024 --rm \
         --user "$USER:$USER" \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
         "$CONTAINER_TAG" \
         bash -c "$cmd" | tee "$log"
     # perform check
@@ -1075,7 +1092,7 @@ case "$subcmd" in
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver $1)"
+        ver="$(select_docker_ver "$1")"
     fi
 
     # start bash inside container
@@ -1083,7 +1100,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm \
         --user "$USER:$USER" \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
         "$CONTAINER_TAG" \
         bash -i -c "$cmd; command -v zsh &>/dev/null && exec zsh || exec bash"
     ;;
@@ -1099,11 +1116,11 @@ case "$subcmd" in
     # select docker
     ver="$DOCKER_FILE_UBUNTU_22"
     if [[ $# -gt 0 ]]; then
-        ver="$(select_docker_ver $1)"
+        ver="$(select_docker_ver "$1")"
     fi
 
     # trap remove
-    trap "rm -f $log" EXIT SIGINT SIGTERM KILL
+    trap "rm -f '$log'" EXIT SIGINT SIGTERM
 
     [[ -r "$log" ]] && echo "File $log still here" || echo "Oh no, file $log is missing"
 
@@ -1112,7 +1129,7 @@ case "$subcmd" in
     docker run --cpu-shares=1024 --rm \
         --user "$USER:$USER" \
         --network="host" \
-        -v $SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH \
+        -v "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
         "$CONTAINER_TAG" \
         bash -c "$cmd" | tee "$log"
 

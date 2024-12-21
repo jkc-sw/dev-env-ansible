@@ -1,12 +1,18 @@
 ---
-# - name: Print facts
-#   debug:
-#     var: ansible_facts
-#
-# - name: Print more var from encrypted inventory
-#   debug:
-#     msg: |
-#       home_git_server_ip = {{ home_git_server_ip }}
-#       home_git_server_dir_path = {{ home_git_server_dir_path }}
+- name: Print facts
+  debug:
+    var: ansible_facts
+
+- name: Test add docker repo
+  become: true
+  deb822_repository:
+    name: docker
+    types: deb
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+    architectures: amd64
+    components: stable
+    suites: '{{ ansible_distribution_release }}'
+    uris: https://download.docker.com/linux/ubuntu
+    state: present
 
 # vim:et ts=2 sts=2 sw=2
