@@ -619,7 +619,7 @@ case "$subcmd" in
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    nix shell 'nixpkgs#ansible' --command ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    nix develop --command ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -663,9 +663,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$playpath' --tags '$tags'"
+        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$playpath' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$playpath' --tags '$tags'"
+        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$playpath' --tags '$tags'"
     fi
     ;;
 
@@ -679,7 +679,7 @@ case "$subcmd" in
         exit 0
     fi
 
-    nix shell 'nixpkgs#ansible' --command "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
+    nix develop --command "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
     ;;
 
 'role')
@@ -736,7 +736,7 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
+    nix develop --command ansible-playbook "${aargs[@]}"
     ;;
 
 'install-i')
@@ -764,9 +764,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     elif [[ "$verbose" == 'false' ]]; then
-        nix shell 'nixpkgs#ansible' --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
     fi
     ;;
 
@@ -808,7 +808,7 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix shell 'nixpkgs#ansible' --command ansible-playbook "${aargs[@]}"
+    nix develop --command ansible-playbook "${aargs[@]}"
     ;;
 
 'tmux')

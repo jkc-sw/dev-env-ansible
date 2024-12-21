@@ -18,8 +18,12 @@
 
 - name: Add docker Repository into /etc/apt/sources.list
   become: true
-  apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+  deb822_repository:
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+    architectures: amd64
+    components: stable
+    suites: '{{ ansible_distribution_release }}'
+    uris: https://download.docker.com/linux/ubuntu
     state: present
 
 - name: Install docker
