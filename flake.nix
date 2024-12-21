@@ -41,7 +41,9 @@
         formatter = pkgs.nixpkgs-fmt;
         devShells.default = pkgs.mkShell {
           buildInputs = packages;
-          # The following var is used in ansible-playbook like this `-e "ansible_playbook_python=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE"`
+          # The following var is used in ansible-playbook like this `-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE"`
+          # I am using ansible_python_interpreter instead of ansible_playbook_python is because I am provising the localhost,
+          #   in which, 'host' and 'remote' are the same machine and should use the same python
           EXPLICIT_PYTHON_PATH_FOR_ANSIBLE = "${pythonEnvWithAnsible}/bin/python3";
           shellHook = ''
             export IN_NIX_RR_SHELL=1
