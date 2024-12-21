@@ -32,11 +32,17 @@
           just
           bitwarden-cli
           jq
-        ] ++ (with pkgs.python312Packages; [ ansible ansible-core ]);
+          # ansible
+          (pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian] ))
+        ];
+        # ] ++ (with pkgs.python312Packages; [ ansible ansible-core ]);
 
       in
       {
         formatter = pkgs.nixpkgs-fmt;
+        # packages.default = pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian] );
+        # packages.ansible = pkgs.ansible;
+        # packages.ansible-core = pkgs.ansible-core;
         devShells.default = pkgs.mkShell {
           buildInputs = packages;
           shellHook = ''

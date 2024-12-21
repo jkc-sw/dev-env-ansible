@@ -138,6 +138,10 @@ displayHelp() {
     echo " One-stop shop to do everything related to this repository"
     echo ""
     echo "--------------------------------------------------------------------------------"
+    echo "Pre-requisite"
+    echo " Please run './shell.sh' to start a nix shell before running any command below"
+    echo ""
+    echo "--------------------------------------------------------------------------------"
     echo "Display Help"
     echo " -h|--help|h|hel|help  : Print this help command"
     echo ""
@@ -372,17 +376,6 @@ install_brew() {
     fi
 }
 
-# function to install ansible
-install_ansible() {
-    # # check if the ansible is installed, if not, install it
-    # if ! command -v curl &>/dev/null; then
-    #     sudo apt update \
-    #     && sudo apt install -y curl git ca-certificates xz-utils
-    # fi
-    install_nix
-    # install_brew
-}
-
 # fnuction that check and set a docker mount when not fonud
 append_docker_mount_global() {
     # Get arguments
@@ -435,6 +428,12 @@ set_mounts_global() {
 if test "$#" -eq 0; then
     displayHelp
     exit 0
+fi
+
+# Only allow the command to be run when in nix shell
+if [[ -z "$IN_NIX_RR_SHELL" ]]; then
+    echo "ERR: Please run ./shell.sh to start a nix shell, then run ./rr.sh ..." >&2
+    exit 1
 fi
 
 # Set the mounts to a list
@@ -619,7 +618,7 @@ case "$subcmd" in
 'tags')
     # List all the tags
     echo "Listing all the tags"
-    nix develop --command ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
+    ansible-playbook -i ./inventory/localhost.yaml -e "playbook_target=docker" "$WHOLE_PLAYBOOK_PATH" --list-tags
     ;;
 
 'role-i')
@@ -653,7 +652,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_nix
 
     # Write the role
     playpath="$(writePlaybook "$role")"
@@ -663,9 +662,9 @@ case "$subcmd" in
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$playpath' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv "$playpath" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$playpath' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' "$playpath" --tags "$tags"
     fi
     ;;
 
@@ -679,7 +678,7 @@ case "$subcmd" in
         exit 0
     fi
 
-    nix develop --command "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
+    "$PROJECT_DIR/scripts/edit_inventory.sh" "${args[0]}"
     ;;
 
 'role')
@@ -713,7 +712,7 @@ case "$subcmd" in
         exit 1
     fi
 
-    install_ansible
+    install_nix
 
     # Write the role
     playpath="$(writePlaybook "$role")"
@@ -736,7 +735,10 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix develop --command ansible-playbook "${aargs[@]}"
+    ansible-playbook "${aargs[@]}"
+    # which python3.12
+    # ansible_python_interpreter
+    # python3.12 -m ansible.cli.playbook "${aargs[@]}"
     ;;
 
 'install-i')
@@ -760,13 +762,13 @@ case "$subcmd" in
         esac
     done
 
-    install_ansible
+    install_nix
 
     # install with ansible playbook
     if [[ "$verbose" == 'true' ]]; then
-        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     elif [[ "$verbose" == 'false' ]]; then
-        nix develop --command bash -l -c "time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' '$WHOLE_PLAYBOOK_PATH' --tags '$tags'"
+        time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
     fi
     ;;
 
@@ -791,7 +793,7 @@ case "$subcmd" in
         esac
     done
 
-    install_ansible
+    install_nix
 
     # buil args
     aargs=()
@@ -808,7 +810,7 @@ case "$subcmd" in
 
     time PY_COLORS=1 \
     ANSIBLE_FORCE_COLOR=1 \
-    nix develop --command ansible-playbook "${aargs[@]}"
+    ansible-playbook "${aargs[@]}"
     ;;
 
 'tmux')
