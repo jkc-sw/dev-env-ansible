@@ -47,7 +47,12 @@ echodebug() {
     fi
 }
 
-# function to locate the hostAddr
+################################################################################
+# @brief function to locate the hostAddr
+# @param cmd - whether it is lxc or incus
+# @param brid - network brigde name
+# @return ipaddress of the host
+################################################################################
 get_host_addr() {
     # Get arguments
     local args=("$@")
@@ -78,7 +83,12 @@ get_host_addr() {
     return 0
 }
 
-# function to calculating the checksum of the argument
+################################################################################
+# @brief get a list of all the mounted paths
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @return list of mounted paths, each per line
+################################################################################
 get_all_mounted_paths_from_containers() {
     # Get arguments
     local args=("$@")
@@ -93,19 +103,24 @@ get_all_mounted_paths_from_containers() {
     echo -n "$paths"
 }
 
-# function to get all the mounted disks
+################################################################################
+# @brief add the new mount path to the container
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param path - path to mount as <path on host>:<path in container>
+# @return void
+################################################################################
 add_lxc_mount_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 4 ]]; then
-        echo "ERR (add_lxc_mount_global): need 4 arguments (bin, container name, disk name, path) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 3 ]]; then
+        echo "ERR (add_lxc_mount_global): need 3 arguments (bin, container name, path) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
-    local name="${args[2]}"
-    local path="${args[3]}"
+    local path="${args[2]}"
     local src="${path%:*}"
     if [[ ! -e "$src" ]]; then
         echo "ERR (add_lxc_mount_global): src path '$src' is not found." >&2
@@ -119,6 +134,11 @@ add_lxc_mount_global() {
     echo "INFO (add_lxc_mount_global): Added '$path'" >&2
 }
 
+################################################################################
+# @brief store the mount path to a global variable
+# @param path - path to mount as <path on host>:<path in container>
+# @return void
+################################################################################
 append_lxc_mount_global() {
     # Get arguments
     local args=("$@")
@@ -135,6 +155,13 @@ append_lxc_mount_global() {
     echo "INFO (append_lxc_mount_global): Added '$path'" >&2
 }
 
+################################################################################
+# @brief execute chmod inside the container
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param path - path to mount as <path on host>:<path in container>
+# @return void
+################################################################################
 chown_lxc_mount_global() {
     # Get arguments
     local args=("$@")
@@ -150,33 +177,44 @@ chown_lxc_mount_global() {
     "$cmd" exec "$lxc_name" -- chown -R "$USER:$USER" "$dest"
 }
 
-# function to setup generic stuff in the container
+################################################################################
+# @brief upon container creation, add user of same uid/guid, grant sudo without
+#        password, set timezone, then restart the container
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param uid - user id
+# @param gid - user's group id
+# @param username - username
+# @return void
+################################################################################
 apply_generic_configurations() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (apply_generic_configurations): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 6 ]]; then
+        echo "ERR (apply_generic_configurations): need 6 arguments (bin, container name, uid, gid, username, home dir) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
-    local uid="$(id -u)"
-    local gid="$(id -g)"
+    local uid="${args[2]}"
+    local gid="${args[3]}"
+    local username="${args[4]}"
+    local homePath="${args[5]}"
     # Remove default ubuntu user and add my user
     echodebug "(apply_generic_configurations): Removes ubuntu default user if found"
     "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\""
     echodebug "(apply_generic_configurations): Sets timezone"
     "$cmd" exec "$lxc_name" -t -- bash -c "timedatectl set-timezone America/Los_Angeles"
-    echodebug "(apply_generic_configurations): Add user $USER ($uid)"
+    echodebug "(apply_generic_configurations): Add user $username ($uid)"
     "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
-        && mkdir -p /home/${USER} \
-        && echo \"${USER}:x:\${uid}:\${gid}:${USER},,,:${HOME}:/bin/bash\" >> /etc/passwd \
-        && echo \"${USER}:x:\${uid}:\" >> /etc/group \
-        && echo \"${USER} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${USER} \
-        && chmod 0440 /etc/sudoers.d/${USER} \
-        && chown \${uid}:\${gid} -R ${HOME} \
-        && echo ${USER}:aoeu | chpasswd"
+        && mkdir -p '${homePath}' \
+        && echo \"${username}:x:\${uid}:\${gid}:${username},,,:${homePath}:/bin/bash\" >> /etc/passwd \
+        && echo \"${username}:x:\${uid}:\" >> /etc/group \
+        && echo \"${username} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${username} \
+        && chmod 0440 /etc/sudoers.d/${username} \
+        && chown \${uid}:\${gid} -R ${homePath} \
+        && echo ${username}:aoeu | chpasswd"
     # map the user id in the container
     echodebug "(apply_generic_configurations): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
@@ -184,17 +222,24 @@ apply_generic_configurations() {
     "$cmd" restart "$lxc_name"
 }
 
-# function to populate the docker mount in a function
+################################################################################
+# @brief Add all the stored filepath to the mounts of container
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @return void
+################################################################################
 apply_lxc_mounts_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 4 ]]; then
+        echo "ERR (apply_lxc_mounts_global): need 4 arguments (bin, container name, username, home dir) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
+    local username="${args[2]}"
+    local homePath="${args[3]}"
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
@@ -204,14 +249,17 @@ apply_lxc_mounts_global() {
             echo "INFO (add_lxc_mount_global): Skip mounted '$each'"
             continue
         fi
-        add_lxc_mount_global "$cmd" "$lxc_name" "d$ii" "$each"
+        add_lxc_mount_global "$cmd" "$lxc_name" "$each"
         chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
     done
     # chown the entire home dir
-    "$cmd" exec "$lxc_name" -- chown -R "$USER:$USER" "$HOME"
+    "$cmd" exec "$lxc_name" -- chown -R "$username:$username" "$homePath"
 }
 
-# Check dependencies
+################################################################################
+# @brief Check that all dependencies are available
+# @throw When any dependency is not met, exit
+################################################################################
 check_dependencies() {
     # Check dependencies
     toexit=false
@@ -227,6 +275,36 @@ check_dependencies() {
     fi
 }
 
+# # Remove containers
+# remove_container() {
+# }
+
+################################################################################
+# @brief test whether the named container is running
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @return 'true' if running, etherwise 'false'
+################################################################################
+test_running_container() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 2 ]]; then
+        echo "ERR (get_running_container): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    # var
+    if [[ -n "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")" ]]; then
+        echo -n 'true'
+    fi
+    echo -n 'false'
+}
+
+################################################################################
+# @brief main
+################################################################################
 main() {
     # var
 
@@ -307,12 +385,13 @@ main() {
     done
 
     # var
-    local containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
+    local containerIsRunning
+    containerIsRunning="$(test_running_container "$cmd" "$lxc_name")"
 
     # When asking to delete
     if [[ "$remove" == 'true' ]]; then
         # Stop/remove the container if found
-        if [[ -n "$containers" ]]; then
+        if [[ "$containerIsRunning" == 'true' ]]; then
             echo "INFO: Stop and remove containers $lxc_name"
             "$cmd" stop "$lxc_name"
             if [[ "$?" -ne 0 ]]; then
@@ -344,7 +423,7 @@ main() {
     fi
 
     # Create a new container if none found
-    if [[ -z "$containers" ]]; then
+    if [[ "$containerIsRunning" == 'false' ]]; then
         # Start an instance
         "$cmd" launch --ephemeral "$imgName" "$lxc_name"
         if [[ "$?" -ne 0 ]]; then
@@ -355,7 +434,7 @@ main() {
         # Configure generic stuff
         echo "INFO: Sleeping 3 seconds to wait for the up network"
         sleep 3
-        apply_generic_configurations "$cmd" "$lxc_name"
+        apply_generic_configurations "$cmd" "$lxc_name" "$(id -u)" "$(id -g)" "$USER" "$HOME"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
             # Fix the locale on debian
@@ -424,11 +503,11 @@ main() {
         fi
 
         # Update the container status
-        containers="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")"
+        containerIsRunning="$(test_running_container "$cmd" "$lxc_name")"
     fi
 
     # Mount folders
-    apply_lxc_mounts_global "$cmd" "$lxc_name"
+    apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
     # Add forwarding rule
     local forward="$("$cmd" network forward list "$brid" -f json)"
