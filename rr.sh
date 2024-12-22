@@ -966,7 +966,7 @@ main() {
         fi
         aargs+=(-i "./inventory/localhost.yaml")
         aargs+=(-e "playbook_target=localhost")
-        aargs+=( -e "playbook_target=localhost")
+        aargs+=(-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
         aargs+=("$WHOLE_PLAYBOOK_PATH")
         aargs+=("--tags")
         aargs+=("$tags")

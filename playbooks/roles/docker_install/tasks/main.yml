@@ -19,6 +19,8 @@
 - name: Add docker Repository into /etc/apt/sources.list
   become: true
   deb822_repository:
+    name: docker
+    types: deb
     signed_by: https://download.docker.com/linux/ubuntu/gpg
     architectures: amd64
     components: stable
