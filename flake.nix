@@ -36,7 +36,7 @@
         packages = with pkgs; [
           bitwarden-cli
           jq
-          pkgs.ansible
+          ansible
         ];
 
       in
