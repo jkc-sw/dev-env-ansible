@@ -12,28 +12,31 @@
         pkgs = import nixpkgs {
           system = "${system}";
           overlays = [
-            ansibleOverlay
+            ansibleOverlayAllPyVersions
           ];
         };
 
-        ansibleOverlay = final: prev: {
-          python312 = prev.python312.override {
-            packageOverrides = pyfinal: pyprev: {
-              ansible-core = pyprev.ansible-core.overrideAttrs (old: {
-                propagatedBuildInputs = old.propagatedBuildInputs ++ [
-                  pyprev.debian
-                ];
-              });
-            };
+        # Override ansible package in all python versions
+        ansibleOverlayAllPyVersions = final: prev:
+        let
+          _overlay = pyfinal: pyprev: {
+            ansible-core = pyprev.ansible-core.overridePythonAttrs (old: {
+              dependencies = old.dependencies ++ [
+                pyprev.debian
+              ];
+            });
           };
+        in
+        {
+          pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [ _overlay ];
         };
 
-        pythonEnvWithAnsible = pkgs.python312.withPackages (p: [p.ansible p.ansible-core p.debian]);
+        pythonEnvWithPyDebian = pkgs.python312.withPackages (p: [p.debian]);
 
         packages = with pkgs; [
           bitwarden-cli
           jq
-          pythonEnvWithAnsible
+          pkgs.ansible
         ];
 
       in
@@ -42,9 +45,9 @@
         devShells.default = pkgs.mkShell {
           buildInputs = packages;
           # The following var is used in ansible-playbook like this `-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE"`
-          # I am using ansible_python_interpreter instead of ansible_playbook_python is because I am provising the localhost,
-          #   in which, 'host' and 'remote' are the same machine and should use the same python
-          EXPLICIT_PYTHON_PATH_FOR_ANSIBLE = "${pythonEnvWithAnsible}/bin/python3";
+          # I am using ansible_python_interpreter instead of ansible_playbook_python is because the remote host, aka localhost, needs
+          #   the pydebian package and I want ansible to use a secific one.
+          EXPLICIT_PYTHON_PATH_FOR_ANSIBLE = "${pythonEnvWithPyDebian}/bin/python3";
           shellHook = ''
             export IN_NIX_RR_SHELL=1
             if [[ -z "$DISPLAY" ]]; then

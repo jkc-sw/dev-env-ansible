@@ -899,9 +899,6 @@ main() {
         time PY_COLORS=1 \
         ANSIBLE_FORCE_COLOR=1 \
         ansible-playbook "${aargs[@]}"
-        # which python3.12
-        # ansible_python_interpreter
-        # python3.12 -m ansible.cli.playbook "${aargs[@]}"
         ;;
 
     'install-i')
