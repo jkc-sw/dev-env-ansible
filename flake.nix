@@ -12,24 +12,22 @@
         pkgs = import nixpkgs {
           system = "${system}";
           overlays = [
-            ansibleOverlayAllPyVersions
+            # ansibleOverlayAllPyVersions
           ];
         };
 
-        # Override ansible package in all python versions
-        ansibleOverlayAllPyVersions = final: prev:
-        let
-          _overlay = pyfinal: pyprev: {
-            ansible-core = pyprev.ansible-core.overridePythonAttrs (old: {
-              dependencies = old.dependencies ++ [
-                pyprev.debian
-              ];
-            });
-          };
-        in
-        {
-          pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [ _overlay ];
-        };
+        # # Override ansible package in all python versions
+        # ansibleOverlayAllPyVersions = final: prev:
+        # let
+        #   _overlay = pyfinal: pyprev: {
+        #     ansible-core = pyprev.ansible-core.overridePythonAttrs (old: {
+        #       dependencies = old.dependencies ++ [];
+        #     });
+        #   };
+        # in
+        # {
+        #   pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [ _overlay ];
+        # };
 
         pythonEnvWithPyDebian = pkgs.python312.withPackages (p: [p.debian]);
 
