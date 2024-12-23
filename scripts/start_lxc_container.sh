@@ -26,6 +26,7 @@ displayHelp() {
     echo ""
     echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
     echo " -d                        : Run a desktop environment via TurboVNC"
+    echo " -m                        : Run as a VM instead of container, which is the default"
     echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
     echo " -i IMAGE_NAME             : Ubuntu image to use. Default is 24.04"
     echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
@@ -334,12 +335,17 @@ main() {
     local shell=false
     local installDesktopEnvironmentWithVNC=false
     local source_only=false
+    local vm=false
 
     # parse the argumetns
-    while getopts 'hvf:i:b:x:p:n:w:sr.d' opt; do
+    while getopts 'hvf:i:b:x:p:n:w:sr.dm' opt; do
         case "$opt" in
         .)
             source_only=true
+            return
+            ;;
+        m)
+            vm=true
             ;;
         d)
             installDesktopEnvironmentWithVNC=true
@@ -513,7 +519,7 @@ main() {
 
     # Add forwarding rule
     local forward="$("$cmd" network forward list "$brid" -f json)"
-    local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+    local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
     local detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
     local detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
     local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
@@ -577,8 +583,6 @@ main() {
     # "$cmd" stop "$lxc_name"
 }
 
-if [[ "$source_only" == "false" ]]; then
-    main "${args[@]}"
-fi
+main "${args[@]}"
 
 # vim:et ts=4 sts=4 sw=4
