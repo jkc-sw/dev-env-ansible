@@ -49,6 +49,19 @@ echodebug() {
 }
 
 ################################################################################
+# @brief Test whether my current system support virtualization
+# @return 'true' if yes, 'false' otherwise
+################################################################################
+test_virtualization_enabled_or_capable() {
+    local cpuinfo="$(</proc/cpuinfo)"
+    if [[ "$cpuinfo" =~ vmx|svm ]]; then
+        echo -n 'true'
+        return
+    fi
+    echo -n 'false'
+}
+
+################################################################################
 # @brief function to locate the hostAddr
 # @param cmd - whether it is lxc or incus
 # @param brid - network brigde name
