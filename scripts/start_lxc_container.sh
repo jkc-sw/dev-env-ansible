@@ -334,15 +334,13 @@ main() {
     local remove=false
     local shell=false
     local installDesktopEnvironmentWithVNC=false
-    local source_only=false
     local vm=false
 
     # parse the argumetns
     while getopts 'hvf:i:b:x:p:n:w:sr.dm' opt; do
         case "$opt" in
         .)
-            source_only=true
-            return
+            return 0
             ;;
         m)
             vm=true
