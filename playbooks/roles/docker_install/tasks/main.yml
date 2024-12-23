@@ -10,12 +10,6 @@
       - gnupg-agent
       - software-properties-common
 
-- name: Download and Add docker Key to Apt-Get Keyring
-  become: true
-  apt_key:
-    url: "https://download.docker.com/linux/ubuntu/gpg"
-    state: present
-
 - name: Add docker Repository into /etc/apt/sources.list
   become: true
   deb822_repository:
