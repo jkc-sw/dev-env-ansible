@@ -298,6 +298,7 @@ test_running_container() {
     # var
     if [[ -n "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")" ]]; then
         echo -n 'true'
+        return
     fi
     echo -n 'false'
 }
