@@ -11,6 +11,7 @@ echom 'Sourced'
 SOURCE_THESE_VIMS_END
 20240423EOF
 
+set -euo pipefail
 
 args=("$@")
 
@@ -53,7 +54,9 @@ echodebug() {
 # @return 'true' if yes, 'false' otherwise
 ################################################################################
 test_virtualization_enabled_or_capable() {
-    local cpuinfo="$(</proc/cpuinfo)"
+    local cpuinfo
+    cpuinfo="$(</proc/cpuinfo)"
+    # TODO implement exit code check
     if [[ "$cpuinfo" =~ vmx|svm ]]; then
         echo -n 'true'
         return
@@ -77,9 +80,15 @@ get_host_addr() {
     fi
     local cmd="${args[0]}"
     local brid="${args[1]}"
-    local forward="$("$cmd" network forward list "$brid" -f json)"
-    local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    local currentIpOutput="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output)"
+    local forward
+    forward="$("$cmd" network forward list "$brid" -f json)"
+    # TODO: implement exit code check
+    local listenAddress
+    listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+    # TODO: implement exit code check
+    local currentIpOutput
+    currentIpOutput="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output)"
+    # TODO: implement exit code check
     # Find an existing one and return it
     while read -r each; do
         if [[ "$currentIpOutput" == *"$each"* ]]; then
@@ -88,7 +97,9 @@ get_host_addr() {
         fi
     done <<<"$listenAddress"
     # otherwise, use fzf to search it
-    local selectedHostIp="$(echo -n "$currentIpOutput" | fzf)"
+    local selectedHostIp
+    selectedHostIp="$(echo -n "$currentIpOutput" | fzf)"
+    # TODO: implement exit code check
     if [[ "$?" -ne 0 || -z "$selectedHostIp" ]]; then
         echo "ERR (get_host_addr): Cannot get the host address using fzf" >&2
         return 1
@@ -113,7 +124,9 @@ get_all_mounted_paths_from_containers() {
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
-    local paths="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .devices[] | \"\(.path):\(.source)\"")"
+    local paths
+    paths="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .devices[] | \"\(.path):\(.source)\"")"
+    # TODO: implement exit code check
     echo -n "$paths"
 }
 
@@ -141,7 +154,9 @@ add_lxc_mount_global() {
         return 1
     fi
     local dest="${path#*:}"
-    local out="$(sha1sum <<<"$path")"
+    local out
+    out="$(sha1sum <<<"$path")"
+    # TODO: implement exit code check
     local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
@@ -257,7 +272,9 @@ apply_lxc_mounts_global() {
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
-        local mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
+        local mountedPaths
+        mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
+        # TODO: implement exit code check
         # Skip this path if already monuted
         if [[ "$mountedPaths" == *"$each"* ]]; then
             echo "INFO (add_lxc_mount_global): Skip mounted '$each'"
@@ -412,8 +429,8 @@ main() {
         # Stop/remove the container if found
         if [[ "$containerIsRunning" == 'true' ]]; then
             echo "INFO: Stop and remove containers $lxc_name"
-            "$cmd" stop "$lxc_name"
-            if [[ "$?" -ne 0 ]]; then
+
+            if ! "$cmd" stop "$lxc_name"; then
                 echo "ERR: Cannot stop the container $lxc_name" >&2
                 return 1
             fi
@@ -421,18 +438,25 @@ main() {
         "$cmd" list -c ns4t,image.description:image
 
         # Remove the network forward port if any was set on this interface
-        local forward="$("$cmd" network forward list "$brid" -f json)"
+        local forward
+        forward="$("$cmd" network forward list "$brid" -f json)"
+        # TODO: implement exit code check
         echodebug "forward = $forward"
-        local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        local listenAddress
+        listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        # TODO: implement exit code check
         echodebug "listenAddress = $listenAddress"
-        local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        local listenPort
+        listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        # TODO: implement exit code check
         echodebug "listenPort = $listenPort"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
             echo "INFO: Find the host address from the output"
             echo "INFO: Removing network forward port"
-            local hostAddr="$(get_host_addr "$cmd" "$brid")"
-            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"
-            if [[ "$?" -ne 0 ]]; then
+            local hostAddr
+            hostAddr="$(get_host_addr "$cmd" "$brid")"
+            # TODO: implement exit code check
+            if ! "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"; then
                 echo "ERR: Cannot remove network forward port" >&2
                 return 1
             fi
@@ -444,8 +468,7 @@ main() {
     # Create a new container if none found
     if [[ "$containerIsRunning" == 'false' ]]; then
         # Start an instance
-        "$cmd" launch --ephemeral "$imgName" "$lxc_name"
-        if [[ "$?" -ne 0 ]]; then
+        if ! "$cmd" launch --ephemeral "$imgName" "$lxc_name"; then
             echo "Err: Failed to create a container" >&2
             exit 1
         fi
@@ -529,18 +552,32 @@ main() {
     apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
     # Add forwarding rule
-    local forward="$("$cmd" network forward list "$brid" -f json)"
-    local containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    local detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
-    local detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
-    local listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    local listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+    local forward
+    forward="$("$cmd" network forward list "$brid" -f json)"
+    # TODO: implement exit code check
+    local containerAddr
+    containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+    # TODO: implement exit code check
+    local detectedAddress
+    detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
+    # TODO: implement exit code check
+    local detectedPort
+    detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
+    # TODO: implement exit code check
+    local listenAddress
+    listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+    # TODO: implement exit code check
+    local listenPort
+    listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+    # TODO: implement exit code check
     # TODO:
     # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
     # Find any previous config
     if [[ -n "$listenPort" ]]; then
         # When any of the previous config is mismatched, delete them
-        local hostAddr="$(get_host_addr "$cmd" "$brid")"
+        local hostAddr
+        hostAddr="$(get_host_addr "$cmd" "$brid")"
+        # TODO: implement exit code check
         if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
             echodebug "forward = $(echo -n "$forward" | jq .)"
             echodebug "containerAddr = $containerAddr"
@@ -557,7 +594,9 @@ main() {
         fi
     fi
     if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
-        local hostAddr="$(get_host_addr "$cmd" "$brid")"
+        local hostAddr
+        hostAddr="$(get_host_addr "$cmd" "$brid")"
+        # TODO: implement exit code check
         # Create a network forward when none found
         if [[ -z "$listenAddress" ]]; then
             echo "INFO: Create a network forward to $listenAddress"
