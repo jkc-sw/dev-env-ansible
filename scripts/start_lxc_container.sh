@@ -56,7 +56,6 @@ echodebug() {
 test_virtualization_enabled_or_capable() {
     local cpuinfo
     cpuinfo="$(</proc/cpuinfo)"
-    # TODO implement exit code check
     if [[ "$cpuinfo" =~ vmx|svm ]]; then
         echo -n 'true'
         return
@@ -82,13 +81,10 @@ get_host_addr() {
     local brid="${args[1]}"
     local forward
     forward="$("$cmd" network forward list "$brid" -f json)"
-    # TODO: implement exit code check
     local listenAddress
     listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    # TODO: implement exit code check
     local currentIpOutput
     currentIpOutput="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output)"
-    # TODO: implement exit code check
     # Find an existing one and return it
     while read -r each; do
         if [[ "$currentIpOutput" == *"$each"* ]]; then
@@ -99,7 +95,6 @@ get_host_addr() {
     # otherwise, use fzf to search it
     local selectedHostIp
     selectedHostIp="$(echo -n "$currentIpOutput" | fzf)"
-    # TODO: implement exit code check
     if [[ "$?" -ne 0 || -z "$selectedHostIp" ]]; then
         echo "ERR (get_host_addr): Cannot get the host address using fzf" >&2
         return 1
@@ -126,7 +121,6 @@ get_all_mounted_paths_from_containers() {
     local lxc_name="${args[1]}"
     local paths
     paths="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .devices[] | \"\(.path):\(.source)\"")"
-    # TODO: implement exit code check
     echo -n "$paths"
 }
 
@@ -148,15 +142,22 @@ add_lxc_mount_global() {
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
     local path="${args[2]}"
+    if [[ ! "$path" == *:* ]]; then
+        echo "ERR (add_lxc_mount_global): path arg should have format '<src>:<dest>'" >&2
+        return 1
+    fi
     local src="${path%:*}"
     if [[ ! -e "$src" ]]; then
-        echo "ERR (add_lxc_mount_global): src path '$src' is not found." >&2
+        echo "ERR (add_lxc_mount_global): src '$src' (before : in path arg) is not found." >&2
         return 1
     fi
     local dest="${path#*:}"
+    if [[ -z "$dest" ]]; then
+        echo "ERR (add_lxc_mount_global): dest (after : in path arg) cannot be empty" >&2
+        return 1
+    fi
     local out
     out="$(sha1sum <<<"$path")"
-    # TODO: implement exit code check
     local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
@@ -269,12 +270,11 @@ apply_lxc_mounts_global() {
     local lxc_name="${args[1]}"
     local username="${args[2]}"
     local homePath="${args[3]}"
+    local mountedPaths
+    mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
     # Apply the monts to the lxc
     for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
         local each="${lxc_volume_mount[ii]}"
-        local mountedPaths
-        mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
-        # TODO: implement exit code check
         # Skip this path if already monuted
         if [[ "$mountedPaths" == *"$each"* ]]; then
             echo "INFO (add_lxc_mount_global): Skip mounted '$each'"
@@ -329,7 +329,7 @@ test_running_container() {
     # var
     if [[ -n "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .name")" ]]; then
         echo -n 'true'
-        return
+        return 0
     fi
     echo -n 'false'
 }
