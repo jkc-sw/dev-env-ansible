@@ -148,7 +148,7 @@ displayHelpLxc() {
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo "Manage a bespoked lxc container for testing this repository"
-    echo " start: [-r] [-w DIR]... [-v] [-d]"
+    echo " start: [-r] [-w DIR]... [-v] [-d] [-m]"
     echo "   Start a LXC container"
     echo ""
     echo " stop: [-v]"
@@ -164,6 +164,7 @@ displayHelpLxc() {
     echo "  -v     > Enable verbose trace in the script"
     echo "  -d     > Enable desktop environment install via VNC"
     echo "  -r     > Stop and remove the running container"
+    echo "  -m     > Create a VM instead of a container"
     echo "  -w dir > Bind mount this folder to the container"
 }
 
@@ -535,13 +536,16 @@ sub_main_lxc() {
     'start')
         startarg=()
         # parse the argumetns
-        while getopts ':rdvw:' opt; do
+        while getopts ':rdvmw:' opt; do
             case "$opt" in
             d)
                 startarg+=(-d)
                 ;;
             v)
                 startarg+=(-v)
+                ;;
+            m)
+                startarg+=(-m)
                 ;;
             w)
                 each="$OPTARG"

@@ -27,7 +27,7 @@ displayHelp() {
     echo ""
     echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
     echo " -d                        : Run a desktop environment via TurboVNC"
-    echo " -m                        : Run as a VM instead of container, which is the default"
+    echo " -m                        : Run as a VM instead of a container. Default is a container"
     echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
     echo " -i IMAGE_NAME             : Ubuntu image to use. Default is 24.04"
     echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
@@ -44,7 +44,7 @@ SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
 # Function to echo debug
 echodebug() {
-    if [[ -n "$DEBUG_LXC" ]]; then
+    if [[ -n "${DEBUG_LXC:=}" ]]; then
         echo "DEBUG: $*"
     fi
 }
@@ -208,6 +208,32 @@ chown_lxc_mount_global() {
 }
 
 ################################################################################
+# @brief Apply some container or VM specific configuration in LXC on the host
+#        VM should be off at this time
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param uid - user id
+# @param gid - user's group id
+# @return void
+################################################################################
+apply_lxc_guest_specific_settings() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 4 ]]; then
+        echo "ERR (apply_generic_configurations): need 4 arguments (bin, container name, uid, gid) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local uid="${args[2]}"
+    local gid="${args[3]}"
+    # map the user id in the container
+    echodebug "(apply_generic_configurations): lxc raw.idmap"
+    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+}
+
+################################################################################
 # @brief upon container creation, add user of same uid/guid, grant sudo without
 #        password, set timezone, then restart the container
 # @param cmd - whether it is lxc or incus
@@ -245,11 +271,6 @@ apply_generic_configurations() {
         && chmod 0440 /etc/sudoers.d/${username} \
         && chown \${uid}:\${gid} -R ${homePath} \
         && echo ${username}:aoeu | chpasswd"
-    # map the user id in the container
-    echodebug "(apply_generic_configurations): lxc raw.idmap"
-    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
-    echodebug "(apply_generic_configurations): restart container $lxc_name"
-    "$cmd" restart "$lxc_name"
 }
 
 ################################################################################
@@ -288,6 +309,38 @@ apply_lxc_mounts_global() {
 }
 
 ################################################################################
+# @brief Create a new guest, container or VM
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param imgName - The image to spawn the container or VM
+# @param vm - Create the guest as a VM when 'true', otherwise 'false'
+# @return void
+################################################################################
+init_new_guest() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 4 ]]; then
+        echo "ERR (init_new_guest): need 4 arguments (bin, container name, username, home dir) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local imgName="${args[2]}"
+    local vm="${args[3]}"
+    local initArgs=(init "$imgName" "$lxc_name")
+    if [[ "$vm" == 'true' ]]; then
+        initArgs+=(--vm)
+    fi
+    echodebug "initArgs = ${initArgs[*]}"
+    if ! "$cmd" "${initArgs[@]}"; then
+        echo "Err: Failed to create a container" >&2
+        return 1
+    fi
+    return 0
+}
+
+################################################################################
 # @brief Check that all dependencies are available
 # @throw When any dependency is not met, exit
 ################################################################################
@@ -311,17 +364,17 @@ check_dependencies() {
 # }
 
 ################################################################################
-# @brief test whether the named container is running
+# @brief test whether the named container is present
 # @param cmd - whether it is lxc or incus
 # @param lxc_name - container name
 # @return 'true' if running, etherwise 'false'
 ################################################################################
-test_running_container() {
+test_container_present() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 2 ]]; then
-        echo "ERR (get_running_container): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
+        echo "ERR (test_container_present): need 2 arguments (bin, container name) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -422,7 +475,7 @@ main() {
 
     # var
     local containerIsRunning
-    containerIsRunning="$(test_running_container "$cmd" "$lxc_name")"
+    containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
 
     # When asking to delete
     if [[ "$remove" == 'true' ]]; then
@@ -430,8 +483,8 @@ main() {
         if [[ "$containerIsRunning" == 'true' ]]; then
             echo "INFO: Stop and remove containers $lxc_name"
 
-            if ! "$cmd" stop "$lxc_name"; then
-                echo "ERR: Cannot stop the container $lxc_name" >&2
+            if ! "$cmd" delete -f "$lxc_name"; then
+                echo "ERR: Cannot delete the container $lxc_name" >&2
                 return 1
             fi
         fi
@@ -440,15 +493,12 @@ main() {
         # Remove the network forward port if any was set on this interface
         local forward
         forward="$("$cmd" network forward list "$brid" -f json)"
-        # TODO: implement exit code check
         echodebug "forward = $forward"
         local listenAddress
         listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-        # TODO: implement exit code check
         echodebug "listenAddress = $listenAddress"
         local listenPort
         listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-        # TODO: implement exit code check
         echodebug "listenPort = $listenPort"
         if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
             echo "INFO: Find the host address from the output"
@@ -467,16 +517,27 @@ main() {
 
     # Create a new container if none found
     if [[ "$containerIsRunning" == 'false' ]]; then
+        # Need to select whether to create a VM or not
         # Start an instance
-        if ! "$cmd" launch --ephemeral "$imgName" "$lxc_name"; then
+        if ! init_new_guest "$cmd" "$lxc_name" "$imgName" "$vm"; then
             echo "Err: Failed to create a container" >&2
             exit 1
         fi
 
+        # Configure container specific stuff while the guest is in off state
+        local uid
+        uid="$(id -u)"
+        local gid
+        gid="$(id -g)"
+        apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
+
+        # Start the container
+        "$cmd" start "$lxc_name"
+
         # Configure generic stuff
-        echo "INFO: Sleeping 3 seconds to wait for the up network"
-        sleep 3
-        apply_generic_configurations "$cmd" "$lxc_name" "$(id -u)" "$(id -g)" "$USER" "$HOME"
+        echo "INFO: Sleeping 20 seconds to wait for the up network"
+        sleep 20
+        apply_generic_configurations "$cmd" "$lxc_name" "$uid" "$gid" "$USER" "$HOME"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
             # Fix the locale on debian
@@ -545,7 +606,7 @@ main() {
         fi
 
         # Update the container status
-        containerIsRunning="$(test_running_container "$cmd" "$lxc_name")"
+        containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
     fi
 
     # Mount folders
