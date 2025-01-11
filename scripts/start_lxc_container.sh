@@ -221,7 +221,7 @@ apply_lxc_guest_specific_settings() {
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 4 ]]; then
-        echo "ERR (apply_generic_configurations): need 4 arguments (bin, container name, uid, gid) only, but found ${#args[@]}" >&2
+        echo "ERR (apply_lxc_guest_specific_settings): need 4 arguments (bin, container name, uid, gid) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -229,8 +229,34 @@ apply_lxc_guest_specific_settings() {
     local uid="${args[2]}"
     local gid="${args[3]}"
     # map the user id in the container
-    echodebug "(apply_generic_configurations): lxc raw.idmap"
+    echodebug "(apply_lxc_guest_specific_settings): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+}
+
+################################################################################
+# @brief Set the number of PCIe device in the lxc container config
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param num - number of PCIe devices in the config limits
+# @return void
+################################################################################
+set_container_pcie_cfg_limits() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 3 ]]; then
+        echo "ERR (set_container_pcie_cfg_limits): need 3 arguments (bin, container name, limits) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local limits="${args[2]}"
+    # Remove default ubuntu user and add my user
+    echodebug "(set_container_pcie_cfg_limits): set the limits.pcie to limits ($limits)"
+    if ! "$cmd" config set "$lxc_name" "limits.pci=$limits"; then
+        echo "ERR (set_container_pcie_cfg_limits): failed to set the config for $lxc_name" >&2
+        return 1
+    fi
 }
 
 ################################################################################
@@ -531,12 +557,19 @@ main() {
         gid="$(id -g)"
         apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
 
+        # # configure the limits for the PCIe devices
+        # # The limit should be 1 more than the mount to account for the host drive
+        # if ! set_container_pcie_cfg_limits "$cmd" "$lxc_name" $(( "${#lxc_volume_mount[@]}" + 1)); then
+        #     echo "Err: Failed to configure the lxc pci limits" >&2
+        #     exit 1
+        # fi
+
         # Start the container
         "$cmd" start "$lxc_name"
 
         # Configure generic stuff
-        echo "INFO: Sleeping 20 seconds to wait for the up network"
-        sleep 20
+        echo "INFO: Sleeping 30 seconds to wait for the up network"
+        sleep 30
         apply_generic_configurations "$cmd" "$lxc_name" "$uid" "$gid" "$USER" "$HOME"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
