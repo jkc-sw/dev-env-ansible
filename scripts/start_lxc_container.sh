@@ -15,6 +15,330 @@ set -euo pipefail
 
 args=("$@")
 
+# const
+SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
+
+################################################################################
+# @brief main
+################################################################################
+main() {
+    # var
+
+    # Ubuntu
+    local imgName='ubuntu:24.04'
+    local lxc_name='tom'
+    local vnc_port_on_host=15900
+
+    # # arch
+    # local imgName='images:archlinux/current/default'
+    # local lxc_name='btw'
+    # local vnc_port_on_host=15902
+
+    # local imgName='images:nixos/24.05/default'
+    # local lxc_name='nix'
+    # local vnc_port_on_host=15903
+
+    # local cmd='lxc'
+    # local brid='incusbr0'
+
+    local cmd='lxc'
+    local brid='lxdbr0'
+    local lxc_volume_mount=()
+    local vnc_port=5900
+    local remove=false
+    local shell=false
+    local installDesktopEnvironmentWithVNC=false
+    local vm=false
+
+    # parse the argumetns
+    while getopts 'hvf:i:b:x:p:n:w:sr.dm' opt; do
+        case "$opt" in
+        .)
+            return 0
+            ;;
+        m)
+            vm=true
+            ;;
+        d)
+            installDesktopEnvironmentWithVNC=true
+            ;;
+        v)
+            set -x  # enable verbose trace
+            ;;
+        s)
+            shell=true
+            ;;
+        r)
+            remove=true
+            ;;
+        p)
+            vnc_port="$OPTARG"
+            ;;
+        f)
+            vnc_port_on_host="$OPTARG"
+            ;;
+        x)
+            cmd="$OPTARG"
+            ;;
+        n)
+            lxc_name="$OPTARG"
+            ;;
+        b)
+            brid="$OPTARG"
+            ;;
+        i)
+            imgName="ubuntu:$OPTARG"
+            ;;
+        w)
+            append_lxc_mount_global "$OPTARG"
+            ;;
+        h)
+            displayHelp
+            return 0
+            ;;
+        *)
+            echo "Unrecognized option $opt" >&2
+            displayHelp
+            return 1
+            ;;
+        esac
+    done
+
+    # var
+    local containerIsRunning
+    containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
+
+    # When asking to delete
+    if [[ "$remove" == 'true' ]]; then
+        # Stop/remove the container if found
+        if [[ "$containerIsRunning" == 'true' ]]; then
+            echo "INFO: Stop and remove containers $lxc_name"
+
+            if ! "$cmd" delete -f "$lxc_name"; then
+                echo "ERR: Cannot delete the container $lxc_name" >&2
+                return 1
+            fi
+        fi
+        "$cmd" list -c ns4t,image.description:image
+
+        # Remove the network forward port if any was set on this interface
+        local forward
+        forward="$("$cmd" network forward list "$brid" -f json)"
+        echodebug "forward = $forward"
+        local listenAddress
+        listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        echodebug "listenAddress = $listenAddress"
+        local listenPort
+        listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        echodebug "listenPort = $listenPort"
+        if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
+            echo "INFO: Find the host address from the output"
+            echo "INFO: Removing network forward port"
+            local hostAddr
+            hostAddr="$(get_host_addr "$cmd" "$brid")"
+            # TODO: implement exit code check
+            if ! "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"; then
+                echo "ERR: Cannot remove network forward port" >&2
+                return 1
+            fi
+        fi
+        "$cmd" network forward list "$brid"
+        return 0
+    fi
+
+    # Create a new container if none found
+    if [[ "$containerIsRunning" == 'false' ]]; then
+        # Need to select whether to create a VM or not
+        # Start an instance
+        if ! init_new_guest "$cmd" "$lxc_name" "$imgName" "$vm"; then
+            echo "Err: Failed to create a container" >&2
+            exit 1
+        fi
+
+        # Configure container specific stuff while the guest is in off state
+        local uid
+        uid="$(id -u)"
+        local gid
+        gid="$(id -g)"
+        apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
+
+        # Mount folders
+        apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
+
+        # # configure the limits for the PCIe devices
+        # # The limit should be 1 more than the mount to account for the host drive
+        # if ! set_container_pcie_cfg_limits "$cmd" "$lxc_name" $(( "${#lxc_volume_mount[@]}" + 1)); then
+        #     echo "Err: Failed to configure the lxc pci limits" >&2
+        #     exit 1
+        # fi
+
+        # Start the container
+        "$cmd" start "$lxc_name"
+
+        # Configure generic stuff
+        local waitTime=3
+        if [[ "$vm" == 'true' ]]; then
+            waitTime=30
+        fi
+        echo "INFO: Sleeping $waitTime seconds to wait for the up network"
+        sleep "$waitTime"
+        apply_generic_configurations "$cmd" "$lxc_name" "$uid" "$gid" "$USER" "$HOME"
+
+        if [[ "$imgName" == *'ubuntu'* ]]; then
+            # Fix the locale on debian
+            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+                && locale-gen en_US.UTF-8 \
+                && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+                && locale-gen en_US.UTF-8'
+
+            if [[ "$installDesktopEnvironmentWithVNC" == 'true' ]]; then
+
+                # Install Browser
+                "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
+                    && apt install -y --no-install-recommends firefox'
+                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+
+                # # Install x11vnc
+                # "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
+                #     && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies x11vnc'
+
+                # # configure x11vnc
+                # "$cmd" exec "$lxc_name" -t -- bash -c "mkdir -p /etc/vnc \
+                #     && x11vnc -storepasswd 'aoeuaoeu' /etc/vnc/passwd \
+                #     && x11vnc -display ':0' -auth guess -forever -loop -noxdamage -repeat -rfbauth '/home/$USER/.vnc/passwd' -autoport 5900 -shared \
+                #     && echo -n '' > /etc/systemd/system/x11vnc.service \
+                #     && {
+                #         echo '[Unit]'
+                #         echo 'Description=\"x11vnc\"'
+                #         echo 'Requires=display-manager.service'
+                #         echo 'After=display-manager.service'
+                #         echo ''
+                #         echo '[Service]'
+                #         echo 'ExecStart=/usr/bin/x11vnc -xkb -noxrecord -noxfixes -noxdamage -display :0 -auth guess -rfbauth /etc/vnc/passwd'
+                #         echo 'ExecStop=/usr/bin/killall x11vnc'
+                #         echo 'Restart=on-failure'
+                #         echo 'Restart-sec=2'
+                #         echo ''
+                #         echo '[Install]'
+                #         echo 'WantedBy=multi-user.target'
+                #     } >> /etc/systemd/system/x11vnc.service \
+                #     && systemctl daemon-reload \
+                #     && systemctl start x11vnc \
+                #     && systemctl enable x11vnc"
+
+                # Install turbovnc
+                "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
+                    gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
+                    && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
+                    && apt update \
+                    && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+
+                # Configure the vnc
+                "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
+                    && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
+                    && chown -R '$USER:$USER' '/home/$USER/.vnc' \
+                    && chmod 0600 '/home/$USER/.vnc/passwd' \
+                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080'"
+
+            fi
+
+        elif [[ "$imgName" == *'archlinux'* ]]; then
+            # TODO: Fix this
+            #   err msg: error: failed retrieving file 'alsa-ucm-conf-1.2.11-1-any.pkg.tar.zst' from mirrors.kernel.org : The requested URL returned error: 404
+            # Install vnc
+            "$cmd" exec "$lxc_name" -t -- bash -c 'pacman --noconfirm -S xfce4'
+        fi
+
+        # Update the container status
+        containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
+    fi
+
+    # # Mount folders
+    # apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
+
+    # Add forwarding rule
+    local forward
+    forward="$("$cmd" network forward list "$brid" -f json)"
+    # TODO: implement exit code check
+    local containerAddr
+    containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+    # TODO: implement exit code check
+    local detectedAddress
+    detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
+    # TODO: implement exit code check
+    local detectedPort
+    detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
+    # TODO: implement exit code check
+    local listenAddress
+    listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+    # TODO: implement exit code check
+    local listenPort
+    listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+    # TODO: implement exit code check
+    # TODO:
+    # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
+    # Find any previous config
+    if [[ -n "$listenPort" ]]; then
+        # When any of the previous config is mismatched, delete them
+        local hostAddr
+        hostAddr="$(get_host_addr "$cmd" "$brid")"
+        # TODO: implement exit code check
+        if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
+            echodebug "forward = $(echo -n "$forward" | jq .)"
+            echodebug "containerAddr = $containerAddr"
+            echodebug "detectedAddress = $detectedAddress"
+            echodebug "detectedPort = $detectedPort"
+            echodebug "listenAddress = $listenAddress"
+            echodebug "listenPort = $listenPort"
+            echodebug "hostAddr = $hostAddr"
+            echo "ERR: The forward has a different container address/port configuration." >&2
+            echo "ERR: Removing the old definition" >&2
+            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
+            # Reset this var to meet the next network forward creation code conditional
+            listenPort=''
+        fi
+    fi
+    if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
+        local hostAddr
+        hostAddr="$(get_host_addr "$cmd" "$brid")"
+        # TODO: implement exit code check
+        # Create a network forward when none found
+        if [[ -z "$listenAddress" ]]; then
+            echo "INFO: Create a network forward to $listenAddress"
+            "$cmd" network forward create "$brid" "$hostAddr"
+        fi
+        # Listen and forward a network port
+        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
+    fi
+
+    # Just print status
+    "$cmd" list -c ns4t,image.description:image
+    "$cmd" network forward list "$brid"
+
+    # "$cmd" exec "$lxc_name" -t -- bash -c "cat /etc/netplan/*"
+
+    # # List the active vnc ports
+    # "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
+
+    # # print ip
+    # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+
+    # # Install x11vnc
+    # "$cmd" exec "$lxc_name" -t -- bash -c 'apt install -y --no-install-recommends x11vnc'
+
+    # # start a bash shell as root
+    # "$cmd" exec "$lxc_name" -t -- bash -l
+
+    if [[ "$shell" == 'true' ]]; then
+        # start a bash shell
+        "$cmd" exec "$lxc_name" -t --cwd "/home/$USER" -- su - "$USER"
+    fi
+
+    # # stop the shell
+    # "$cmd" stop "$lxc_name"
+}
+
 displayHelp() {
     # print help here
     echo "${BASH_SOURCE[0]} [flags] Create lxc container for testing"
@@ -38,9 +362,6 @@ displayHelp() {
     echo " -h                        : Print this help command"
     echo " -v                        : Verbose trace information"
 }
-
-# const
-SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
 # Function to echo debug
 echodebug() {
@@ -328,10 +649,10 @@ apply_lxc_mounts_global() {
             continue
         fi
         add_lxc_mount_global "$cmd" "$lxc_name" "$each"
-        chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
+        # chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
     done
-    # chown the entire home dir
-    "$cmd" exec "$lxc_name" -- chown -R "$username:$username" "$homePath"
+    # # chown the entire home dir
+    # "$cmd" exec "$lxc_name" -- chown -R "$username:$username" "$homePath"
 }
 
 ################################################################################
@@ -411,320 +732,6 @@ test_container_present() {
         return 0
     fi
     echo -n 'false'
-}
-
-################################################################################
-# @brief main
-################################################################################
-main() {
-    # var
-
-    # Ubuntu
-    local imgName='ubuntu:24.04'
-    local lxc_name='tom'
-    local vnc_port_on_host=15900
-
-    # # arch
-    # local imgName='images:archlinux/current/default'
-    # local lxc_name='btw'
-    # local vnc_port_on_host=15902
-
-    # local imgName='images:nixos/24.05/default'
-    # local lxc_name='nix'
-    # local vnc_port_on_host=15903
-
-    # local cmd='lxc'
-    # local brid='incusbr0'
-
-    local cmd='lxc'
-    local brid='lxdbr0'
-    local lxc_volume_mount=()
-    local vnc_port=5900
-    local remove=false
-    local shell=false
-    local installDesktopEnvironmentWithVNC=false
-    local vm=false
-
-    # parse the argumetns
-    while getopts 'hvf:i:b:x:p:n:w:sr.dm' opt; do
-        case "$opt" in
-        .)
-            return 0
-            ;;
-        m)
-            vm=true
-            ;;
-        d)
-            installDesktopEnvironmentWithVNC=true
-            ;;
-        v)
-            set -x  # enable verbose trace
-            ;;
-        s)
-            shell=true
-            ;;
-        r)
-            remove=true
-            ;;
-        p)
-            vnc_port="$OPTARG"
-            ;;
-        f)
-            vnc_port_on_host="$OPTARG"
-            ;;
-        x)
-            cmd="$OPTARG"
-            ;;
-        n)
-            lxc_name="$OPTARG"
-            ;;
-        b)
-            brid="$OPTARG"
-            ;;
-        i)
-            imgName="ubuntu:$OPTARG"
-            ;;
-        w)
-            append_lxc_mount_global "$OPTARG"
-            ;;
-        h)
-            displayHelp
-            return 0
-            ;;
-        *)
-            echo "Unrecognized option $opt" >&2
-            displayHelp
-            return 1
-            ;;
-        esac
-    done
-
-    # var
-    local containerIsRunning
-    containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
-
-    # When asking to delete
-    if [[ "$remove" == 'true' ]]; then
-        # Stop/remove the container if found
-        if [[ "$containerIsRunning" == 'true' ]]; then
-            echo "INFO: Stop and remove containers $lxc_name"
-
-            if ! "$cmd" delete -f "$lxc_name"; then
-                echo "ERR: Cannot delete the container $lxc_name" >&2
-                return 1
-            fi
-        fi
-        "$cmd" list -c ns4t,image.description:image
-
-        # Remove the network forward port if any was set on this interface
-        local forward
-        forward="$("$cmd" network forward list "$brid" -f json)"
-        echodebug "forward = $forward"
-        local listenAddress
-        listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-        echodebug "listenAddress = $listenAddress"
-        local listenPort
-        listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-        echodebug "listenPort = $listenPort"
-        if [[ -n "$listenAddress" && "$listenPort" == "$vnc_port_on_host" ]]; then
-            echo "INFO: Find the host address from the output"
-            echo "INFO: Removing network forward port"
-            local hostAddr
-            hostAddr="$(get_host_addr "$cmd" "$brid")"
-            # TODO: implement exit code check
-            if ! "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$vnc_port_on_host"; then
-                echo "ERR: Cannot remove network forward port" >&2
-                return 1
-            fi
-        fi
-        "$cmd" network forward list "$brid"
-        return 0
-    fi
-
-    # Create a new container if none found
-    if [[ "$containerIsRunning" == 'false' ]]; then
-        # Need to select whether to create a VM or not
-        # Start an instance
-        if ! init_new_guest "$cmd" "$lxc_name" "$imgName" "$vm"; then
-            echo "Err: Failed to create a container" >&2
-            exit 1
-        fi
-
-        # Configure container specific stuff while the guest is in off state
-        local uid
-        uid="$(id -u)"
-        local gid
-        gid="$(id -g)"
-        apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
-
-        # # configure the limits for the PCIe devices
-        # # The limit should be 1 more than the mount to account for the host drive
-        # if ! set_container_pcie_cfg_limits "$cmd" "$lxc_name" $(( "${#lxc_volume_mount[@]}" + 1)); then
-        #     echo "Err: Failed to configure the lxc pci limits" >&2
-        #     exit 1
-        # fi
-
-        # Start the container
-        "$cmd" start "$lxc_name"
-
-        # Configure generic stuff
-        echo "INFO: Sleeping 30 seconds to wait for the up network"
-        sleep 30
-        apply_generic_configurations "$cmd" "$lxc_name" "$uid" "$gid" "$USER" "$HOME"
-
-        if [[ "$imgName" == *'ubuntu'* ]]; then
-            # Fix the locale on debian
-            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
-                && locale-gen en_US.UTF-8 \
-                && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
-                && locale-gen en_US.UTF-8'
-
-            if [[ "$installDesktopEnvironmentWithVNC" == 'true' ]]; then
-
-                # Install Browser
-                "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
-                    && apt install -y --no-install-recommends firefox'
-                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
-
-                # # Install x11vnc
-                # "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
-                #     && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies x11vnc'
-
-                # # configure x11vnc
-                # "$cmd" exec "$lxc_name" -t -- bash -c "mkdir -p /etc/vnc \
-                #     && x11vnc -storepasswd 'aoeuaoeu' /etc/vnc/passwd \
-                #     && x11vnc -display ':0' -auth guess -forever -loop -noxdamage -repeat -rfbauth '/home/$USER/.vnc/passwd' -autoport 5900 -shared \
-                #     && echo -n '' > /etc/systemd/system/x11vnc.service \
-                #     && {
-                #         echo '[Unit]'
-                #         echo 'Description=\"x11vnc\"'
-                #         echo 'Requires=display-manager.service'
-                #         echo 'After=display-manager.service'
-                #         echo ''
-                #         echo '[Service]'
-                #         echo 'ExecStart=/usr/bin/x11vnc -xkb -noxrecord -noxfixes -noxdamage -display :0 -auth guess -rfbauth /etc/vnc/passwd'
-                #         echo 'ExecStop=/usr/bin/killall x11vnc'
-                #         echo 'Restart=on-failure'
-                #         echo 'Restart-sec=2'
-                #         echo ''
-                #         echo '[Install]'
-                #         echo 'WantedBy=multi-user.target'
-                #     } >> /etc/systemd/system/x11vnc.service \
-                #     && systemctl daemon-reload \
-                #     && systemctl start x11vnc \
-                #     && systemctl enable x11vnc"
-
-                # Install turbovnc
-                "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
-                    gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
-                    && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
-                    && apt update \
-                    && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
-                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
-
-                # Configure the vnc
-                "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
-                    && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
-                    && chown -R '$USER:$USER' '/home/$USER/.vnc' \
-                    && chmod 0600 '/home/$USER/.vnc/passwd' \
-                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080'"
-
-            fi
-
-        elif [[ "$imgName" == *'archlinux'* ]]; then
-            # TODO: Fix this
-            #   err msg: error: failed retrieving file 'alsa-ucm-conf-1.2.11-1-any.pkg.tar.zst' from mirrors.kernel.org : The requested URL returned error: 404
-            # Install vnc
-            "$cmd" exec "$lxc_name" -t -- bash -c 'pacman --noconfirm -S xfce4'
-        fi
-
-        # Update the container status
-        containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
-    fi
-
-    # Mount folders
-    apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
-
-    # Add forwarding rule
-    local forward
-    forward="$("$cmd" network forward list "$brid" -f json)"
-    # TODO: implement exit code check
-    local containerAddr
-    containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    # TODO: implement exit code check
-    local detectedAddress
-    detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
-    # TODO: implement exit code check
-    local detectedPort
-    detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
-    # TODO: implement exit code check
-    local listenAddress
-    listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    # TODO: implement exit code check
-    local listenPort
-    listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-    # TODO: implement exit code check
-    # TODO:
-    # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
-    # Find any previous config
-    if [[ -n "$listenPort" ]]; then
-        # When any of the previous config is mismatched, delete them
-        local hostAddr
-        hostAddr="$(get_host_addr "$cmd" "$brid")"
-        # TODO: implement exit code check
-        if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
-            echodebug "forward = $(echo -n "$forward" | jq .)"
-            echodebug "containerAddr = $containerAddr"
-            echodebug "detectedAddress = $detectedAddress"
-            echodebug "detectedPort = $detectedPort"
-            echodebug "listenAddress = $listenAddress"
-            echodebug "listenPort = $listenPort"
-            echodebug "hostAddr = $hostAddr"
-            echo "ERR: The forward has a different container address/port configuration." >&2
-            echo "ERR: Removing the old definition" >&2
-            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
-            # Reset this var to meet the next network forward creation code conditional
-            listenPort=''
-        fi
-    fi
-    if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
-        local hostAddr
-        hostAddr="$(get_host_addr "$cmd" "$brid")"
-        # TODO: implement exit code check
-        # Create a network forward when none found
-        if [[ -z "$listenAddress" ]]; then
-            echo "INFO: Create a network forward to $listenAddress"
-            "$cmd" network forward create "$brid" "$hostAddr"
-        fi
-        # Listen and forward a network port
-        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
-    fi
-
-    # Just print status
-    "$cmd" list -c ns4t,image.description:image
-    "$cmd" network forward list "$brid"
-
-    # "$cmd" exec "$lxc_name" -t -- bash -c "cat /etc/netplan/*"
-
-    # # List the active vnc ports
-    # "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c '/opt/TurboVNC/bin/vncserver -list'
-
-    # # print ip
-    # printf "Connect to VNC using '_vncconnect %s :1'\n" "$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network.eth0.addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-
-    # # Install x11vnc
-    # "$cmd" exec "$lxc_name" -t -- bash -c 'apt install -y --no-install-recommends x11vnc'
-
-    # # start a bash shell as root
-    # "$cmd" exec "$lxc_name" -t -- bash -l
-
-    if [[ "$shell" == 'true' ]]; then
-        # start a bash shell
-        "$cmd" exec "$lxc_name" -t --cwd "/home/$USER" -- su - "$USER"
-    fi
-
-    # # stop the shell
-    # "$cmd" stop "$lxc_name"
 }
 
 main "${args[@]}"
