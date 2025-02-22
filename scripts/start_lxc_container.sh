@@ -163,7 +163,7 @@ main() {
         apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
 
         # Mount folders
-        apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
+        add_lxc_mount_devices_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
         # # configure the limits for the PCIe devices
         # # The limit should be 1 more than the mount to account for the host drive
@@ -231,8 +231,8 @@ main() {
                     gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
                     && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
                     && apt update \
-                    && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
-                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+                    && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
+                    # && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
 
                 # Configure the vnc
                 "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
@@ -254,8 +254,8 @@ main() {
         containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
     fi
 
-    # # Mount folders
-    # apply_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
+    # Mount folders
+    chown_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
     # Add forwarding rule
     local forward
@@ -452,29 +452,29 @@ get_all_mounted_paths_from_containers() {
 # @param path - path to mount as <path on host>:<path in container>
 # @return void
 ################################################################################
-add_lxc_mount_global() {
+add_lxc_mount_device() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 3 ]]; then
-        echo "ERR (add_lxc_mount_global): need 3 arguments (bin, container name, path) only, but found ${#args[@]}" >&2
+        echo "ERR (add_lxc_mount_device): need 3 arguments (bin, container name, path) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
     local path="${args[2]}"
     if [[ ! "$path" == *:* ]]; then
-        echo "ERR (add_lxc_mount_global): path arg should have format '<src>:<dest>'" >&2
+        echo "ERR (add_lxc_mount_device): path arg should have format '<src>:<dest>'" >&2
         return 1
     fi
     local src="${path%:*}"
     if [[ ! -e "$src" ]]; then
-        echo "ERR (add_lxc_mount_global): src '$src' (before : in path arg) is not found." >&2
+        echo "ERR (add_lxc_mount_device): src '$src' (before : in path arg) is not found." >&2
         return 1
     fi
     local dest="${path#*:}"
     if [[ -z "$dest" ]]; then
-        echo "ERR (add_lxc_mount_global): dest (after : in path arg) cannot be empty" >&2
+        echo "ERR (add_lxc_mount_device): dest (after : in path arg) cannot be empty" >&2
         return 1
     fi
     local out
@@ -482,7 +482,7 @@ add_lxc_mount_global() {
     local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
-    echo "INFO (add_lxc_mount_global): Added '$path'" >&2
+    echo "INFO (add_lxc_mount_device): Added '$path'" >&2
 }
 
 ################################################################################
@@ -513,12 +513,12 @@ append_lxc_mount_global() {
 # @param path - path to mount as <path on host>:<path in container>
 # @return void
 ################################################################################
-chown_lxc_mount_global() {
+chown_lxc_each_mount_device() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 3 ]]; then
-        echo "ERR (chown_lxc_mount_global): need 3 argument (bin, container name, path), but found ${#args[@]}" >&2
+        echo "ERR (chown_lxc_each_mount_device): need 3 argument (bin, container name, path), but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -621,17 +621,17 @@ apply_generic_configurations() {
 }
 
 ################################################################################
-# @brief Add all the stored filepath to the mounts of container
+# @brief Change the owner of the mount points
 # @param cmd - whether it is lxc or incus
 # @param lxc_name - container name
 # @return void
 ################################################################################
-apply_lxc_mounts_global() {
+chown_lxc_mounts_global() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
     if [[ "${#args[@]}" -ne 4 ]]; then
-        echo "ERR (apply_lxc_mounts_global): need 4 arguments (bin, container name, username, home dir) only, but found ${#args[@]}" >&2
+        echo "ERR (chown_lxc_mounts_global): need 4 arguments (bin, container name, username, home dir) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
@@ -645,14 +645,47 @@ apply_lxc_mounts_global() {
         local each="${lxc_volume_mount[ii]}"
         # Skip this path if already monuted
         if [[ "$mountedPaths" == *"$each"* ]]; then
-            echo "INFO (add_lxc_mount_global): Skip mounted '$each'"
+            echo "INFO (chown_lxc_mounts_global): Skip mounted '$each'"
             continue
         fi
-        add_lxc_mount_global "$cmd" "$lxc_name" "$each"
-        # chown_lxc_mount_global "$cmd" "$lxc_name" "$each"
+        chown_lxc_each_mount_device "$cmd" "$lxc_name" "$each"
     done
-    # # chown the entire home dir
-    # "$cmd" exec "$lxc_name" -- chown -R "$username:$username" "$homePath"
+    # chown the entire home dir
+    "$cmd" exec "$lxc_name" -- chown -R "$username:$username" "$homePath"
+}
+
+################################################################################
+# @brief Add all the stored filepath to the mounts of container
+# @param cmd - whether it is lxc or incus
+# @param lxc_name - container name
+# @param username - user name to map from the host and container/vm
+# @param home - home path on the host and in the container/vm
+# @return void
+################################################################################
+add_lxc_mount_devices_global() {
+    # Get arguments
+    local args=("$@")
+    # Need 1 argument
+    if [[ "${#args[@]}" -ne 4 ]]; then
+        echo "ERR (add_lxc_mount_devices_global): need 4 arguments (bin, container name, username, home dir) only, but found ${#args[@]}" >&2
+        return 1
+    fi
+    local cmd="${args[0]}"
+    local lxc_name="${args[1]}"
+    local username="${args[2]}"
+    local homePath="${args[3]}"
+    local mountedPaths
+    mountedPaths="$(get_all_mounted_paths_from_containers "$cmd" "$lxc_name")"
+    # Apply the monts to the lxc
+    for ii in $(seq 0 $(( "${#lxc_volume_mount[@]}" - 1)) ); do
+        local each="${lxc_volume_mount[ii]}"
+        # Skip this path if already monuted
+        if [[ "$mountedPaths" == *"$each"* ]]; then
+            echo "INFO (add_lxc_mount_devices_global): Skip mounted '$each'"
+            continue
+        fi
+        add_lxc_mount_device "$cmd" "$lxc_name" "$each"
+    done
 }
 
 ################################################################################
