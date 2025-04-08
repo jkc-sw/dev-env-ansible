@@ -22,6 +22,11 @@
     uris: https://download.docker.com/linux/ubuntu
     state: present
 
+- name: Update cache to pick up the new keys
+  become: true
+  apt:
+    update_cache: yes
+
 - name: Install docker
   become: true
   apt:
