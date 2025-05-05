@@ -165,20 +165,13 @@ main() {
         # Mount folders
         add_lxc_mount_devices_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
-        # # configure the limits for the PCIe devices
-        # # The limit should be 1 more than the mount to account for the host drive
-        # if ! set_container_pcie_cfg_limits "$cmd" "$lxc_name" $(( "${#lxc_volume_mount[@]}" + 1)); then
-        #     echo "Err: Failed to configure the lxc pci limits" >&2
-        #     exit 1
-        # fi
-
         # Start the container
         "$cmd" start "$lxc_name"
 
         # Configure generic stuff
         local waitTime=3
         if [[ "$vm" == 'true' ]]; then
-            waitTime=30
+            waitTime=60
         fi
         echo "INFO: Sleeping $waitTime seconds to wait for the up network"
         sleep "$waitTime"
@@ -231,15 +224,16 @@ main() {
                     gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
                     && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
                     && apt update \
-                    && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
-                    # && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                    && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies turbovnc'
+                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
 
                 # Configure the vnc
                 "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
                     && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
                     && chown -R '$USER:$USER' '/home/$USER/.vnc' \
                     && chmod 0600 '/home/$USER/.vnc/passwd' \
-                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080'"
+                    && export TVNC_WM=xfce \
+                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080' -xstartup /home/$USER/xstartup"
 
             fi
 
@@ -710,7 +704,7 @@ init_new_guest() {
     local vm="${args[3]}"
     local initArgs=(init "$imgName" "$lxc_name")
     if [[ "$vm" == 'true' ]]; then
-        initArgs+=(--vm)
+        initArgs+=(--vm --disk root,size=150GiB)
     fi
     echodebug "initArgs = ${initArgs[*]}"
     if ! "$cmd" "${initArgs[@]}"; then
