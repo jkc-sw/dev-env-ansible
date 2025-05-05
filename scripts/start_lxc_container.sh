@@ -232,8 +232,12 @@ main() {
                     && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
                     && chown -R '$USER:$USER' '/home/$USER/.vnc' \
                     && chmod 0600 '/home/$USER/.vnc/passwd' \
+                    && echo '! Use a truetype font and size.' >/home/$USER/.Xresources \
+                    && echo 'xterm*faceName: Monospace' >/home/$USER/.Xresources \
+                    && echo 'xterm*faceSize: 14' >/home/$USER/.Xresources \
+                    && xrdb -merge /home/$USER/.Xresources \
                     && export TVNC_WM=xfce \
-                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080' -xstartup /home/$USER/xstartup"
+                    && /opt/TurboVNC/bin/vncserver :0 -depth 24 -geometry '1920x1080'"
 
             fi
 
