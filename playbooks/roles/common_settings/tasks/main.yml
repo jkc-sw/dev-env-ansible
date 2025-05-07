@@ -49,22 +49,23 @@
       state: 'present'
       update_cache: true
       name:
-        - git
-        - curl
-        - smbclient
-        - samba-common
-        - cifs-utils
         - apt-transport-https
-        - openssh-server
-        - net-tools
-        - moreutils
-        - util-linux
+        - cifs-utils
         - coreutils
-        - software-properties-common
-        - libxml2-utils
-        - netdiscover
-        - iputils-ping
+        - curl
         - exfat-fuse
+        - git
+        - iputils-ping
+        - libxml2-utils
+        - moreutils
+        - net-tools
+        - netdiscover
+        - openssh-server
+        - pass
+        - samba-common
+        - smbclient
+        - software-properties-common
+        - util-linux
 
   - name: Make sure some system dependencies are installed
     become: true
@@ -87,7 +88,6 @@
         - pdfgrep
         - gnupg
         - faketime
-        - pass
         - qtpass
         - expect
         - gv
