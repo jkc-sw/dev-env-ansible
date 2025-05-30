@@ -32,8 +32,6 @@
         pythonEnvWithPyDebian = pkgs.python312.withPackages (p: [p.debian]);
 
         packages = with pkgs; [
-          bitwarden-cli
-          jq
           ansible
         ];
 
