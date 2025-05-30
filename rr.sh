@@ -893,6 +893,7 @@ main() {
         if [[ "$verbose" == 'true' ]]; then
             aargs+=("-vvv")
         fi
+        aargs+=(-K)
         aargs+=(-e "playbook_target=localhost")
         aargs+=(-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
         aargs+=(-i "./inventory/localhost.yaml")
@@ -929,12 +930,21 @@ main() {
 
         install_nix
 
+        # buil args
+        aargs=()
+
         # install with ansible playbook
         if [[ "$verbose" == 'true' ]]; then
-            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" -vvv "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
-        elif [[ "$verbose" == 'false' ]]; then
-            time ansible-playbook -i ./inventory/localhost.yaml -e 'playbook_target=localhost' -e "playbook_target=localhost" "$WHOLE_PLAYBOOK_PATH" --tags "$tags"
+            aargs+=("-vvv")
         fi
+        aargs+=(-e "playbook_target=localhost")
+        aargs+=(-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
+        aargs+=(-i "./inventory/localhost.yaml")
+        aargs+=("$WHOLE_PLAYBOOK_PATH")
+        aargs+=("--tags")
+        aargs+=("$tags")
+
+        time ansible-playbook "${aargs[@]}"
         ;;
 
     'install')
@@ -968,6 +978,7 @@ main() {
         if [[ "$verbose" == 'true' ]]; then
             aargs+=("-vvv")
         fi
+        aargs+=(-K)
         aargs+=(-i "./inventory/localhost.yaml")
         aargs+=(-e "playbook_target=localhost")
         aargs+=(-e "ansible_python_interpreter=$EXPLICIT_PYTHON_PATH_FOR_ANSIBLE")
