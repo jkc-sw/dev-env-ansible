@@ -708,7 +708,7 @@ init_new_guest() {
     local vm="${args[3]}"
     local initArgs=(init "$imgName" "$lxc_name")
     if [[ "$vm" == 'true' ]]; then
-        initArgs+=(--vm --disk root,size=150GiB)
+        initArgs+=(--vm --device root,size=32GiB)
     fi
     echodebug "initArgs = ${initArgs[*]}"
     if ! "$cmd" "${initArgs[@]}"; then
