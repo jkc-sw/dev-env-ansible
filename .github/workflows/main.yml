@@ -19,7 +19,6 @@ jobs:
           'common_settings',
           'dotfiles',
           'lttng_install',
-          'matlab_schemer',
           'networking_tools',
           'some_git_clones',
           ]

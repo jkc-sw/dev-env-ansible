@@ -13,7 +13,6 @@
   tags:
     - rare
   roles:
-    - matlab_schemer
     - networking_tools
 
 - hosts: "{{ playbook_target }}"
