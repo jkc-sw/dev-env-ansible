@@ -20,7 +20,6 @@
   tags:
     - never
   roles:
-    - podman_install
     - home-manager
 
 - hosts: "{{ playbook_target }}"

@@ -14,8 +14,6 @@ jobs:
         role: [
           'home-manager',
           'scratch',
-          'podman_install',
-          'zeotier_install',
           'common_settings',
           'dotfiles',
           'lttng_install',
