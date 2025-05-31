@@ -40,12 +40,3 @@
     - lttng_install
     - insync_install
 
-- hosts: "{{ playbook_target }}"
-  gather_facts: true
-  tags:
-    - gui
-  roles:
-    - desktop
-    - qtile
-    - xmonad_wm
-

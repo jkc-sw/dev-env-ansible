@@ -19,14 +19,11 @@ jobs:
           'zeotier_install',
           'common_settings',
           'conda_install',
-          'desktop',
           'dotfiles',
           'lttng_install',
           'matlab_schemer',
           'networking_tools',
-          'qtile',
           'some_git_clones',
-          'xmonad_wm',
           ]
     runs-on: ubuntu-22.04
     steps:

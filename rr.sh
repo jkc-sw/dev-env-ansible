@@ -729,7 +729,6 @@ main() {
             'wireshark' \
             'xclip' \
             'xmobar' \
-            'xmonad' \
             'yaml-language-server' \
             'yarn' \
         )

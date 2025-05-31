@@ -1,6 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-dev_condaenv: "{{ home_dir + '/miniconda3/envs/dev_env_ansible' }}"
-qtile_repos: "{{ home_dir + '/repos/qtile' }}"
-
-# vim:et ts=2 sts=2 sw=2
