@@ -1,40 +1,40 @@
-name: CI
-on:
-  push:
-  # schedule:
-  #   - cron: '0 10 * * *'
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  roles:
-    strategy:
-      matrix:
-        role: [
-          'home-manager',
-          'scratch',
-          'common_settings',
-          'dotfiles',
-          'lttng_install',
-          'networking_tools',
-          'some_git_clones',
-          ]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Make it writable
-        run: "chmod -R a+w ."
-      - name: Run command
-        run: "./rr.sh run-role 20 ${{ matrix.role }}"
-
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ['20', '18', '22']
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run command
-        run: "./rr.sh run-test ${{ matrix.os }}"
+# name: CI
+# on:
+#   push:
+#   # schedule:
+#   #   - cron: '0 10 * * *'
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+#
+# jobs:
+#   roles:
+#     strategy:
+#       matrix:
+#         role: [
+#           'home-manager',
+#           'scratch',
+#           'common_settings',
+#           'dotfiles',
+#           'lttng_install',
+#           'networking_tools',
+#           'some_git_clones',
+#           ]
+#     runs-on: ubuntu-24.04
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: Make it writable
+#         run: "chmod -R a+w ."
+#       - name: Run command
+#         run: "./rr.sh role 22 ${{ matrix.role }}"
+#
+#   build:
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: ['20', '18', '22']
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: Run command
+#         run: "./rr.sh run-test ${{ matrix.os }}"

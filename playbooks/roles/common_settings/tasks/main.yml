@@ -5,12 +5,6 @@
   set_fact:
     update_dotfile: true
 
-- name: Update gui
-  tags:
-    - gui
-  set_fact:
-    gui: true
-
 - name: Skip the common settings for development - default is not skipping
   set_fact:
     skip_common_settings: false
@@ -20,16 +14,6 @@
     - skipcs
   set_fact:
     skip_common_settings: true
-
-- name: Install llvm without building - Default build
-  set_fact:
-    fast: false
-
-- name: Install llvm without building
-  tags:
-    - fast
-  set_fact:
-    fast: true
 
 - name: Common settings
   when: not skip_common_settings | default(true)
