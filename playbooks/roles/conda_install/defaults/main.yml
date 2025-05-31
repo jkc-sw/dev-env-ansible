@@ -1,9 +1,0 @@
----
-home_dir: "{{ ansible_env.HOME }}"
-conda_install_dir: "{{ home_dir + '/miniconda3' }}"
-conda_bin_fullpath: "{{ conda_install_dir + '/bin/conda' }}"
-conda_installer_path: "/tmp/Miniconda3-latest-Linux-x86_64.sh"
-zshrc_path: "{{ home_dir + '/.zshrc' }}"
-bashrc_path: "{{ home_dir + '/.bashrc' }}"
-pwshrc_path: "{{ home_dir + '/.config/powershell/profile.ps1' }}"
-

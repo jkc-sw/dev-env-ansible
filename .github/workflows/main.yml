@@ -17,7 +17,6 @@ jobs:
           'podman_install',
           'zeotier_install',
           'common_settings',
-          'conda_install',
           'dotfiles',
           'lttng_install',
           'matlab_schemer',

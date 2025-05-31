@@ -11,13 +11,6 @@
 - hosts: "{{ playbook_target }}"
   gather_facts: true
   tags:
-    - extra
-  roles:
-    - conda_install
-
-- hosts: "{{ playbook_target }}"
-  gather_facts: true
-  tags:
     - rare
   roles:
     - matlab_schemer

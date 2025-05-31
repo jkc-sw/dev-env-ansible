@@ -663,9 +663,7 @@ main() {
             'clang' \
             'clangd' \
             'cmake' \
-            'conda' \
             'ctags' \
-            'dmenu' \
             'doas' \
             'docker' \
             'docker-langserver' \
