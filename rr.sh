@@ -383,23 +383,6 @@ install_nix() {
     fi
 }
 
-# Setup env
-setup_brew() {
-    if [[ -x /home/linuxbrew/.linuxbrew/bin/brew && -z "$HOMEBREW_PREFIX" ]]; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    fi
-}
-
-# instal brew
-install_brew() {
-    setup_brew
-    if ! command -v brew &>/dev/null; then
-        /bin/bash -c "export NONINTERACTIVE=1 ; $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        brew install ansible
-        setup_brew
-    fi
-}
-
 # fnuction that check and set a docker mount when not fonud
 append_docker_mount_global() {
     # Get arguments

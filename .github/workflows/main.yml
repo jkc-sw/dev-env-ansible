@@ -15,7 +15,6 @@ jobs:
           'home-manager',
           'scratch',
           'podman_install',
-          'brew_install',
           'zeotier_install',
           'common_settings',
           'conda_install',
