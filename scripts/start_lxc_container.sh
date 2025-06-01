@@ -15,8 +15,8 @@ set -euo pipefail
 
 args=("$@")
 
-# const
-SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
+# # const
+# SCRIPT_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
 
 ################################################################################
 # @brief main
@@ -32,6 +32,11 @@ main() {
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
+    # local vnc_port_on_host=15902
+
+    # # rockylinux or RHEL
+    # local imgName='images:rockylinux/8/default'
+    # local lxc_name='rock'
     # local vnc_port_on_host=15902
 
     # local imgName='images:nixos/24.05/default'
@@ -178,6 +183,12 @@ main() {
         apply_generic_configurations "$cmd" "$lxc_name" "$uid" "$gid" "$USER" "$HOME"
 
         if [[ "$imgName" == *'ubuntu'* ]]; then
+            # # system update
+            # "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive \
+            #     && apt update \
+            #     && apt dist-upgrade -y --no-install-recommends \
+            #     && apt autoremove -y'
+
             # Fix the locale on debian
             "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
                 && locale-gen en_US.UTF-8 \
@@ -186,46 +197,12 @@ main() {
 
             if [[ "$installDesktopEnvironmentWithVNC" == 'true' ]]; then
 
-                # Install Browser
-                "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
-                    && apt install -y --no-install-recommends firefox'
-                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
-
-                # # Install x11vnc
-                # "$cmd" exec "$lxc_name" -t -- bash -c 'apt update \
-                #     && apt install -y --no-install-recommends xorg xfce4 xfce4-goodies x11vnc'
-
-                # # configure x11vnc
-                # "$cmd" exec "$lxc_name" -t -- bash -c "mkdir -p /etc/vnc \
-                #     && x11vnc -storepasswd 'aoeuaoeu' /etc/vnc/passwd \
-                #     && x11vnc -display ':0' -auth guess -forever -loop -noxdamage -repeat -rfbauth '/home/$USER/.vnc/passwd' -autoport 5900 -shared \
-                #     && echo -n '' > /etc/systemd/system/x11vnc.service \
-                #     && {
-                #         echo '[Unit]'
-                #         echo 'Description=\"x11vnc\"'
-                #         echo 'Requires=display-manager.service'
-                #         echo 'After=display-manager.service'
-                #         echo ''
-                #         echo '[Service]'
-                #         echo 'ExecStart=/usr/bin/x11vnc -xkb -noxrecord -noxfixes -noxdamage -display :0 -auth guess -rfbauth /etc/vnc/passwd'
-                #         echo 'ExecStop=/usr/bin/killall x11vnc'
-                #         echo 'Restart=on-failure'
-                #         echo 'Restart-sec=2'
-                #         echo ''
-                #         echo '[Install]'
-                #         echo 'WantedBy=multi-user.target'
-                #     } >> /etc/systemd/system/x11vnc.service \
-                #     && systemctl daemon-reload \
-                #     && systemctl start x11vnc \
-                #     && systemctl enable x11vnc"
-
                 # Install turbovnc
                 "$cmd" exec "$lxc_name" -t -- bash -c 'wget -q -O- https://packagecloud.io/dcommander/turbovnc/gpgkey | \
                     gpg --dearmor >/etc/apt/trusted.gpg.d/TurboVNC.gpg \
                     && wget -q -O/etc/apt/sources.list.d/turbovnc.list https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.list \
                     && apt update \
                     && apt install -y --no-install-recommends xorg xfce4 turbovnc'
-                    # && apt install -y --no-install-recommends xorg ubuntu-desktop-minimal turbovnc'
 
                 # Configure the vnc
                 "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
@@ -241,6 +218,36 @@ main() {
 
             fi
 
+        elif [[ "$imgName" == *'rockylinux'* ]]; then
+            # # System upgrade for Rocky Linux
+            # "$cmd" exec "$lxc_name" -t -- bash -c 'dnf update -y && dnf distrosync -y && dnf autoremove -y'
+
+            # Fix the locale on Rocky Linux
+            "$cmd" exec "$lxc_name" -t -- bash -c 'localedef -i en_US -f UTF-8 en_US.UTF-8 \
+                && localectl set-locale LANG=en_US.UTF-8'
+
+            if [[ "$installDesktopEnvironmentWithVNC" == 'true' ]]; then
+
+                # Add TurboVNC repository and install TurboVNC and XFCE Desktop Environment
+                "$cmd" exec "$lxc_name" -t -- bash -c "dnf install -y epel-release wget \
+                    && wget -q -O /etc/yum.repos.d/TurboVNC.repo https://raw.githubusercontent.com/TurboVNC/repo/main/TurboVNC.repo \
+                    && rpm --import https://packagecloud.io/dcommander/turbovnc/gpgkey \
+                    && dnf groupinstall -y 'Xfce' 'base-x' \
+                    && dnf install -y turbovnc perl \
+                    && echo \"export PATH=\$PATH:/opt/TurboVNC/bin\" > /etc/profile.d/turbovnc.sh"
+
+                # Configure the VNC
+                "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
+                    && echo -n aoeuaoeu | vncpasswd -f > '/home/$USER/.vnc/passwd' \
+                    && chown -R '$USER:$USER' '/home/$USER/.vnc' \
+                    && chmod 0600 '/home/$USER/.vnc/passwd' \
+                    && echo '! Use a truetype font and size.' >/home/$USER/.Xresources \
+                    && echo 'xterm*faceName: Monospace' >/home/$USER/.Xresources \
+                    && echo 'xterm*faceSize: 14' >/home/$USER/.Xresources \
+                    && export TVNC_WM=xfce \
+                    && vncserver :0 -depth 24 -geometry '1920x1080'"
+
+            fi
         elif [[ "$imgName" == *'archlinux'* ]]; then
             # TODO: Fix this
             #   err msg: error: failed retrieving file 'alsa-ucm-conf-1.2.11-1-any.pkg.tar.zst' from mirrors.kernel.org : The requested URL returned error: 404
@@ -604,7 +611,7 @@ apply_generic_configurations() {
     local homePath="${args[5]}"
     # Remove default ubuntu user and add my user
     echodebug "(apply_generic_configurations): Removes ubuntu default user if found"
-    "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\""
+    "$cmd" exec "$lxc_name" -t -- bash -c "id -un $uid 2>/dev/null && userdel -f \"\$(id -un $uid)\"" || true
     echodebug "(apply_generic_configurations): Sets timezone"
     "$cmd" exec "$lxc_name" -t -- bash -c "timedatectl set-timezone America/Los_Angeles"
     echodebug "(apply_generic_configurations): Add user $username ($uid)"
@@ -615,7 +622,7 @@ apply_generic_configurations() {
         && echo \"${username} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${username} \
         && chmod 0440 /etc/sudoers.d/${username} \
         && chown \${uid}:\${gid} -R ${homePath} \
-        && echo ${username}:aoeu | chpasswd"
+        && echo ${username}:aoeu | chpasswd" || true
 }
 
 ################################################################################
@@ -708,7 +715,7 @@ init_new_guest() {
     local vm="${args[3]}"
     local initArgs=(init "$imgName" "$lxc_name")
     if [[ "$vm" == 'true' ]]; then
-        initArgs+=(--vm --device root,size=32GiB)
+        initArgs+=(--vm --device 'root,size=32GiB')
     fi
     echodebug "initArgs = ${initArgs[*]}"
     if ! "$cmd" "${initArgs[@]}"; then
