@@ -25,7 +25,7 @@ main() {
     # var
 
     # Ubuntu
-    local imgName='ubuntu:24.04'
+    local imgName='images:ubuntu/noble/default' # ubunt 24.04
     local lxc_name='tom'
     local vnc_port_on_host=15900
 
@@ -46,8 +46,11 @@ main() {
     # local cmd='lxc'
     # local brid='incusbr0'
 
-    local cmd='lxc'
-    local brid='lxdbr0'
+    # local cmd='lxc'
+    # local brid='lxdbr0'
+    local cmd='incus'
+    local brid='incusbr0'
+
     local lxc_volume_mount=()
     local vnc_port=5900
     local remove=false
@@ -412,12 +415,14 @@ get_host_addr() {
     local currentIpOutput
     currentIpOutput="$(ip -j a|jq '.[].addr_info[]|select(.family | test("^inet$")).local' --raw-output)"
     # Find an existing one and return it
-    while read -r each; do
-        if [[ "$currentIpOutput" == *"$each"* ]]; then
-            echo -n "$each"
-            return 0
-        fi
-    done <<<"$listenAddress"
+    if [[ -n "$listenAddress" ]]; then
+        while read -r each; do
+            if [[ "$currentIpOutput" == *"$each"* ]]; then
+                echo -n "$each"
+                return 0
+            fi
+        done <<<"$listenAddress"
+    fi
     # otherwise, use fzf to search it
     local selectedHostIp
     selectedHostIp="$(echo -n "$currentIpOutput" | fzf)"
