@@ -192,6 +192,11 @@ main() {
             #     && apt dist-upgrade -y --no-install-recommends \
             #     && apt autoremove -y'
 
+            # Install basic util
+            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive \
+                && apt update \
+                && apt install -y --no-install-recommends wget curl git'
+
             # Fix the locale on debian
             "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
                 && locale-gen en_US.UTF-8 \
