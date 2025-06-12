@@ -25,7 +25,8 @@ main() {
     # var
 
     # Ubuntu
-    local imgName='images:ubuntu/noble/default' # ubunt 24.04
+    # local imgName='images:ubuntu/noble/default' # ubunt 24.04
+    local imgName='images:ubuntu/jammy/default' # ubunt 24.04
     local lxc_name='tom'
     local vnc_port_on_host=15900
 
@@ -195,7 +196,7 @@ main() {
             # Install basic util
             "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive \
                 && apt update \
-                && apt install -y --no-install-recommends wget curl git'
+                && apt install -y --no-install-recommends wget curl gpg git'
 
             # Fix the locale on debian
             "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
