@@ -26,7 +26,8 @@ main() {
 
     # Ubuntu
     # local imgName='images:ubuntu/noble/default' # ubunt 24.04
-    local imgName='images:ubuntu/jammy/default' # ubunt 24.04
+    # local imgName='images:ubuntu/jammy/default' # ubunt 24.04
+    local imgName='images:ubuntu/plucky/default' # ubunt 25.04
     local lxc_name='tom'
     local vnc_port_on_host=15900
 
