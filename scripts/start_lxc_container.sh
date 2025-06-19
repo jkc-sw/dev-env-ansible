@@ -267,69 +267,70 @@ main() {
 
         # Update the container status
         containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
+
+        # Add forwarding rule
+        local forward
+        forward="$("$cmd" network forward list "$brid" -f json)"
+        # TODO: implement exit code check
+        local containerAddr
+        containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
+        # TODO: implement exit code check
+        local detectedAddress
+        detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
+        # TODO: implement exit code check
+        local detectedPort
+        detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
+        # TODO: implement exit code check
+        local listenAddress
+        listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
+        # TODO: implement exit code check
+        local listenPort
+        listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
+        # TODO: implement exit code check
+        # TODO:
+        # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
+        # Find any previous config
+        if [[ -n "$listenPort" ]]; then
+            # When any of the previous config is mismatched, delete them
+            local hostAddr
+            hostAddr="$(get_host_addr "$cmd" "$brid")"
+            # TODO: implement exit code check
+            if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
+                echodebug "forward = $(echo -n "$forward" | jq .)"
+                echodebug "containerAddr = $containerAddr"
+                echodebug "detectedAddress = $detectedAddress"
+                echodebug "detectedPort = $detectedPort"
+                echodebug "listenAddress = $listenAddress"
+                echodebug "listenPort = $listenPort"
+                echodebug "hostAddr = $hostAddr"
+                echo "ERR: The forward has a different container address/port configuration." >&2
+                echo "ERR: Removing the old definition" >&2
+                "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
+                # Reset this var to meet the next network forward creation code conditional
+                listenPort=''
+            fi
+        fi
+        if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
+            local hostAddr
+            hostAddr="$(get_host_addr "$cmd" "$brid")"
+            # TODO: implement exit code check
+            # Create a network forward when none found
+            if [[ -z "$listenAddress" ]]; then
+                echo "INFO: Create a network forward to $listenAddress"
+                "$cmd" network forward create "$brid" "$hostAddr"
+            fi
+            # Listen and forward a network port
+            "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
+        fi
+
+        # Just print status
+        "$cmd" list -c ns4t,image.description:image
+        "$cmd" network forward list "$brid"
+
     fi
 
     # Mount folders
     chown_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
-
-    # Add forwarding rule
-    local forward
-    forward="$("$cmd" network forward list "$brid" -f json)"
-    # TODO: implement exit code check
-    local containerAddr
-    containerAddr="$("$cmd" list -f json | jq --raw-output ".[] | select(.name | test(\"^$lxc_name\$\")) | .state.network | with_entries(select(.key | test(\"lo\") | not))[] | .addresses[] | select (.family | test(\"^inet\$\")) | .address")"
-    # TODO: implement exit code check
-    local detectedAddress
-    detectedAddress="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_address')"
-    # TODO: implement exit code check
-    local detectedPort
-    detectedPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].target_port')"
-    # TODO: implement exit code check
-    local listenAddress
-    listenAddress="$(echo -n "$forward" | jq --raw-output '.[].listen_address')"
-    # TODO: implement exit code check
-    local listenPort
-    listenPort="$(echo -n "$forward" | jq --raw-output '.[].ports[].listen_port')"
-    # TODO: implement exit code check
-    # TODO:
-    # - Need to change the logic to be port specific. When a network forward is listed, filter based on the listening port, check whether dest ip/port match
-    # Find any previous config
-    if [[ -n "$listenPort" ]]; then
-        # When any of the previous config is mismatched, delete them
-        local hostAddr
-        hostAddr="$(get_host_addr "$cmd" "$brid")"
-        # TODO: implement exit code check
-        if [[ "$detectedAddress" != "$containerAddr" || "$listenAddress" != "$hostAddr" || "$detectedPort" != "$vnc_port" || "$listenPort" != "$vnc_port_on_host" ]]; then
-            echodebug "forward = $(echo -n "$forward" | jq .)"
-            echodebug "containerAddr = $containerAddr"
-            echodebug "detectedAddress = $detectedAddress"
-            echodebug "detectedPort = $detectedPort"
-            echodebug "listenAddress = $listenAddress"
-            echodebug "listenPort = $listenPort"
-            echodebug "hostAddr = $hostAddr"
-            echo "ERR: The forward has a different container address/port configuration." >&2
-            echo "ERR: Removing the old definition" >&2
-            "$cmd" network forward port remove "$brid" "$hostAddr" tcp "$listenPort"
-            # Reset this var to meet the next network forward creation code conditional
-            listenPort=''
-        fi
-    fi
-    if [[ "$listenPort" != "$vnc_port_on_host" ]]; then
-        local hostAddr
-        hostAddr="$(get_host_addr "$cmd" "$brid")"
-        # TODO: implement exit code check
-        # Create a network forward when none found
-        if [[ -z "$listenAddress" ]]; then
-            echo "INFO: Create a network forward to $listenAddress"
-            "$cmd" network forward create "$brid" "$hostAddr"
-        fi
-        # Listen and forward a network port
-        "$cmd" network forward port add "$brid" "$hostAddr" tcp "$vnc_port_on_host" "$containerAddr" "$vnc_port"
-    fi
-
-    # Just print status
-    "$cmd" list -c ns4t,image.description:image
-    "$cmd" network forward list "$brid"
 
     # "$cmd" exec "$lxc_name" -t -- bash -c "cat /etc/netplan/*"
 
