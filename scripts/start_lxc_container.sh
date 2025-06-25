@@ -35,7 +35,7 @@ main() {
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
-    # local vnc_port_on_host=15902
+    # local vnc_port_on_host=15901
 
     # # rockylinux or RHEL
     # # local imgName='images:rockylinux/8/default'
@@ -43,7 +43,8 @@ main() {
     # local lxc_name='rock'
     # local vnc_port_on_host=15902
 
-    # local imgName='images:nixos/24.05/default'
+    # # local imgName='images:nixos/24.05/default'
+    # local imgName='images:nixos/25.05/default'
     # local lxc_name='nix'
     # local vnc_port_on_host=15903
 
