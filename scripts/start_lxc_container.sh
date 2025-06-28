@@ -43,6 +43,7 @@ main() {
     # local lxc_name='rock'
     # local vnc_port_on_host=15902
 
+    # # Nixos
     # # local imgName='images:nixos/24.05/default'
     # local imgName='images:nixos/25.05/default'
     # local lxc_name='nix'
@@ -573,6 +574,8 @@ apply_lxc_guest_specific_settings() {
     # map the user id in the container
     echodebug "(apply_lxc_guest_specific_settings): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+    # The following is crucial for nixos to run properly: https://nixos.wiki/wiki/Incus
+    "$cmd" config set "$lxc_name" security.nesting true
 }
 
 ################################################################################
