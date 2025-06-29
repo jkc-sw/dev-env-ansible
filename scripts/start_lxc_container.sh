@@ -500,7 +500,9 @@ add_lxc_mount_device() {
         return 1
     fi
     local out
-    out="$(sha1sum <<<"$path")"
+    # Trimming to 16 chars is critical to avoid qemu from complaining name too long
+    # error "qemu-system-x86_64:/run/incus/tom/qemu.conf:273: tag property must be 36 bytes or less"
+    out="$(sha1sum <<<"$path" | head -c 16)"
     local pathHash="${out%% *}"
     # Add this disk because it is not found
     "$cmd" config device add "$lxc_name" "$pathHash" disk source="$src" path="$dest"
