@@ -576,8 +576,14 @@ apply_lxc_guest_specific_settings() {
     # map the user id in the container
     echodebug "(apply_lxc_guest_specific_settings): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
-    # The following is crucial for nixos to run properly: https://nixos.wiki/wiki/Incus
-    "$cmd" config set "$lxc_name" security.nesting true
+
+    # # The following is crucial for nixos CONTAINER to run properly: https://nixos.wiki/wiki/Incus
+    # "$cmd" config set "$lxc_name" security.nesting true
+
+    # # This is needed by nixos VM. Otherwise, it errors with Error: The image used by this instance is incompatible with secureboot. Please set security.secureboot=false on the instance
+    # "$cmd" config set "$lxc_name" security.secureboot false
+    # "$cmd" config set "$lxc_name" limits.cpu 4
+    # "$cmd" config set "$lxc_name" limits.memory 8GiB
 }
 
 ################################################################################
