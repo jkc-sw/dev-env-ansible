@@ -102,7 +102,7 @@ main() {
             brid="$OPTARG"
             ;;
         i)
-            imgName="ubuntu:$OPTARG"
+            imgName="$OPTARG"
             ;;
         w)
             append_lxc_mount_global "$OPTARG"
@@ -374,7 +374,7 @@ displayHelp() {
     echo " -d                        : Run a desktop environment via TurboVNC"
     echo " -m                        : Run as a VM instead of a container. Default is a container"
     # echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
-    echo " -i IMAGE_NAME             : Ubuntu image to use. Default is 24.04"
+    echo " -i IMAGE_NAME             : Image to use. Default is 'ubuntu:24.04'"
     echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
     # echo " -p VNC_PORT               : The VNC port inside the container. Default is 5901"
     echo " -w HOST_DIR:CONATINER_DIR : Map this folder to the container. Can call multiple times"
