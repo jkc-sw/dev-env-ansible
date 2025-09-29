@@ -175,7 +175,7 @@ main() {
         uid="$(id -u)"
         local gid
         gid="$(id -g)"
-        apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid"
+        apply_lxc_guest_specific_settings "$cmd" "$lxc_name" "$uid" "$gid" "$vm"
 
         # Mount folders
         add_lxc_mount_devices_global "$cmd" "$lxc_name" "$USER" "$HOME"
@@ -560,31 +560,36 @@ chown_lxc_each_mount_device() {
 # @param lxc_name - container name
 # @param uid - user id
 # @param gid - user's group id
+# @param vm - whether to create a VM instead of a container. expect either 'true' or 'false'
 # @return void
 ################################################################################
 apply_lxc_guest_specific_settings() {
     # Get arguments
     local args=("$@")
     # Need 1 argument
-    if [[ "${#args[@]}" -ne 4 ]]; then
-        echo "ERR (apply_lxc_guest_specific_settings): need 4 arguments (bin, container name, uid, gid) only, but found ${#args[@]}" >&2
+    if [[ "${#args[@]}" -ne 5 ]]; then
+        echo "ERR (apply_lxc_guest_specific_settings): need 5 arguments (bin, container name, uid, gid, vm) only, but found ${#args[@]}" >&2
         return 1
     fi
     local cmd="${args[0]}"
     local lxc_name="${args[1]}"
     local uid="${args[2]}"
     local gid="${args[3]}"
+    local vm="${args[4]}"
     # map the user id in the container
     echodebug "(apply_lxc_guest_specific_settings): lxc raw.idmap"
     "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
 
-    # # The following is crucial for nixos CONTAINER to run properly: https://nixos.wiki/wiki/Incus
-    # "$cmd" config set "$lxc_name" security.nesting true
+    if [[ "$vm" == 'true' ]]; then
+        # This is needed by nixos VM. Otherwise, it errors with Error: The image used by this instance is incompatible with secureboot. Please set security.secureboot=false on the instance
+        "$cmd" config set "$lxc_name" security.secureboot false
+        "$cmd" config set "$lxc_name" limits.cpu 4
+        "$cmd" config set "$lxc_name" limits.memory 8GiB
+    else
+        # The following is crucial for nixos CONTAINER to run properly: https://nixos.wiki/wiki/Incus
+        "$cmd" config set "$lxc_name" security.nesting true
+    fi
 
-    # # This is needed by nixos VM. Otherwise, it errors with Error: The image used by this instance is incompatible with secureboot. Please set security.secureboot=false on the instance
-    # "$cmd" config set "$lxc_name" security.secureboot false
-    # "$cmd" config set "$lxc_name" limits.cpu 4
-    # "$cmd" config set "$lxc_name" limits.memory 8GiB
 }
 
 ################################################################################
