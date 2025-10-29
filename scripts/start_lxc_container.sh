@@ -64,55 +64,71 @@ main() {
     local installDesktopEnvironmentWithVNC=false
     local vm=false
 
-    # parse the argumetns
-    # while getopts 'hvf:i:b:x:p:n:w:sr.dm' opt; do
-    while getopts 'hv:i:b:x:n:w:sr.dm' opt; do
-        case "$opt" in
-        .)
+    # parse the arguments
+    local parsed
+    if ! parsed="$(getopt -o 'hv:i:b:x:n:w:sr.dm' -l 'help,verbose,image:,bridge:,cmd:,name:,mount:,shell,remove,desktop,vm,source-only' -- "${args[@]}")"; then
+        displayHelp
+        return 1
+    fi
+    eval set -- "$parsed"
+    while true; do
+        case "$1" in
+        -.)
             return 0
             ;;
-        m)
+        --source-only)
+            return 0
+            ;;
+        -m|--vm)
             vm=true
+            shift
             ;;
-        d)
+        -d|--desktop)
             installDesktopEnvironmentWithVNC=true
+            shift
             ;;
-        v)
+        -v|--verbose)
             set -x  # enable verbose trace
+            shift
             ;;
-        s)
+        -s|--shell)
             shell=true
+            shift
             ;;
-        r)
+        -r|--remove)
             remove=true
+            shift
             ;;
-        # p)
-        #     vnc_port="$OPTARG"
-        #     ;;
-        # f)
-        #     vnc_port_on_host="$OPTARG"
-        #     ;;
-        x)
-            cmd="$OPTARG"
+        -x|--cmd)
+            cmd="$2"
+            shift 2
             ;;
-        n)
-            lxc_name="$OPTARG"
+        -n|--name)
+            lxc_name="$2"
+            shift 2
             ;;
-        b)
-            brid="$OPTARG"
+        -b|--bridge)
+            brid="$2"
+            shift 2
             ;;
-        i)
-            imgName="$OPTARG"
+        -i|--image)
+            imgName="$2"
+            shift 2
             ;;
-        w)
-            append_lxc_mount_global "$OPTARG"
+        -w|--mount)
+            append_lxc_mount_global "$2"
+            shift 2
             ;;
-        h)
+        -h|--help)
             displayHelp
             return 0
             ;;
+        --)
+            shift
+            break
+            ;;
         *)
-            echo "Unrecognized option $opt" >&2
+            echo "ERR: Unrecognized option '$1'" >&2
             displayHelp
             return 1
             ;;
@@ -365,23 +381,25 @@ displayHelp() {
     echo "${BASH_SOURCE[0]} [flags] Create lxc container for testing"
     echo ""
     echo "Flags:"
-    echo " -c                        : Creat a new container instance"
-    echo " -.                        : Source the command without executing"
-    echo " -r                        : Remove this container instance"
-    echo " -s                        : Drop me into a bash shell"
+    echo " -h, --help                : Print this help command"
+    echo " -v, --verbose             : Verbose trace information"
+    echo " -., --source-only         : Source the command without executing"
+    echo " -r, --remove              : Remove this container instance"
+    echo " -s, --shell               : Drop me into a bash shell"
+    echo " -d, --desktop             : Run a desktop environment via TurboVNC"
+    echo " -m, --vm                  : Run as a VM instead of a container (default is container)"
     echo ""
-    echo " -b BRIDGE                 : Name of the default bridge. Default is lxdbr0"
-    echo " -d                        : Run a desktop environment via TurboVNC"
-    echo " -m                        : Run as a VM instead of a container. Default is a container"
-    # echo " -f VNC_PORT_ON_HOST       : The VNC port to map onto the host address. Default is 15901"
-    echo " -i IMAGE_NAME             : Image to use. Default is 'ubuntu:24.04'"
-    echo " -n CONTAINER_NAME         : Name of the lxc container. Default is 'tom'"
-    # echo " -p VNC_PORT               : The VNC port inside the container. Default is 5901"
-    echo " -w HOST_DIR:CONATINER_DIR : Map this folder to the container. Can call multiple times"
-    echo " -x CMD                    : Command to use. Default is lxc"
+    echo " -b, --bridge BRIDGE       : Name of the default bridge (default: incusbr0)"
+    # echo " -f, --forward-port PORT   : VNC port exposed on the host (default: 15901)"
+    echo " -i, --image IMAGE_NAME    : Image to use (default: images:rockylinux/9/default)"
+    echo " -n, --name NAME           : Name of the lxc container (default: rock)"
+    # echo " -p, --vnc-port PORT       : VNC port inside the container (default: 5900)"
+    echo " -w, --mount HOST:CONTAINER: Map this folder to the container; can be set multiple times"
+    echo " -x, --cmd CMD             : Command to use (default: incus)"
     echo ""
-    echo " -h                        : Print this help command"
-    echo " -v                        : Verbose trace information"
+    echo "Examples:"
+    echo "  ${BASH_SOURCE[0]} --image images:ubuntu/noble/default --name devbox"
+    echo "  ${BASH_SOURCE[0]} --shell --mount \"\$HOME/projects:/workspace\""
 }
 
 # Function to echo debug
