@@ -237,7 +237,7 @@ main() {
 
                 # Configure the vnc
                 "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
-                    && echo -n aoeuaoeu | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
+                    && echo -n asdfasdf | /opt/TurboVNC/bin/vncpasswd -f > '/home/$USER/.vnc/passwd' \
                     && chown -R '$USER:$USER' '/home/$USER/.vnc' \
                     && chmod 0600 '/home/$USER/.vnc/passwd' \
                     && echo '! Use a truetype font and size.' >/home/$USER/.Xresources \
@@ -269,7 +269,7 @@ main() {
 
                 # Configure the VNC
                 "$cmd" exec "$lxc_name" -t -- su - "$USER" bash -c "mkdir -p '/home/$USER/.vnc' \
-                    && echo -n aoeuaoeu | vncpasswd -f > '/home/$USER/.vnc/passwd' \
+                    && echo -n asdfasdf | vncpasswd -f > '/home/$USER/.vnc/passwd' \
                     && chown -R '$USER:$USER' '/home/$USER/.vnc' \
                     && chmod 0600 '/home/$USER/.vnc/passwd' \
                     && echo '! Use a truetype font and size.' >/home/$USER/.Xresources \
@@ -673,7 +673,7 @@ apply_generic_configurations() {
         && echo \"${username} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${username} \
         && chmod 0440 /etc/sudoers.d/${username} \
         && chown \${uid}:\${gid} -R ${homePath} \
-        && echo ${username}:aoeu | chpasswd" || true
+        && echo ${username}:asdf | chpasswd" || true
 }
 
 ################################################################################
