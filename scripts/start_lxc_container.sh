@@ -135,6 +135,8 @@ main() {
         esac
     done
 
+    check_dependencies
+
     # var
     local containerIsRunning
     containerIsRunning="$(test_container_present "$cmd" "$lxc_name")"
@@ -603,6 +605,7 @@ apply_lxc_guest_specific_settings() {
         "$cmd" config set "$lxc_name" security.secureboot false
         "$cmd" config set "$lxc_name" limits.cpu 4
         "$cmd" config set "$lxc_name" limits.memory 8GiB
+        "$cmd" config device add "$lxc_name" agent disk source=agent:config
     else
         # The following is crucial for nixos CONTAINER to run properly: https://nixos.wiki/wiki/Incus
         "$cmd" config set "$lxc_name" security.nesting true
@@ -783,7 +786,7 @@ init_new_guest() {
 check_dependencies() {
     # Check dependencies
     toexit=false
-    for c in lxc jq ip fzf; do
+    for c in jq ip fzf genisoimage; do
         if ! command -v "$c" &>/dev/null; then
             echo "ERR: $c is not found in your PATH" >&2
             toexit=true
