@@ -29,7 +29,7 @@ main() {
     # local imgName='images:ubuntu/jammy/default' # ubunt 22.04
     local imgName='images:ubuntu/noble/default' # ubunt 24.04
     # local imgName='images:ubuntu/plucky/default' # ubunt 25.04
-    local lxc_name='tom'
+    local lxc_name='rtkernel'
     local vnc_port_on_host=15900
 
     # # arch
@@ -223,7 +223,9 @@ main() {
                 && apt install -y --no-install-recommends wget curl gpg git'
 
             # Fix the locale on debian
-            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive && dpkg-reconfigure -f noninteractive locales \
+            "$cmd" exec "$lxc_name" -t -- bash -c 'export DEBIAN_FRONTEND=noninteractive \
+                && rm /var/lib/locales/supported.d/en \
+                && dpkg-reconfigure -f noninteractive locales \
                 && locale-gen en_US.UTF-8 \
                 && update-locale LC ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
                 && locale-gen en_US.UTF-8'
