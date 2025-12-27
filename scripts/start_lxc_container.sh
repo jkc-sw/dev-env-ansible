@@ -354,8 +354,8 @@ main() {
 
     fi
 
-    # Mount folders
-    chown_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
+    # # Mount folders
+    # chown_lxc_mounts_global "$cmd" "$lxc_name" "$USER" "$HOME"
 
     # "$cmd" exec "$lxc_name" -t -- bash -c "cat /etc/netplan/*"
 
