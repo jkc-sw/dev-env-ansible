@@ -24,29 +24,29 @@ args=("$@")
 main() {
     # var
 
-    # Ubuntu
-    # local imgName='images:ubuntu/focal/default' # ubunt 20.04
-    # local imgName='images:ubuntu/jammy/default' # ubunt 22.04
-    local imgName='images:ubuntu/noble/default' # ubunt 24.04
-    # local imgName='images:ubuntu/plucky/default' # ubunt 25.04
-    local lxc_name='rtkernel'
-    local vnc_port_on_host=15900
+    # # Ubuntu
+    # # local imgName='images:ubuntu/focal/default' # ubunt 20.04
+    # # local imgName='images:ubuntu/jammy/default' # ubunt 22.04
+    # local imgName='images:ubuntu/noble/default' # ubunt 24.04
+    # # local imgName='images:ubuntu/plucky/default' # ubunt 25.04
+    # local lxc_name='cb'
+    # local vnc_port_on_host=15900
 
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
     # local vnc_port_on_host=15901
 
-    # # rockylinux or RHEL
-    # # local imgName='images:rockylinux/8/default'
-    # local imgName='images:rockylinux/9/default'
-    # local lxc_name='rock'
-    # local vnc_port_on_host=15902
+    # rockylinux or RHEL
+    # local imgName='images:rockylinux/8/default'
+    local imgName='images:rockylinux/9/default'
+    local lxc_name='cb'
+    local vnc_port_on_host=15902
 
     # # Nixos
     # # local imgName='images:nixos/24.05/default'
-    # local imgName='images:nixos/25.05/default'
-    # local lxc_name='nix'
+    # local imgName='images:nixos/25.11/default'
+    # local lxc_name='incus-test'
     # local vnc_port_on_host=15903
 
     # local cmd='lxc'
@@ -54,7 +54,7 @@ main() {
 
     # local cmd='lxc'
     # local brid='lxdbr0'
-    local cmd='incus'
+    local cmd='incus_wrapped'
     local brid='incusbr0'
 
     local lxc_volume_mount=()
@@ -411,6 +411,11 @@ echodebug() {
     if [[ -n "${DEBUG_LXC:=}" ]]; then
         echo "DEBUG: $*"
     fi
+}
+
+incus_wrapped() {
+    echo "(incus_wrapped): incus $*" >&2
+    incus "$@"
 }
 
 ################################################################################
