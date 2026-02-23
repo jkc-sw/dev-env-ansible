@@ -215,7 +215,7 @@ set_mounts_global() {
         "$SCRIPT_DIR:$ANSIBLE_DEV_ENV_ANSIBLE_PATH" \
         "$HOME/repos/focus-side.vim:$HOME/repos/focus-side.vim" \
         "$HOME/repos/jerry-nixos:$HOME/repos/jerry-nixos" \
-        "$HOME/.ssh/id_ed25519:$HOME/.ssh/id_ed25519" \
+        "$HOME/.ssh:$HOME/.ssh" \
     ; do
         append_lxc_mount_global "$each"
     done
