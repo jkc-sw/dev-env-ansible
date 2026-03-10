@@ -38,9 +38,9 @@ main() {
     # local vnc_port_on_host=15901
 
     # rockylinux or RHEL
-    # local imgName='images:rockylinux/8/default'
-    local imgName='images:rockylinux/9/default'
-    local lxc_name='cb'
+    # local imgName='images:almalinux/8/default'
+    local imgName='images:almalinux/9/default'
+    local lxc_name='alma'
     local vnc_port_on_host=15902
 
     # # Nixos
