@@ -24,24 +24,24 @@ args=("$@")
 main() {
     # var
 
-    # # Ubuntu
-    # # local imgName='images:ubuntu/focal/default' # ubunt 20.04
-    # # local imgName='images:ubuntu/jammy/default' # ubunt 22.04
-    # local imgName='images:ubuntu/noble/default' # ubunt 24.04
-    # # local imgName='images:ubuntu/plucky/default' # ubunt 25.04
-    # local lxc_name='cb'
-    # local vnc_port_on_host=15900
+    # Ubuntu
+    # local imgName='images:ubuntu/focal/default' # ubunt 20.04
+    # local imgName='images:ubuntu/jammy/default' # ubunt 22.04
+    local imgName='images:ubuntu/noble/default' # ubunt 24.04
+    # local imgName='images:ubuntu/plucky/default' # ubunt 25.04
+    local lxc_name='cb'
+    local vnc_port_on_host=15900
 
     # # arch
     # local imgName='images:archlinux/current/default'
     # local lxc_name='btw'
     # local vnc_port_on_host=15901
 
-    # rockylinux or RHEL
-    # local imgName='images:almalinux/8/default'
-    local imgName='images:almalinux/9/default'
-    local lxc_name='alma'
-    local vnc_port_on_host=15902
+    # # rockylinux or RHEL
+    # # local imgName='images:almalinux/8/default'
+    # local imgName='images:almalinux/9/default'
+    # local lxc_name='alma'
+    # local vnc_port_on_host=15902
 
     # # Nixos
     # # local imgName='images:nixos/24.05/default'
@@ -605,17 +605,17 @@ apply_lxc_guest_specific_settings() {
     local vm="${args[4]}"
     # map the user id in the container
     echodebug "(apply_lxc_guest_specific_settings): lxc raw.idmap"
-    "$cmd" config set "$lxc_name" raw.idmap "both $uid $uid"
+    "$cmd" config set "$lxc_name" "raw.idmap=both $uid $uid"
 
     if [[ "$vm" == 'true' ]]; then
         # This is needed by nixos VM. Otherwise, it errors with Error: The image used by this instance is incompatible with secureboot. Please set security.secureboot=false on the instance
-        "$cmd" config set "$lxc_name" security.secureboot false
-        "$cmd" config set "$lxc_name" limits.cpu 4
-        "$cmd" config set "$lxc_name" limits.memory 8GiB
+        "$cmd" config set "$lxc_name" 'security.secureboot=false'
+        "$cmd" config set "$lxc_name" 'limits.cpu=4'
+        "$cmd" config set "$lxc_name" 'limits.memory=8GiB'
         "$cmd" config device add "$lxc_name" agent disk source=agent:config
     else
         # The following is crucial for nixos CONTAINER to run properly: https://nixos.wiki/wiki/Incus
-        "$cmd" config set "$lxc_name" security.nesting true
+        "$cmd" config set "$lxc_name" 'security.nesting=true'
     fi
 
 }
