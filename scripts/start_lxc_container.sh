@@ -678,6 +678,7 @@ apply_generic_configurations() {
     echodebug "(apply_generic_configurations): Add user $username ($uid)"
     "$cmd" exec "$lxc_name" -t -- bash -c "export uid=$uid gid=$gid \
         && mkdir -p '${homePath}' \
+        && mkdir -p '/etc/sudoers.d/' \
         && echo \"${username}:x:\${uid}:\${gid}:${username},,,:${homePath}:/bin/bash\" >> /etc/passwd \
         && echo \"${username}:x:\${uid}:\" >> /etc/group \
         && echo \"${username} ALL=(ALL:ALL) NOPASSWD: ALL\" > /etc/sudoers.d/${username} \
